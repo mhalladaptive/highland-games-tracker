@@ -95,3 +95,45 @@ function todayISO() {
   const dd = String(d.getDate()).padStart(2, '0');
   return `${yyyy}-${mm}-${dd}`;
 }
+
+function bestSinceReturn(data, itemId) {
+  if (!data || !Array.isArray(data.sessions)) return null;
+  let best = null;
+  for (const session of data.sessions) {
+    if (!session || !session.marks) continue;
+    const marks = session.marks[itemId];
+    if (!Array.isArray(marks)) continue;
+    for (const mark of marks) {
+      if (Number.isFinite(mark)) {
+        if (best === null || mark > best) best = mark;
+      }
+    }
+  }
+  return best;
+}
+
+function percentOfBaseline(best, baseline) {
+  if (!Number.isFinite(best) || !Number.isFinite(baseline) || baseline === 0) {
+    return null;
+  }
+  return (best / baseline) * 100;
+}
+
+function formatNumber(n) {
+  if (!Number.isFinite(n)) return '';
+  if (Number.isInteger(n)) return String(n);
+  return String(+n.toFixed(2));
+}
+
+function formatMeasurement(value, measurementType) {
+  if (!Number.isFinite(value) || value < 0) return '';
+  if (measurementType === 'weight') {
+    return `${formatNumber(value)} lb`;
+  }
+  const { feet, inches } = inchesToFeetInches(value);
+  if (feet === '' && inches === '') return '';
+  if (inches === 0) {
+    return `${feet}'`;
+  }
+  return `${feet}' ${formatNumber(inches)}"`;
+}

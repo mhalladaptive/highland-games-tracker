@@ -296,6 +296,84 @@ test('ITEMS: stone events both flagged capturesStoneWeight', () => {
   assertTrue(stones.every((s) => s.capturesStoneWeight === true), 'both stones must capture stone weight');
 });
 
+// --- bestSinceReturn ---
+
+test('bestSinceReturn: no sessions => null', () => {
+  const data = { baselines: {}, stoneWeights: {}, sessions: [] };
+  assertEqual(bestSinceReturn(data, 'deadlift'), null);
+});
+
+test('bestSinceReturn: single session, single attempt', () => {
+  const data = { sessions: [{ id: 1, date: '2026-05-15', marks: { deadlift: [300] } }] };
+  assertEqual(bestSinceReturn(data, 'deadlift'), 300);
+});
+
+test('bestSinceReturn: multiple sessions, returns max across all', () => {
+  const data = { sessions: [
+    { id: 1, date: '2026-05-15', marks: { deadlift: [300, 305] } },
+    { id: 2, date: '2026-05-20', marks: { deadlift: [310] } },
+    { id: 3, date: '2026-05-25', marks: { deadlift: [295, 308] } },
+  ] };
+  assertEqual(bestSinceReturn(data, 'deadlift'), 310);
+});
+
+test('bestSinceReturn: item not in any session => null', () => {
+  const data = { sessions: [{ id: 1, date: '2026-05-15', marks: { deadlift: [300] } }] };
+  assertEqual(bestSinceReturn(data, 'braemar-stone'), null);
+});
+
+// --- percentOfBaseline ---
+
+test('percentOfBaseline: 300 / 400 => 75', () => {
+  assertEqual(percentOfBaseline(300, 400), 75);
+});
+
+test('percentOfBaseline: equal => 100', () => {
+  assertEqual(percentOfBaseline(400, 400), 100);
+});
+
+test('percentOfBaseline: best > baseline => over 100', () => {
+  assertEqual(percentOfBaseline(420, 400), 105);
+});
+
+test('percentOfBaseline: baseline 0 => null', () => {
+  assertEqual(percentOfBaseline(100, 0), null);
+});
+
+test('percentOfBaseline: null best => null', () => {
+  assertEqual(percentOfBaseline(null, 100), null);
+});
+
+// --- formatMeasurement ---
+
+test('formatMeasurement: 66 inches as distance => 5\' 6"', () => {
+  assertEqual(formatMeasurement(66, 'distance'), `5' 6"`);
+});
+
+test('formatMeasurement: 60 inches as distance => 5\' (no inches)', () => {
+  assertEqual(formatMeasurement(60, 'distance'), `5'`);
+});
+
+test('formatMeasurement: 66.5 inches as height => 5\' 6.5"', () => {
+  assertEqual(formatMeasurement(66.5, 'height'), `5' 6.5"`);
+});
+
+test('formatMeasurement: 365 lb as weight', () => {
+  assertEqual(formatMeasurement(365, 'weight'), '365 lb');
+});
+
+test('formatMeasurement: 365.5 lb as weight', () => {
+  assertEqual(formatMeasurement(365.5, 'weight'), '365.5 lb');
+});
+
+test('formatMeasurement: null => empty string', () => {
+  assertEqual(formatMeasurement(null, 'distance'), '');
+});
+
+test('formatMeasurement: 0 inches => 0\'', () => {
+  assertEqual(formatMeasurement(0, 'distance'), `0'`);
+});
+
 // --- Harness ---
 
 function runTests() {
