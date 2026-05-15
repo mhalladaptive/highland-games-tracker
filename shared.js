@@ -24,12 +24,21 @@ const STORAGE_KEY = 'comeback-tracker-v1';
 
 function loadData() {
   const raw = localStorage.getItem(STORAGE_KEY);
-  const fresh = { version: 1, baselines: {}, stoneWeights: {}, sessions: [] };
+  const fresh = {
+    version: 1,
+    baselines: {},
+    baselineMeta: {},
+    stoneWeights: {},
+    sessions: [],
+  };
   if (!raw) return fresh;
   try {
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== 'object' || !parsed.baselines) {
       return fresh;
+    }
+    if (!parsed.baselineMeta || typeof parsed.baselineMeta !== 'object') {
+      parsed.baselineMeta = {};
     }
     if (!parsed.stoneWeights || typeof parsed.stoneWeights !== 'object') {
       parsed.stoneWeights = {};
@@ -96,20 +105,35 @@ function todayISO() {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-function bestSinceReturn(data, itemId) {
+function bestSinceReturnDetails(data, itemId) {
   if (!data || !Array.isArray(data.sessions)) return null;
-  let best = null;
+  let bestValue = null;
+  let bestSession = null;
   for (const session of data.sessions) {
     if (!session || !session.marks) continue;
     const marks = session.marks[itemId];
     if (!Array.isArray(marks)) continue;
     for (const mark of marks) {
       if (Number.isFinite(mark)) {
-        if (best === null || mark > best) best = mark;
+        if (bestValue === null || mark > bestValue) {
+          bestValue = mark;
+          bestSession = session;
+        }
       }
     }
   }
-  return best;
+  if (bestValue === null) return null;
+  return {
+    value: bestValue,
+    sessionId: bestSession.id,
+    sessionDate: bestSession.date,
+    sessionLocation: bestSession.location || null,
+  };
+}
+
+function bestSinceReturn(data, itemId) {
+  const details = bestSinceReturnDetails(data, itemId);
+  return details ? details.value : null;
 }
 
 function percentOfBaseline(best, baseline) {

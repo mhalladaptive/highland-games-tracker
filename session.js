@@ -180,6 +180,8 @@ function renderForm(prefillMarks, prefillStoneWeights) {
 
 function collectFormData() {
   const date = document.getElementById('session-date').value;
+  const locationInput = document.getElementById('session-location');
+  const location = locationInput && locationInput.value ? locationInput.value.trim() : '';
   const marks = {};
   const stoneWeights = {};
 
@@ -211,7 +213,7 @@ function collectFormData() {
     }
   });
 
-  return { date, marks, stoneWeights };
+  return { date, location, marks, stoneWeights };
 }
 
 function totalAttempts(session) {
@@ -251,6 +253,13 @@ function renderSessionsList(sessions) {
     dateLine.textContent = formatSessionDate(s.date);
     info.appendChild(dateLine);
 
+    if (s.location) {
+      const locLine = document.createElement('div');
+      locLine.className = 'session-location-line';
+      locLine.textContent = s.location;
+      info.appendChild(locLine);
+    }
+
     const summary = document.createElement('div');
     summary.className = 'session-summary';
     const items = itemCount(s);
@@ -285,6 +294,8 @@ function renderSessionsList(sessions) {
 function resetForm() {
   editingSessionId = null;
   document.getElementById('session-date').value = todayISO();
+  const locInput = document.getElementById('session-location');
+  if (locInput) locInput.value = '';
   renderForm({}, {});
   document.getElementById('save-btn').textContent = 'Save Session';
   document.getElementById('edit-banner').hidden = true;
@@ -297,6 +308,8 @@ function handleEdit(sessionId) {
 
   editingSessionId = sessionId;
   document.getElementById('session-date').value = session.date;
+  const locInput = document.getElementById('session-location');
+  if (locInput) locInput.value = session.location || '';
   renderForm(session.marks, session.stoneWeights || {});
   document.getElementById('save-btn').textContent = 'Update Session';
   document.getElementById('edit-banner-date').textContent = formatSessionDate(session.date);
@@ -359,6 +372,7 @@ function handleSubmit(event) {
       data.sessions[idx] = {
         id: editingSessionId,
         date: formData.date,
+        location: formData.location || '',
         marks: formData.marks,
         stoneWeights: formData.stoneWeights,
       };
@@ -371,6 +385,7 @@ function handleSubmit(event) {
     const newSession = {
       id: Date.now(),
       date: formData.date,
+      location: formData.location || '',
       marks: formData.marks,
       stoneWeights: formData.stoneWeights,
     };

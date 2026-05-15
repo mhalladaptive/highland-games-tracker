@@ -299,21 +299,19 @@ body {
   border-radius: 12px;
   margin-bottom: 1.25rem;
   padding: 0.85rem 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
   box-shadow: var(--shadow);
 }
 
-.date-label {
+.date-section .meta-row .date-label {
+  flex: 0 0 110px;
   font-weight: 500;
-  font-size: 0.95rem;
-  flex: 1;
+  font-size: 0.9rem;
+  color: var(--text);
 }
 
-.date-field {
-  flex: 0 0 auto;
-  max-width: 180px;
+.date-section .meta-row .date-field {
+  flex: 1;
+  max-width: 240px;
   width: auto;
 }
 
@@ -562,4 +560,124 @@ body {
 .gap-row--no-sessions .gap-item-name {
   color: var(--muted);
   font-weight: 400;
+}
+
+.item-meta-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-top: 0.25rem;
+  border-top: 1px dashed var(--border);
+  margin-top: 0.25rem;
+}
+
+.meta-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.meta-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  flex: 0 0 60px;
+}
+
+.meta-group .field {
+  flex: 1;
+  height: 38px;
+  font-size: 0.9rem;
+}
+
+.meta-group .meta-date {
+  max-width: 170px;
+}
+
+.meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.meta-row + .meta-row {
+  margin-top: 0.5rem;
+}
+
+.session-location-line {
+  font-size: 0.85rem;
+  color: var(--text);
+  margin-top: 0.1rem;
+}
+
+.gap-percent {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.gap-percent:hover {
+  opacity: 0.85;
+}
+
+.gap-percent:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+.gap-details {
+  display: none;
+  margin-top: 0.5rem;
+  padding: 0.75rem 0.85rem;
+  background: #f7f7f9;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.gap-row.expanded .gap-details {
+  display: block;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .gap-row:hover .gap-details {
+    display: block;
+  }
+}
+
+.gap-detail-line + .gap-detail-line {
+  margin-top: 0.35rem;
+}
+
+.gap-detail-line strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.detail-mark {
+  color: var(--text);
+}
+
+.detail-provenance {
+  color: var(--muted);
+}
+
+@media (min-width: 600px) {
+  .item-meta-fields {
+    flex-direction: row;
+    gap: 0.85rem;
+  }
+  .meta-group {
+    flex: 1;
+  }
+  .meta-row {
+    flex-direction: row;
+  }
 }

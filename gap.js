@@ -9,7 +9,31 @@ function buildStatSpan(label, value) {
   return wrap;
 }
 
-function buildGapRow(item, baseline, best) {
+function buildDetailLine(label, mark, date, location) {
+  const line = document.createElement('div');
+  line.className = 'gap-detail-line';
+
+  const labelEl = document.createElement('strong');
+  labelEl.textContent = `${label}: `;
+  line.appendChild(labelEl);
+
+  const markEl = document.createElement('span');
+  markEl.className = 'detail-mark';
+  markEl.textContent = mark;
+  line.appendChild(markEl);
+
+  const dateText = date ? formatSessionDate(date) : '(no date recorded)';
+  const locText = location && location.trim() ? location : '(no location recorded)';
+
+  const provenance = document.createElement('span');
+  provenance.className = 'detail-provenance';
+  provenance.textContent = ` — ${dateText}, ${locText}`;
+  line.appendChild(provenance);
+
+  return line;
+}
+
+function buildGapRow(item, baseline, baselineMeta, bestDetails) {
   const row = document.createElement('div');
   row.className = 'gap-row';
   row.dataset.itemId = item.id;
@@ -37,7 +61,7 @@ function buildGapRow(item, baseline, best) {
 
   const baselineText = formatMeasurement(baseline, item.measurementType);
 
-  if (!Number.isFinite(best)) {
+  if (!bestDetails) {
     row.classList.add('gap-row--no-sessions');
     const placeholder = document.createElement('p');
     placeholder.className = 'gap-empty';
@@ -46,14 +70,23 @@ function buildGapRow(item, baseline, best) {
     return row;
   }
 
+  const best = bestDetails.value;
   const pct = percentOfBaseline(best, baseline);
   const gap = baseline - best;
   const atOrPast = pct >= 100;
+  const detailsId = `gap-details-${item.id}`;
 
-  const pctEl = document.createElement('div');
-  pctEl.className = 'gap-percent' + (atOrPast ? ' at-or-past' : '');
-  pctEl.textContent = `${Math.round(pct)}%`;
-  row.appendChild(pctEl);
+  const pctBtn = document.createElement('button');
+  pctBtn.type = 'button';
+  pctBtn.className = 'gap-percent' + (atOrPast ? ' at-or-past' : '');
+  pctBtn.textContent = `${Math.round(pct)}%`;
+  pctBtn.setAttribute('aria-expanded', 'false');
+  pctBtn.setAttribute('aria-controls', detailsId);
+  pctBtn.addEventListener('click', () => {
+    const expanded = row.classList.toggle('expanded');
+    pctBtn.setAttribute('aria-expanded', String(expanded));
+  });
+  row.appendChild(pctBtn);
 
   const bar = document.createElement('div');
   bar.className = 'gap-bar';
@@ -84,6 +117,22 @@ function buildGapRow(item, baseline, best) {
   }
   row.appendChild(stats);
 
+  const details = document.createElement('div');
+  details.id = detailsId;
+  details.className = 'gap-details';
+
+  const baselineMetaDate = baselineMeta && baselineMeta.date ? baselineMeta.date : null;
+  const baselineMetaLoc = baselineMeta && baselineMeta.location ? baselineMeta.location : null;
+  details.appendChild(buildDetailLine('Baseline', baselineText, baselineMetaDate, baselineMetaLoc));
+  details.appendChild(buildDetailLine(
+    'Best',
+    formatMeasurement(best, item.measurementType),
+    bestDetails.sessionDate,
+    bestDetails.sessionLocation
+  ));
+
+  row.appendChild(details);
+
   return row;
 }
 
@@ -96,8 +145,9 @@ function renderGap(data) {
   for (const item of ITEMS) {
     const baselineRaw = data.baselines ? data.baselines[item.id] : null;
     const baseline = Number.isFinite(baselineRaw) ? baselineRaw : null;
-    const best = bestSinceReturn(data, item.id);
-    const row = buildGapRow(item, baseline, best);
+    const baselineMeta = data.baselineMeta ? data.baselineMeta[item.id] : null;
+    const bestDetails = bestSinceReturnDetails(data, item.id);
+    const row = buildGapRow(item, baseline, baselineMeta, bestDetails);
     if (item.category === 'throw') {
       throwsList.appendChild(row);
     } else {

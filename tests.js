@@ -174,6 +174,7 @@ test('loadData: empty storage => fresh shape', () => {
   assertDeepEqual(loadData(), {
     version: 1,
     baselines: {},
+    baselineMeta: {},
     stoneWeights: {},
     sessions: [],
   });
@@ -185,6 +186,7 @@ test('loadData: corrupt JSON => fresh shape', () => {
   assertDeepEqual(loadData(), {
     version: 1,
     baselines: {},
+    baselineMeta: {},
     stoneWeights: {},
     sessions: [],
   });
@@ -196,6 +198,7 @@ test('loadData: data missing baselines key => fresh shape', () => {
   assertDeepEqual(loadData(), {
     version: 1,
     baselines: {},
+    baselineMeta: {},
     stoneWeights: {},
     sessions: [],
   });
@@ -231,6 +234,7 @@ test('save + load: round-trip preserves baselines', () => {
   const fixture = {
     version: 1,
     baselines: { deadlift: 365, 'braemar-stone': 426 },
+    baselineMeta: {},
     stoneWeights: {},
     sessions: [],
   };
@@ -249,6 +253,7 @@ test('save + load: round-trip preserves sessions with attempts', () => {
   const fixture = {
     version: 1,
     baselines: {},
+    baselineMeta: {},
     stoneWeights: {},
     sessions: [session],
   };
@@ -261,6 +266,7 @@ test('save + load: preserves unknown future fields', () => {
   const fixture = {
     version: 1,
     baselines: {},
+    baselineMeta: {},
     stoneWeights: {},
     sessions: [],
     futureField: 'hello',
@@ -320,6 +326,92 @@ test('bestSinceReturn: multiple sessions, returns max across all', () => {
 test('bestSinceReturn: item not in any session => null', () => {
   const data = { sessions: [{ id: 1, date: '2026-05-15', marks: { deadlift: [300] } }] };
   assertEqual(bestSinceReturn(data, 'braemar-stone'), null);
+});
+
+// --- bestSinceReturnDetails ---
+
+test('bestSinceReturnDetails: no sessions => null', () => {
+  const data = { baselines: {}, stoneWeights: {}, sessions: [] };
+  assertEqual(bestSinceReturnDetails(data, 'deadlift'), null);
+});
+
+test('bestSinceReturnDetails: single session returns full provenance', () => {
+  const data = { sessions: [
+    { id: 1234, date: '2026-05-15', location: 'Test Field', marks: { deadlift: [300] } },
+  ] };
+  const details = bestSinceReturnDetails(data, 'deadlift');
+  assertEqual(details.value, 300);
+  assertEqual(details.sessionId, 1234);
+  assertEqual(details.sessionDate, '2026-05-15');
+  assertEqual(details.sessionLocation, 'Test Field');
+});
+
+test('bestSinceReturnDetails: returns details of session containing the max', () => {
+  const data = { sessions: [
+    { id: 1, date: '2026-05-10', location: 'Field A', marks: { deadlift: [300, 305] } },
+    { id: 2, date: '2026-05-20', location: 'Field B', marks: { deadlift: [310] } },
+    { id: 3, date: '2026-05-25', location: 'Field C', marks: { deadlift: [295, 308] } },
+  ] };
+  const details = bestSinceReturnDetails(data, 'deadlift');
+  assertEqual(details.value, 310);
+  assertEqual(details.sessionId, 2);
+  assertEqual(details.sessionLocation, 'Field B');
+});
+
+test('bestSinceReturnDetails: missing location returns null in sessionLocation', () => {
+  const data = { sessions: [
+    { id: 1234, date: '2026-05-15', marks: { deadlift: [300] } },
+  ] };
+  const details = bestSinceReturnDetails(data, 'deadlift');
+  assertEqual(details.sessionLocation, null);
+});
+
+// --- loadData backward compatibility for baselineMeta ---
+
+test('loadData: missing baselineMeta => filled in as empty object', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    version: 1,
+    baselines: { deadlift: 365 },
+    stoneWeights: {},
+    sessions: [],
+  }));
+  const data = loadData();
+  assertDeepEqual(data.baselineMeta, {});
+  assertEqual(data.baselines.deadlift, 365);
+});
+
+test('save + load: round-trip preserves baselineMeta', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  const fixture = {
+    version: 1,
+    baselines: { 'braemar-stone': 339.5 },
+    baselineMeta: { 'braemar-stone': { date: '2019-10-12', location: 'Radford Highlander Festival' } },
+    stoneWeights: {},
+    sessions: [],
+  };
+  saveData(fixture);
+  assertDeepEqual(loadData(), fixture);
+});
+
+test('save + load: round-trip preserves session location', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  const session = {
+    id: 1234567890,
+    date: '2024-08-03',
+    location: 'Dublin Irish Festival',
+    marks: { 'open-stone': [312] },
+    stoneWeights: {},
+  };
+  const fixture = {
+    version: 1,
+    baselines: {},
+    baselineMeta: {},
+    stoneWeights: {},
+    sessions: [session],
+  };
+  saveData(fixture);
+  assertDeepEqual(loadData(), fixture);
 });
 
 // --- percentOfBaseline ---

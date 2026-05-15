@@ -1,4 +1,4 @@
-function buildRow(item, baselineValue, stoneWeightValue) {
+function buildRow(item, baselineValue, stoneWeightValue, baselineMeta) {
   const row = document.createElement('div');
   row.className = 'item-row';
   row.dataset.itemId = item.id;
@@ -114,6 +114,42 @@ function buildRow(item, baselineValue, stoneWeightValue) {
     row.appendChild(extra);
   }
 
+  const meta = document.createElement('div');
+  meta.className = 'item-meta-fields';
+
+  const dateGroup = document.createElement('div');
+  dateGroup.className = 'meta-group';
+  const dateLabel = document.createElement('span');
+  dateLabel.className = 'meta-label';
+  dateLabel.textContent = 'Set on';
+  dateGroup.appendChild(dateLabel);
+  const dateInput = document.createElement('input');
+  dateInput.type = 'date';
+  dateInput.className = 'field meta-date';
+  dateInput.dataset.field = 'metaDate';
+  dateInput.setAttribute('aria-label', `${item.name} baseline date`);
+  if (baselineMeta && baselineMeta.date) dateInput.value = baselineMeta.date;
+  dateGroup.appendChild(dateInput);
+  meta.appendChild(dateGroup);
+
+  const locGroup = document.createElement('div');
+  locGroup.className = 'meta-group';
+  const locLabel = document.createElement('span');
+  locLabel.className = 'meta-label';
+  locLabel.textContent = 'At';
+  locGroup.appendChild(locLabel);
+  const locInput = document.createElement('input');
+  locInput.type = 'text';
+  locInput.className = 'field meta-location';
+  locInput.dataset.field = 'metaLocation';
+  locInput.placeholder = 'optional';
+  locInput.setAttribute('aria-label', `${item.name} baseline location`);
+  if (baselineMeta && baselineMeta.location) locInput.value = baselineMeta.location;
+  locGroup.appendChild(locInput);
+  meta.appendChild(locGroup);
+
+  row.appendChild(meta);
+
   return row;
 }
 
@@ -128,7 +164,8 @@ function renderForm(data) {
     const baselineValue = Number.isFinite(baseline) ? baseline : null;
     const stoneWeight = data.stoneWeights ? data.stoneWeights[item.id] : null;
     const stoneWeightValue = Number.isFinite(stoneWeight) ? stoneWeight : null;
-    const row = buildRow(item, baselineValue, stoneWeightValue);
+    const baselineMeta = data.baselineMeta ? data.baselineMeta[item.id] : null;
+    const row = buildRow(item, baselineValue, stoneWeightValue, baselineMeta);
     if (item.category === 'throw') {
       throwsList.appendChild(row);
     } else {
@@ -140,6 +177,7 @@ function renderForm(data) {
 function collectFormData() {
   const baselines = {};
   const stoneWeights = {};
+  const baselineMeta = {};
   const rows = document.querySelectorAll('.item-row');
   rows.forEach((row) => {
     const id = row.dataset.itemId;
@@ -159,8 +197,18 @@ function collectFormData() {
       const sw = readNumber(stoneInput);
       if (sw !== null) stoneWeights[id] = sw;
     }
+    const dateInput = row.querySelector('[data-field="metaDate"]');
+    const locInput = row.querySelector('[data-field="metaLocation"]');
+    const date = dateInput && dateInput.value ? dateInput.value.trim() : '';
+    const location = locInput && locInput.value ? locInput.value.trim() : '';
+    if (date || location) {
+      const meta = {};
+      if (date) meta.date = date;
+      if (location) meta.location = location;
+      baselineMeta[id] = meta;
+    }
   });
-  return { baselines, stoneWeights };
+  return { baselines, stoneWeights, baselineMeta };
 }
 
 function showStatus(message) {
