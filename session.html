@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a7d3e" />
+  <title>Comeback Tracker — Log Session</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>Comeback Tracker</h1>
+    <nav class="screen-nav">
+      <a href="index.html">Set Baseline</a>
+      <a href="session.html" class="active">Log Session</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <form id="session-form" novalidate>
+      <div class="edit-banner" id="edit-banner" hidden>
+        <span class="edit-banner-text">Editing session from <strong id="edit-banner-date"></strong></span>
+        <button type="button" id="cancel-edit-btn" class="ghost-btn">Cancel</button>
+      </div>
+
+      <section class="date-section">
+        <label for="session-date" class="date-label">Session date</label>
+        <input type="date" id="session-date" class="field date-field" required />
+      </section>
+
+      <section class="group" data-category="throw">
+        <h2>Throws</h2>
+        <div class="items" id="throws-list"></div>
+      </section>
+
+      <section class="group" data-category="lift">
+        <h2>Lifts</h2>
+        <div class="items" id="lifts-list"></div>
+      </section>
+
+      <div class="actions">
+        <button type="submit" id="save-btn" class="save-btn">Save Session</button>
+        <p id="status" class="status" role="status" aria-live="polite"></p>
+      </div>
+    </form>
+
+    <section class="past-sessions">
+      <h2>Past Sessions</h2>
+      <p class="empty-state" id="sessions-empty">No sessions logged yet.</p>
+      <ul class="sessions-list" id="sessions-list"></ul>
+    </section>
+  </main>
+
+  <script src="shared.js"></script>
+  <script src="session.js"></script>
+</body>
+</html>

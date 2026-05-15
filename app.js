@@ -1,74 +1,3 @@
-const ITEMS = [
-  { id: 'braemar-stone',         name: 'Braemar Stone',              category: 'throw', measurementType: 'distance', implement: '20–26 lb', capturesStoneWeight: true },
-  { id: 'open-stone',            name: 'Open Stone',                 category: 'throw', measurementType: 'distance', implement: '16–22 lb', capturesStoneWeight: true },
-  { id: 'heavy-hammer',          name: 'Heavy Hammer',               category: 'throw', measurementType: 'distance', implement: '16 lb' },
-  { id: 'light-hammer',          name: 'Light Hammer',               category: 'throw', measurementType: 'distance', implement: '12 lb' },
-  { id: 'heavy-weight-distance', name: 'Heavy Weight for Distance',  category: 'throw', measurementType: 'distance', implement: '42 lb' },
-  { id: 'light-weight-distance', name: 'Light Weight for Distance',  category: 'throw', measurementType: 'distance', implement: '28 lb' },
-  // Display name changed from "Weight Over Bar" to "Weight for Height".
-  // The id is intentionally kept stable so any already-saved baseline stays linked.
-  { id: 'weight-over-bar',       name: 'Weight for Height',          category: 'throw', measurementType: 'height',   implement: '42 lb' },
-  { id: 'sheaf-toss',            name: 'Sheaf Toss',                 category: 'throw', measurementType: 'height',   implement: '12 lb' },
-
-  { id: 'overhead-press', name: 'Overhead Press',              category: 'lift', measurementType: 'weight', protocol: '1RM' },
-  { id: 'deadlift',       name: 'Deadlift',                    category: 'lift', measurementType: 'weight', protocol: '10RM (40 sec)' },
-  { id: 'hang-clean',     name: 'Hang Clean',                  category: 'lift', measurementType: 'weight', protocol: '1RM' },
-  { id: 'power-clean',    name: 'Power Clean',                 category: 'lift', measurementType: 'weight', protocol: '1RM' },
-  { id: 'hang-snatch',    name: 'Hang Snatch',                 category: 'lift', measurementType: 'weight', protocol: '1RM' },
-  { id: 'one-hand-snatch',name: 'One-Handed Barbell Snatch',   category: 'lift', measurementType: 'weight', protocol: '1RM' },
-  { id: 'box-squat',      name: 'Box Squat',                   category: 'lift', measurementType: 'weight', protocol: '7RM' },
-  { id: 'good-mornings',  name: 'Good Mornings',               category: 'lift', measurementType: 'weight', protocol: '7RM' },
-];
-
-const STORAGE_KEY = 'comeback-tracker-v1';
-
-function loadData() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return { version: 1, baselines: {}, stoneWeights: {} };
-  try {
-    const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== 'object' || !parsed.baselines) {
-      return { version: 1, baselines: {}, stoneWeights: {} };
-    }
-    if (!parsed.stoneWeights || typeof parsed.stoneWeights !== 'object') {
-      parsed.stoneWeights = {};
-    }
-    return parsed;
-  } catch {
-    return { version: 1, baselines: {}, stoneWeights: {} };
-  }
-}
-
-function saveData(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-}
-
-function feetInchesToInches(feet, inches) {
-  const f = Number.isFinite(feet) ? feet : 0;
-  const i = Number.isFinite(inches) ? inches : 0;
-  return f * 12 + i;
-}
-
-function inchesToFeetInches(totalInches) {
-  if (!Number.isFinite(totalInches)) return { feet: '', inches: '' };
-  const feet = Math.floor(totalInches / 12);
-  const inches = +(totalInches - feet * 12).toFixed(2);
-  return { feet, inches };
-}
-
-function metaLabel(item) {
-  if (item.measurementType === 'distance') {
-    return item.implement ? `Distance · ${item.implement}` : 'Distance';
-  }
-  if (item.measurementType === 'height') {
-    return item.implement ? `Height · ${item.implement}` : 'Height';
-  }
-  if (item.measurementType === 'weight') {
-    return item.protocol ? `Weight · ${item.protocol}` : 'Weight';
-  }
-  return '';
-}
-
 function buildRow(item, baselineValue, stoneWeightValue) {
   const row = document.createElement('div');
   row.className = 'item-row';
@@ -77,12 +6,14 @@ function buildRow(item, baselineValue, stoneWeightValue) {
 
   const label = document.createElement('div');
   label.className = 'item-label';
-  label.innerHTML = `
-    <span class="item-name"></span>
-    <span class="item-meta"></span>
-  `;
-  label.querySelector('.item-name').textContent = item.name;
-  label.querySelector('.item-meta').textContent = metaLabel(item);
+  const nameSpan = document.createElement('span');
+  nameSpan.className = 'item-name';
+  nameSpan.textContent = item.name;
+  const metaSpan = document.createElement('span');
+  metaSpan.className = 'item-meta';
+  metaSpan.textContent = metaLabel(item);
+  label.appendChild(nameSpan);
+  label.appendChild(metaSpan);
 
   const inputs = document.createElement('div');
   inputs.className = 'item-inputs';
@@ -206,13 +137,6 @@ function renderForm(data) {
   }
 }
 
-function readNumber(input) {
-  if (!input || input.value === '' || input.value == null) return null;
-  const n = Number(input.value);
-  if (!Number.isFinite(n) || n < 0) return null;
-  return n;
-}
-
 function collectFormData() {
   const baselines = {};
   const stoneWeights = {};
@@ -236,7 +160,7 @@ function collectFormData() {
       if (sw !== null) stoneWeights[id] = sw;
     }
   });
-  return { version: 1, baselines, stoneWeights };
+  return { baselines, stoneWeights };
 }
 
 function showStatus(message) {
@@ -256,7 +180,9 @@ function init() {
   const form = document.getElementById('baseline-form');
   form.addEventListener('submit', (event) => {
     event.preventDefault();
-    const next = collectFormData();
+    const current = loadData();
+    const updates = collectFormData();
+    const next = { ...current, ...updates };
     saveData(next);
     renderForm(next);
     showStatus('Baseline saved.');
