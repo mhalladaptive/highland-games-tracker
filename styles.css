@@ -370,6 +370,10 @@ body.gap-page {
   gap: 0.75rem;
 }
 
+.edit-banner[hidden] {
+  display: none;
+}
+
 .edit-banner-text {
   font-size: 0.9rem;
   color: #6b4f00;
