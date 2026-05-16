@@ -234,6 +234,40 @@ function collectFormData() {
   return { date, location, kind, marks, stoneWeights };
 }
 
+function findAttemptGaps() {
+  const gaps = [];
+  const rows = document.querySelectorAll('.item-row');
+  rows.forEach((row) => {
+    const id = row.dataset.itemId;
+    const type = row.dataset.measurementType;
+    const slotsShown = parseInt(row.dataset.attempts, 10) || 1;
+
+    const slotHasValue = [];
+    for (let i = 1; i <= slotsShown; i++) {
+      if (type === 'weight') {
+        const w = readNumber(row.querySelector(`[data-field="weight"][data-slot="${i}"]`));
+        slotHasValue.push(w !== null);
+      } else {
+        const f = readNumber(row.querySelector(`[data-field="feet"][data-slot="${i}"]`));
+        const inch = readNumber(row.querySelector(`[data-field="inches"][data-slot="${i}"]`));
+        slotHasValue.push(f !== null || inch !== null);
+      }
+    }
+
+    const firstEmptyIdx = slotHasValue.indexOf(false);
+    const lastFilledIdx = slotHasValue.reduce((acc, has, i) => (has ? i : acc), -1);
+
+    if (firstEmptyIdx !== -1 && firstEmptyIdx < lastFilledIdx) {
+      const item = ITEMS.find((it) => it.id === id);
+      gaps.push({
+        itemName: item ? item.name : id,
+        emptySlot: firstEmptyIdx + 1,
+      });
+    }
+  });
+  return gaps;
+}
+
 function totalAttempts(session) {
   return Object.values(session.marks).reduce((sum, arr) => sum + arr.length, 0);
 }
@@ -448,6 +482,13 @@ function handleSubmit(event) {
 
   if (!formData.date) {
     showStatus('Pick a date first.');
+    return;
+  }
+
+  const gaps = findAttemptGaps();
+  if (gaps.length > 0) {
+    const g = gaps[0];
+    showStatus(`${g.itemName}: attempt ${g.emptySlot} is empty. Fill it before saving.`);
     return;
   }
 
