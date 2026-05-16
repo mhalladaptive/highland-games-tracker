@@ -384,17 +384,51 @@ body.gap-page {
   box-shadow: var(--shadow);
 }
 
+.meta-row {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.25rem;
+}
+
+.meta-row + .meta-row {
+  margin-top: 0.9rem;
+}
+
 .date-section .meta-row .date-label {
-  flex: 0 0 110px;
-  font-weight: 500;
-  font-size: 0.9rem;
-  color: var(--text);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  font-weight: 600;
 }
 
 .date-section .meta-row .date-field {
-  flex: 1;
-  max-width: 240px;
-  width: auto;
+  width: 100%;
+  max-width: none;
+}
+
+@media (min-width: 600px) {
+  .meta-row {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .meta-row + .meta-row {
+    margin-top: 0.6rem;
+  }
+  .date-section .meta-row .date-label {
+    flex: 0 0 110px;
+    font-size: 0.9rem;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--text);
+    font-weight: 500;
+  }
+  .date-section .meta-row .date-field {
+    flex: 1;
+    max-width: 240px;
+    width: auto;
+  }
 }
 
 .attempts {
