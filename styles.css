@@ -790,7 +790,7 @@ body.gap-page {
 .meta-group .field {
   flex: 1;
   height: 38px;
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .meta-group .meta-date {
