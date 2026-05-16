@@ -177,13 +177,27 @@ function renderGap(data) {
   throwsList.innerHTML = '';
   liftsList.innerHTML = '';
 
-  for (const item of ITEMS) {
+  const itemsWithInfo = ITEMS.map((item) => {
     const baselineRaw = data.baselines ? data.baselines[item.id] : null;
     const baseline = Number.isFinite(baselineRaw) ? baselineRaw : null;
     const baselineMeta = data.baselineMeta ? data.baselineMeta[item.id] : null;
     const bestDetails = bestSinceReturnDetails(data, item.id, currentFilter);
-    const row = buildGapRow(item, baseline, baselineMeta, bestDetails);
-    if (item.category === 'throw') {
+    const pct = (baseline !== null && bestDetails && Number.isFinite(bestDetails.value))
+      ? percentOfBaseline(bestDetails.value, baseline)
+      : null;
+    return { item, baseline, baselineMeta, bestDetails, pct };
+  });
+
+  itemsWithInfo.sort((a, b) => {
+    if (a.pct === null && b.pct === null) return 0;
+    if (a.pct === null) return 1;
+    if (b.pct === null) return -1;
+    return a.pct - b.pct;
+  });
+
+  for (const info of itemsWithInfo) {
+    const row = buildGapRow(info.item, info.baseline, info.baselineMeta, info.bestDetails);
+    if (info.item.category === 'throw') {
       throwsList.appendChild(row);
     } else {
       liftsList.appendChild(row);
