@@ -157,6 +157,38 @@ function formatNumber(n) {
   return String(+n.toFixed(2));
 }
 
+function validateBackup(parsed) {
+  if (!parsed || typeof parsed !== 'object') {
+    return 'File is not a valid object.';
+  }
+  if (parsed.appName !== 'comeback-tracker') {
+    return 'Not a Comeback Tracker backup file.';
+  }
+  if (!parsed.data || typeof parsed.data !== 'object') {
+    return 'Backup file is missing the data section.';
+  }
+  if (parsed.data.version !== 1) {
+    return `Unsupported data version: ${parsed.data.version}.`;
+  }
+  if (!parsed.data.baselines || typeof parsed.data.baselines !== 'object' || Array.isArray(parsed.data.baselines)) {
+    return 'Backup file is missing or has invalid baselines.';
+  }
+  if (parsed.data.baselineMeta !== undefined) {
+    if (typeof parsed.data.baselineMeta !== 'object' || parsed.data.baselineMeta === null || Array.isArray(parsed.data.baselineMeta)) {
+      return 'Backup baselineMeta is the wrong type.';
+    }
+  }
+  if (parsed.data.stoneWeights !== undefined) {
+    if (typeof parsed.data.stoneWeights !== 'object' || parsed.data.stoneWeights === null || Array.isArray(parsed.data.stoneWeights)) {
+      return 'Backup stoneWeights is the wrong type.';
+    }
+  }
+  if (parsed.data.sessions !== undefined && !Array.isArray(parsed.data.sessions)) {
+    return 'Backup sessions is the wrong type (expected array).';
+  }
+  return null;
+}
+
 function formatMeasurement(value, measurementType) {
   if (!Number.isFinite(value) || value < 0) return '';
   if (measurementType === 'weight') {

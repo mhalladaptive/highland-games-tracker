@@ -285,6 +285,41 @@ body.gap-page {
   opacity: 1;
 }
 
+.status.error {
+  color: var(--error);
+}
+
+.data-section {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.data-section h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.data-help {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0 0 0.85rem;
+  line-height: 1.5;
+}
+
+.data-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.data-actions .ghost-btn {
+  flex: 1;
+  min-width: 140px;
+}
+
 @media (min-width: 600px) {
   .item-row {
     flex-direction: row;

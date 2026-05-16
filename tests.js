@@ -366,6 +366,85 @@ test('bestSinceReturnDetails: missing location returns null in sessionLocation',
   assertEqual(details.sessionLocation, null);
 });
 
+// --- validateBackup ---
+
+function makeBackup(overrides) {
+  return Object.assign({
+    appName: 'comeback-tracker',
+    exportedAt: '2026-05-16T00:00:00.000Z',
+    data: {
+      version: 1,
+      baselines: {},
+      baselineMeta: {},
+      stoneWeights: {},
+      sessions: [],
+    },
+  }, overrides || {});
+}
+
+test('validateBackup: well-formed envelope => null', () => {
+  assertEqual(validateBackup(makeBackup()), null);
+});
+
+test('validateBackup: null input => error', () => {
+  assertTrue(typeof validateBackup(null) === 'string');
+});
+
+test('validateBackup: string input => error', () => {
+  assertTrue(typeof validateBackup('hello') === 'string');
+});
+
+test('validateBackup: wrong appName => error', () => {
+  const out = validateBackup(makeBackup({ appName: 'other-app' }));
+  assertTrue(typeof out === 'string' && out.includes('Comeback Tracker'));
+});
+
+test('validateBackup: missing data section => error', () => {
+  const bad = makeBackup();
+  delete bad.data;
+  assertTrue(typeof validateBackup(bad) === 'string');
+});
+
+test('validateBackup: wrong version => error', () => {
+  const bad = makeBackup();
+  bad.data.version = 2;
+  const out = validateBackup(bad);
+  assertTrue(typeof out === 'string' && out.includes('version'));
+});
+
+test('validateBackup: missing baselines => error', () => {
+  const bad = makeBackup();
+  delete bad.data.baselines;
+  assertTrue(typeof validateBackup(bad) === 'string');
+});
+
+test('validateBackup: baselines as array => error', () => {
+  const bad = makeBackup();
+  bad.data.baselines = [];
+  assertTrue(typeof validateBackup(bad) === 'string');
+});
+
+test('validateBackup: sessions as string => error', () => {
+  const bad = makeBackup();
+  bad.data.sessions = '12 items';
+  const out = validateBackup(bad);
+  assertTrue(typeof out === 'string' && out.includes('sessions'));
+});
+
+test('validateBackup: missing optional fields => null (lenient)', () => {
+  const lenient = makeBackup();
+  delete lenient.data.baselineMeta;
+  delete lenient.data.stoneWeights;
+  delete lenient.data.sessions;
+  assertEqual(validateBackup(lenient), null);
+});
+
+test('validateBackup: baselineMeta as array => error', () => {
+  const bad = makeBackup();
+  bad.data.baselineMeta = [];
+  assertTrue(typeof validateBackup(bad) === 'string');
+});
+
 // --- bestSinceReturnDetails kind filter ---
 
 test('bestSinceReturnDetails: competition filter excludes training sessions', () => {

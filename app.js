@@ -221,6 +221,80 @@ function showStatus(message) {
   }, 2200);
 }
 
+function showDataStatus(message, isError) {
+  const el = document.getElementById('data-status');
+  el.textContent = message;
+  el.classList.add('visible');
+  if (isError) {
+    el.classList.add('error');
+  } else {
+    el.classList.remove('error');
+  }
+  clearTimeout(showDataStatus._t);
+  showDataStatus._t = setTimeout(() => {
+    el.classList.remove('visible');
+    el.classList.remove('error');
+  }, isError ? 5000 : 2500);
+}
+
+function exportData() {
+  const data = loadData();
+  const envelope = {
+    appName: 'comeback-tracker',
+    exportedAt: new Date().toISOString(),
+    data,
+  };
+  const json = JSON.stringify(envelope, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `comeback-tracker-backup-${todayISO()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showDataStatus('Backup downloaded.');
+}
+
+function importData(file) {
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    let parsed;
+    try {
+      parsed = JSON.parse(event.target.result);
+    } catch (err) {
+      showDataStatus('Could not parse the file as JSON.', true);
+      return;
+    }
+    const error = validateBackup(parsed);
+    if (error) {
+      showDataStatus(error, true);
+      return;
+    }
+    const current = loadData();
+    const hasExistingData =
+      Object.keys(current.baselines || {}).length > 0 ||
+      (Array.isArray(current.sessions) && current.sessions.length > 0);
+    if (hasExistingData) {
+      const ok = window.confirm(
+        'This will replace your current baselines and sessions with the imported data. Continue?'
+      );
+      if (!ok) {
+        showDataStatus('Restore cancelled.');
+        return;
+      }
+    }
+    saveData(parsed.data);
+    showDataStatus('Backup restored. Reloading...');
+    setTimeout(() => location.reload(), 700);
+  };
+  reader.onerror = () => {
+    showDataStatus('Could not read file.', true);
+  };
+  reader.readAsText(file);
+}
+
 function init() {
   const data = loadData();
   renderForm(data);
@@ -235,6 +309,20 @@ function init() {
     renderForm(next);
     showStatus('Baseline saved.');
   });
+
+  const exportBtn = document.getElementById('export-btn');
+  if (exportBtn) exportBtn.addEventListener('click', exportData);
+
+  const importBtn = document.getElementById('import-btn');
+  const importFile = document.getElementById('import-file');
+  if (importBtn && importFile) {
+    importBtn.addEventListener('click', () => importFile.click());
+    importFile.addEventListener('change', (event) => {
+      const file = event.target.files && event.target.files[0];
+      if (file) importData(file);
+      event.target.value = '';
+    });
+  }
 }
 
 document.addEventListener('DOMContentLoaded', init);

@@ -42,6 +42,20 @@
         <p id="status" class="status" role="status" aria-live="polite"></p>
       </div>
     </form>
+
+    <section class="data-section">
+      <h2>Data</h2>
+      <p class="data-help">
+        Save a JSON file of all your baselines and sessions to your downloads folder.
+        Restore on another device to bring your data with you.
+      </p>
+      <div class="data-actions">
+        <button type="button" id="export-btn" class="ghost-btn">Download Backup</button>
+        <button type="button" id="import-btn" class="ghost-btn">Restore from Backup</button>
+        <input type="file" id="import-file" accept=".json,application/json" hidden />
+      </div>
+      <p id="data-status" class="status" role="status" aria-live="polite"></p>
+    </section>
   </main>
 
   <script src="shared.js"></script>
