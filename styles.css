@@ -46,7 +46,7 @@ body.gap-page {
     url('images/tape-measure.svg') right top / 80px auto no-repeat,
     linear-gradient(rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.55)),
     url('images/hammer-throw.jpg') center center / cover no-repeat;
-  background-attachment: fixed, fixed, fixed;
+  background-attachment: scroll, fixed, fixed;
 }
 
 .session-row.kind-competition {
