@@ -116,7 +116,11 @@ function buildSessionRow(item, attempts, stoneWeightValue) {
   addBtn.addEventListener('click', () => {
     const current = parseInt(row.dataset.attempts, 10);
     if (current < 3) {
-      row.dataset.attempts = String(current + 1);
+      const next = current + 1;
+      row.dataset.attempts = String(next);
+      const newSlot = row.querySelector(`.attempt[data-slot="${next}"]`);
+      const firstInput = newSlot && newSlot.querySelector('input');
+      if (firstInput) firstInput.focus();
     }
   });
   attemptsContainer.appendChild(addBtn);
