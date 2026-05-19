@@ -20,13 +20,14 @@ const ITEMS = [
   { id: 'good-mornings',  name: 'Good Mornings',               category: 'lift', measurementType: 'weight', protocol: '7RM' },
 ];
 
-const STORAGE_KEY = 'comeback-tracker-v1';
+const STORAGE_KEY = 'highland-games-tracker-v1';
 
-// One-time migration: early Comeback Tracker versions had no Highland Games
-// field, so users put the Games title in the Location field on competition
-// sessions. Now that there's a dedicated `games` field, move location → games
-// for any pre-existing competition session that doesn't already have a games
-// value. Training sessions are left untouched — their locations are real.
+// Legacy migration carried over from the v1 fork: the original app had no
+// dedicated Highland Games field, so competition sessions stored the Games
+// title in the location field. Move location → games for any competition
+// session that has a location but no games value. Training sessions are
+// left untouched — their locations are real. Idempotent. In v2 native
+// localStorage this is a no-op; it runs on data imported from v1 backups.
 function migrateLegacyGamesLocation(data) {
   if (!data || !Array.isArray(data.sessions)) return false;
   let migrated = false;
@@ -184,8 +185,8 @@ function validateBackup(parsed) {
   if (!parsed || typeof parsed !== 'object') {
     return 'File is not a valid object.';
   }
-  if (parsed.appName !== 'comeback-tracker') {
-    return 'Not a Comeback Tracker backup file.';
+  if (parsed.appName !== 'highland-games-tracker') {
+    return 'Not a Highland Games Tracker backup file.';
   }
   if (!parsed.data || typeof parsed.data !== 'object') {
     return 'Backup file is missing the data section.';

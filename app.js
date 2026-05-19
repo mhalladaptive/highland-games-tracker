@@ -240,7 +240,7 @@ function showDataStatus(message, isError) {
 function exportData() {
   const data = loadData();
   const envelope = {
-    appName: 'comeback-tracker',
+    appName: 'highland-games-tracker',
     exportedAt: new Date().toISOString(),
     data,
   };
@@ -249,7 +249,7 @@ function exportData() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `comeback-tracker-backup-${todayISO()}.json`;
+  a.download = `highland-games-tracker-backup-${todayISO()}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

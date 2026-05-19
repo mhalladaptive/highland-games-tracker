@@ -480,7 +480,7 @@ test('bestSinceReturnDetails: missing location returns null in sessionLocation',
 
 function makeBackup(overrides) {
   return Object.assign({
-    appName: 'comeback-tracker',
+    appName: 'highland-games-tracker',
     exportedAt: '2026-05-16T00:00:00.000Z',
     data: {
       version: 1,
@@ -506,7 +506,7 @@ test('validateBackup: string input => error', () => {
 
 test('validateBackup: wrong appName => error', () => {
   const out = validateBackup(makeBackup({ appName: 'other-app' }));
-  assertTrue(typeof out === 'string' && out.includes('Comeback Tracker'));
+  assertTrue(typeof out === 'string' && out.includes('Highland Games Tracker'));
 });
 
 test('validateBackup: missing data section => error', () => {
