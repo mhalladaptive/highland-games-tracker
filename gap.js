@@ -151,8 +151,7 @@ function buildGapRow(item, baseline, baselineMeta, bestDetails) {
 
   const baselineMetaDate = baselineMeta && baselineMeta.date ? baselineMeta.date : null;
   const baselineMetaLoc = baselineMeta && baselineMeta.location ? baselineMeta.location : null;
-  const baselineFallback = item.category === 'lift' ? 'pre-2020' : null;
-  details.appendChild(buildDetailLine('Baseline', baselineText, baselineMetaDate, baselineMetaLoc, baselineFallback));
+  details.appendChild(buildDetailLine('Baseline', baselineText, baselineMetaDate, baselineMetaLoc, null));
   details.appendChild(buildDetailLine(
     'Best',
     formatMeasurement(best, item.measurementType),
