@@ -227,6 +227,116 @@ test('loadData: missing sessions => filled in as empty array', () => {
   assertEqual(data.sessions.length, 0);
 });
 
+// --- legacy games-in-location migration ---
+
+test('migration: competition session with location-as-games moves into games field', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    version: 1,
+    baselines: {},
+    baselineMeta: {},
+    stoneWeights: {},
+    sessions: [{
+      id: 1,
+      date: '2024-08-17',
+      kind: 'competition',
+      location: 'Grandfather Mountain',
+      marks: { 'braemar-stone': [420] },
+      stoneWeights: {},
+    }],
+  }));
+  const data = loadData();
+  assertEqual(data.sessions[0].games, 'Grandfather Mountain');
+  assertEqual(data.sessions[0].location, '');
+});
+
+test('migration: training session is left untouched', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    version: 1,
+    baselines: {},
+    baselineMeta: {},
+    stoneWeights: {},
+    sessions: [{
+      id: 2,
+      date: '2024-08-18',
+      kind: 'training',
+      location: 'Garage Gym',
+      marks: { deadlift: [365] },
+      stoneWeights: {},
+    }],
+  }));
+  const data = loadData();
+  assertEqual(data.sessions[0].location, 'Garage Gym');
+  assertTrue(data.sessions[0].games === undefined || data.sessions[0].games === '');
+});
+
+test('migration: competition session with existing games value is left untouched', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    version: 1,
+    baselines: {},
+    baselineMeta: {},
+    stoneWeights: {},
+    sessions: [{
+      id: 3,
+      date: '2024-09-01',
+      kind: 'competition',
+      games: 'Celtic Clash',
+      location: 'Asheville, NC',
+      marks: { 'braemar-stone': [420] },
+      stoneWeights: {},
+    }],
+  }));
+  const data = loadData();
+  assertEqual(data.sessions[0].games, 'Celtic Clash');
+  assertEqual(data.sessions[0].location, 'Asheville, NC');
+});
+
+test('migration: is idempotent across reloads', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    version: 1,
+    baselines: {},
+    baselineMeta: {},
+    stoneWeights: {},
+    sessions: [{
+      id: 4,
+      date: '2024-08-17',
+      kind: 'competition',
+      location: 'Grandfather Mountain',
+      marks: {},
+      stoneWeights: {},
+    }],
+  }));
+  const first = loadData();
+  assertEqual(first.sessions[0].games, 'Grandfather Mountain');
+  assertEqual(first.sessions[0].location, '');
+  const second = loadData();
+  assertEqual(second.sessions[0].games, 'Grandfather Mountain');
+  assertEqual(second.sessions[0].location, '');
+});
+
+test('migration: legacy session with no kind defaults to competition and migrates', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    version: 1,
+    baselines: {},
+    baselineMeta: {},
+    stoneWeights: {},
+    sessions: [{
+      id: 5,
+      date: '2024-07-04',
+      location: 'Radford Highland Games',
+      marks: {},
+      stoneWeights: {},
+    }],
+  }));
+  const data = loadData();
+  assertEqual(data.sessions[0].games, 'Radford Highland Games');
+  assertEqual(data.sessions[0].location, '');
+});
+
 // --- save + load round-trips ---
 
 test('save + load: round-trip preserves baselines', () => {
@@ -540,12 +650,14 @@ test('save + load: round-trip preserves baselineMeta', () => {
   assertDeepEqual(loadData(), fixture);
 });
 
-test('save + load: round-trip preserves session location', () => {
+test('save + load: round-trip preserves session location and games', () => {
   localStorage.removeItem(STORAGE_KEY);
   const session = {
     id: 1234567890,
     date: '2024-08-03',
-    location: 'Dublin Irish Festival',
+    kind: 'competition',
+    games: 'Dublin Irish Festival',
+    location: 'Dublin, OH',
     marks: { 'open-stone': [312] },
     stoneWeights: {},
   };

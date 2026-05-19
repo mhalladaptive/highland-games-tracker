@@ -31,6 +31,10 @@
           <label for="session-date" class="date-label">Session date</label>
           <input type="date" id="session-date" class="field date-field" required />
         </div>
+        <div class="meta-row comp-only">
+          <label for="session-games" class="date-label">Highland Games</label>
+          <input type="text" id="session-games" class="field date-field" placeholder="e.g. Grandfather Mountain" />
+        </div>
         <div class="meta-row">
           <label for="session-location" class="date-label">Location</label>
           <input type="text" id="session-location" class="field date-field" placeholder="optional" />
@@ -49,9 +53,19 @@
         <div class="items" id="throws-list"></div>
       </section>
 
+      <section class="notes-section">
+        <label for="throws-notes" class="notes-label">Throws notes</label>
+        <textarea id="throws-notes" class="field notes-field" rows="2" placeholder="optional"></textarea>
+      </section>
+
       <section class="group" data-category="lift">
         <h2>Lifts</h2>
         <div class="items" id="lifts-list"></div>
+      </section>
+
+      <section class="notes-section">
+        <label for="lifts-notes" class="notes-label">Lifts notes</label>
+        <textarea id="lifts-notes" class="field notes-field" rows="2" placeholder="optional"></textarea>
       </section>
 
       <div class="actions">

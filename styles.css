@@ -58,6 +58,10 @@ body.gap-page {
   background: linear-gradient(180deg, #e2ead0 0%, #c8b297 100%);
 }
 
+body.kind-training .comp-only {
+  display: none;
+}
+
 .app-header {
   padding: 1.25rem 1rem 0.75rem;
   text-align: center;
@@ -178,6 +182,10 @@ body.gap-page {
   color: var(--muted);
 }
 
+.item-row--session .item-meta {
+  font-size: 1.2rem;
+}
+
 .item-inputs {
   display: flex;
   align-items: center;
@@ -288,6 +296,8 @@ body.gap-page {
 
 .status.error {
   color: var(--error);
+  font-size: 1.05rem;
+  font-weight: 600;
 }
 
 .data-section {
@@ -437,6 +447,41 @@ body.gap-page {
   }
 }
 
+.notes-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 1.25rem;
+  padding: 0.85rem 1rem;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.notes-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.notes-field {
+  width: 100%;
+  height: auto;
+  min-height: 44px;
+  padding: 0.65rem 0.75rem;
+  font-size: 1rem;
+  font-family: inherit;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  resize: none;
+  overflow: hidden;
+  line-height: 1.4;
+}
+
 .attempts {
   display: flex;
   flex-direction: column;
@@ -573,6 +618,28 @@ body.gap-page {
   margin: 0;
 }
 
+.session-notes-block {
+  margin: 0.5rem 0 0.25rem;
+  padding: 0.5rem 0.65rem;
+  background: #fafafa;
+  border-left: 3px solid var(--border);
+  border-radius: 4px;
+}
+
+.session-notes-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+
+.session-notes-body {
+  color: var(--text);
+  white-space: pre-wrap;
+}
+
 .session-info {
   flex: 1;
   min-width: 0;
@@ -653,13 +720,21 @@ body.gap-page {
   gap: 0.75rem;
 }
 
+.gap-item-label {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
 .gap-item-name {
   font-weight: 500;
   font-size: 1rem;
 }
 
 .gap-item-meta {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: var(--muted);
 }
 
@@ -690,10 +765,6 @@ body.gap-page {
   font-weight: 500;
 }
 
-.gap-stat--meta {
-  color: var(--muted);
-  font-style: italic;
-}
 
 .gap-percent {
   font-size: 2.25rem;
@@ -796,6 +867,13 @@ body.gap-page {
 
 .meta-group .meta-date {
   max-width: 170px;
+}
+
+.session-games-line {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-top: 0.15rem;
 }
 
 .session-location-line {

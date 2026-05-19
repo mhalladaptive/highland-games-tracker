@@ -53,20 +53,23 @@ function buildGapRow(item, baseline, baselineMeta, bestDetails) {
 
   const header = document.createElement('div');
   header.className = 'gap-row-header';
+  const labelGroup = document.createElement('div');
+  labelGroup.className = 'gap-item-label';
   const name = document.createElement('span');
   name.className = 'gap-item-name';
   name.textContent = item.name;
-  header.appendChild(name);
+  labelGroup.appendChild(name);
 
-  function appendMetaToHeader() {
+  const metaText = item.implement || item.protocol || '';
+  if (metaText) {
     const metaSpan = document.createElement('span');
     metaSpan.className = 'gap-item-meta';
-    metaSpan.textContent = metaLabel(item);
-    header.appendChild(metaSpan);
+    metaSpan.textContent = metaText;
+    labelGroup.appendChild(metaSpan);
   }
+  header.appendChild(labelGroup);
 
   if (!Number.isFinite(baseline)) {
-    appendMetaToHeader();
     row.appendChild(header);
 
     row.classList.add('gap-row--empty');
@@ -80,7 +83,6 @@ function buildGapRow(item, baseline, baselineMeta, bestDetails) {
   const baselineText = formatMeasurement(baseline, item.measurementType);
 
   if (!bestDetails) {
-    appendMetaToHeader();
     row.appendChild(header);
 
     row.classList.add('gap-row--no-sessions');
@@ -141,11 +143,6 @@ function buildGapRow(item, baseline, baselineMeta, bestDetails) {
   stats.appendChild(buildStatSpan('baseline', baselineText));
   stats.appendChild(document.createTextNode(' · '));
   stats.appendChild(buildStatSpan('best', formatMeasurement(best, item.measurementType)));
-  stats.appendChild(document.createTextNode(' · '));
-  const metaInStats = document.createElement('span');
-  metaInStats.className = 'gap-stat gap-stat--meta';
-  metaInStats.textContent = metaLabel(item);
-  stats.appendChild(metaInStats);
   row.appendChild(stats);
 
   const details = document.createElement('div');

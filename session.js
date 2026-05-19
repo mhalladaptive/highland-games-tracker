@@ -24,7 +24,6 @@ function buildAttemptSlot(item, slotIndex, value) {
     input.className = 'field';
     input.dataset.field = 'weight';
     input.dataset.slot = slotIndex;
-    input.placeholder = '0';
     input.setAttribute('aria-label', `${item.name} attempt ${slotIndex} weight in pounds`);
     if (Number.isFinite(value)) input.value = value;
     wrap.appendChild(input);
@@ -46,7 +45,6 @@ function buildAttemptSlot(item, slotIndex, value) {
     feetInput.className = 'field';
     feetInput.dataset.field = 'feet';
     feetInput.dataset.slot = slotIndex;
-    feetInput.placeholder = '0';
     feetInput.setAttribute('aria-label', `${item.name} attempt ${slotIndex} feet`);
     if (feet !== '') feetInput.value = feet;
     feetWrap.appendChild(feetInput);
@@ -65,7 +63,6 @@ function buildAttemptSlot(item, slotIndex, value) {
     inchesInput.className = 'field';
     inchesInput.dataset.field = 'inches';
     inchesInput.dataset.slot = slotIndex;
-    inchesInput.placeholder = '0';
     inchesInput.setAttribute('aria-label', `${item.name} attempt ${slotIndex} inches`);
     if (inches !== '') inchesInput.value = inches;
     inchesWrap.appendChild(inchesInput);
@@ -96,7 +93,7 @@ function buildSessionRow(item, attempts, stoneWeightValue) {
   nameSpan.textContent = item.name;
   const metaSpan = document.createElement('span');
   metaSpan.className = 'item-meta';
-  metaSpan.textContent = metaLabel(item);
+  metaSpan.textContent = item.implement || item.protocol || '';
   label.appendChild(nameSpan);
   label.appendChild(metaSpan);
   row.appendChild(label);
@@ -199,10 +196,22 @@ function setSelectedKind(kind) {
   document.body.classList.add(`kind-${next}`);
 }
 
+function autoGrowTextarea(textarea) {
+  if (!textarea) return;
+  textarea.style.height = 'auto';
+  textarea.style.height = textarea.scrollHeight + 'px';
+}
+
 function collectFormData() {
   const date = document.getElementById('session-date').value;
   const locationInput = document.getElementById('session-location');
   const location = locationInput && locationInput.value ? locationInput.value.trim() : '';
+  const gamesInput = document.getElementById('session-games');
+  const games = gamesInput && gamesInput.value ? gamesInput.value.trim() : '';
+  const throwsNotesInput = document.getElementById('throws-notes');
+  const throwsNotes = throwsNotesInput && throwsNotesInput.value ? throwsNotesInput.value.trim() : '';
+  const liftsNotesInput = document.getElementById('lifts-notes');
+  const liftsNotes = liftsNotesInput && liftsNotesInput.value ? liftsNotesInput.value.trim() : '';
   const kind = getSelectedKind();
   const marks = {};
   const stoneWeights = {};
@@ -235,7 +244,7 @@ function collectFormData() {
     }
   });
 
-  return { date, location, kind, marks, stoneWeights };
+  return { date, location, games, throwsNotes, liftsNotes, kind, marks, stoneWeights };
 }
 
 function findAttemptGaps() {
@@ -280,50 +289,92 @@ function itemCount(session) {
   return Object.keys(session.marks).length;
 }
 
+function buildSessionEventLine(item, session) {
+  const marks = session.marks ? session.marks[item.id] : null;
+  if (!Array.isArray(marks) || marks.length === 0) return null;
+
+  const line = document.createElement('div');
+  line.className = 'session-event-line';
+
+  const nameSpan = document.createElement('span');
+  nameSpan.className = 'session-event-name';
+  nameSpan.textContent = item.name;
+  line.appendChild(nameSpan);
+
+  if (
+    item.capturesStoneWeight &&
+    session.stoneWeights &&
+    Number.isFinite(session.stoneWeights[item.id])
+  ) {
+    const stoneSpan = document.createElement('span');
+    stoneSpan.className = 'session-event-stone';
+    stoneSpan.textContent = ` (${session.stoneWeights[item.id]} lb)`;
+    line.appendChild(stoneSpan);
+  }
+
+  line.appendChild(document.createTextNode(' — '));
+
+  const marksText = marks
+    .map((m) => formatMeasurement(m, item.measurementType))
+    .join(', ');
+  const marksSpan = document.createElement('span');
+  marksSpan.className = 'session-event-marks';
+  marksSpan.textContent = marksText;
+  line.appendChild(marksSpan);
+
+  return line;
+}
+
+function buildNotesBlock(label, text) {
+  if (!text) return null;
+  const wrap = document.createElement('div');
+  wrap.className = 'session-notes-block';
+
+  const labelEl = document.createElement('div');
+  labelEl.className = 'session-notes-label';
+  labelEl.textContent = label;
+  wrap.appendChild(labelEl);
+
+  const body = document.createElement('div');
+  body.className = 'session-notes-body';
+  body.textContent = text;
+  wrap.appendChild(body);
+
+  return wrap;
+}
+
 function buildSessionDetailsPanel(session, detailsId) {
   const details = document.createElement('div');
   details.id = detailsId;
   details.className = 'session-details';
 
   let anyLines = false;
-  for (const item of ITEMS) {
-    const marks = session.marks ? session.marks[item.id] : null;
-    if (!Array.isArray(marks) || marks.length === 0) continue;
+  const throwItems = ITEMS.filter((it) => it.category === 'throw');
+  const liftItems = ITEMS.filter((it) => it.category === 'lift');
 
-    anyLines = true;
-    const line = document.createElement('div');
-    line.className = 'session-event-line';
-
-    const nameSpan = document.createElement('span');
-    nameSpan.className = 'session-event-name';
-    nameSpan.textContent = item.name;
-    line.appendChild(nameSpan);
-
-    if (
-      item.capturesStoneWeight &&
-      session.stoneWeights &&
-      Number.isFinite(session.stoneWeights[item.id])
-    ) {
-      const stoneSpan = document.createElement('span');
-      stoneSpan.className = 'session-event-stone';
-      stoneSpan.textContent = ` (${session.stoneWeights[item.id]} lb)`;
-      line.appendChild(stoneSpan);
+  for (const item of throwItems) {
+    const line = buildSessionEventLine(item, session);
+    if (line) {
+      anyLines = true;
+      details.appendChild(line);
     }
-
-    line.appendChild(document.createTextNode(' — '));
-
-    const marksText = marks
-      .map((m) => formatMeasurement(m, item.measurementType))
-      .join(', ');
-    const marksSpan = document.createElement('span');
-    marksSpan.className = 'session-event-marks';
-    marksSpan.textContent = marksText;
-    line.appendChild(marksSpan);
-
-    details.appendChild(line);
   }
 
-  if (!anyLines) {
+  const throwsNotesBlock = buildNotesBlock('Throws notes', session.throwsNotes);
+  if (throwsNotesBlock) details.appendChild(throwsNotesBlock);
+
+  for (const item of liftItems) {
+    const line = buildSessionEventLine(item, session);
+    if (line) {
+      anyLines = true;
+      details.appendChild(line);
+    }
+  }
+
+  const liftsNotesBlock = buildNotesBlock('Lifts notes', session.liftsNotes);
+  if (liftsNotesBlock) details.appendChild(liftsNotesBlock);
+
+  if (!anyLines && !throwsNotesBlock && !liftsNotesBlock) {
     const placeholder = document.createElement('p');
     placeholder.className = 'session-details-empty';
     placeholder.textContent = 'No marks recorded.';
@@ -366,6 +417,13 @@ function renderSessionsList(sessions) {
     badge.textContent = kind === 'training' ? 'TRAIN' : 'COMP';
     dateLine.appendChild(badge);
     info.appendChild(dateLine);
+
+    if (kind === 'competition' && s.games) {
+      const gamesLine = document.createElement('div');
+      gamesLine.className = 'session-games-line';
+      gamesLine.textContent = s.games;
+      info.appendChild(gamesLine);
+    }
 
     if (s.location) {
       const locLine = document.createElement('div');
@@ -424,6 +482,18 @@ function resetForm() {
   document.getElementById('session-date').value = todayISO();
   const locInput = document.getElementById('session-location');
   if (locInput) locInput.value = '';
+  const gamesInput = document.getElementById('session-games');
+  if (gamesInput) gamesInput.value = '';
+  const throwsNotesInput = document.getElementById('throws-notes');
+  if (throwsNotesInput) {
+    throwsNotesInput.value = '';
+    autoGrowTextarea(throwsNotesInput);
+  }
+  const liftsNotesInput = document.getElementById('lifts-notes');
+  if (liftsNotesInput) {
+    liftsNotesInput.value = '';
+    autoGrowTextarea(liftsNotesInput);
+  }
   setSelectedKind('competition');
   renderForm({}, {});
   document.getElementById('save-btn').textContent = 'Save Session';
@@ -439,6 +509,18 @@ function handleEdit(sessionId) {
   document.getElementById('session-date').value = session.date;
   const locInput = document.getElementById('session-location');
   if (locInput) locInput.value = session.location || '';
+  const gamesInput = document.getElementById('session-games');
+  if (gamesInput) gamesInput.value = session.games || '';
+  const throwsNotesInput = document.getElementById('throws-notes');
+  if (throwsNotesInput) {
+    throwsNotesInput.value = session.throwsNotes || '';
+    autoGrowTextarea(throwsNotesInput);
+  }
+  const liftsNotesInput = document.getElementById('lifts-notes');
+  if (liftsNotesInput) {
+    liftsNotesInput.value = session.liftsNotes || '';
+    autoGrowTextarea(liftsNotesInput);
+  }
   setSelectedKind(session.kind || 'competition');
   renderForm(session.marks, session.stoneWeights || {});
   document.getElementById('save-btn').textContent = 'Update Session';
@@ -470,9 +552,10 @@ function handleCancelEdit() {
   resetForm();
 }
 
-function showStatus(message) {
+function showStatus(message, type) {
   const el = document.getElementById('status');
   el.textContent = message;
+  el.classList.toggle('error', type === 'error');
   el.classList.add('visible');
   clearTimeout(showStatus._t);
   showStatus._t = setTimeout(() => {
@@ -485,23 +568,27 @@ function handleSubmit(event) {
   const formData = collectFormData();
 
   if (!formData.date) {
-    showStatus('Pick a date first.');
+    showStatus('Pick a date first.', 'error');
     return;
   }
 
   const gaps = findAttemptGaps();
   if (gaps.length > 0) {
     const g = gaps[0];
-    showStatus(`${g.itemName}: attempt ${g.emptySlot} is empty. Fill it before saving.`);
+    showStatus(`${g.itemName}: attempt ${g.emptySlot} is empty. Fill it before saving.`, 'error');
     return;
   }
 
   if (Object.keys(formData.marks).length === 0) {
-    showStatus('Add at least one mark before saving.');
+    showStatus('Add at least one mark before saving.', 'error');
     return;
   }
 
   const data = loadData();
+
+  const games = formData.kind === 'competition' ? (formData.games || '') : '';
+  const throwsNotes = formData.throwsNotes || '';
+  const liftsNotes = formData.liftsNotes || '';
 
   if (editingSessionId !== null) {
     const idx = data.sessions.findIndex((s) => s.id === editingSessionId);
@@ -510,9 +597,12 @@ function handleSubmit(event) {
         id: editingSessionId,
         date: formData.date,
         location: formData.location || '',
+        games,
         kind: formData.kind,
         marks: formData.marks,
         stoneWeights: formData.stoneWeights,
+        throwsNotes,
+        liftsNotes,
       };
     }
     saveData(data);
@@ -524,9 +614,12 @@ function handleSubmit(event) {
       id: Date.now(),
       date: formData.date,
       location: formData.location || '',
+      games,
       kind: formData.kind,
       marks: formData.marks,
       stoneWeights: formData.stoneWeights,
+      throwsNotes,
+      liftsNotes,
     };
     data.sessions.push(newSession);
     saveData(data);
@@ -545,6 +638,11 @@ function init() {
 
   document.querySelectorAll('.kind-btn').forEach((btn) => {
     btn.addEventListener('click', () => setSelectedKind(btn.dataset.kind));
+  });
+
+  document.querySelectorAll('.notes-field').forEach((textarea) => {
+    textarea.addEventListener('input', () => autoGrowTextarea(textarea));
+    autoGrowTextarea(textarea);
   });
 
   document.getElementById('session-form').addEventListener('submit', handleSubmit);

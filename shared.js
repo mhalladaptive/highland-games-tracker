@@ -22,6 +22,26 @@ const ITEMS = [
 
 const STORAGE_KEY = 'comeback-tracker-v1';
 
+// One-time migration: early Comeback Tracker versions had no Highland Games
+// field, so users put the Games title in the Location field on competition
+// sessions. Now that there's a dedicated `games` field, move location → games
+// for any pre-existing competition session that doesn't already have a games
+// value. Training sessions are left untouched — their locations are real.
+function migrateLegacyGamesLocation(data) {
+  if (!data || !Array.isArray(data.sessions)) return false;
+  let migrated = false;
+  for (const session of data.sessions) {
+    if (!session) continue;
+    if (sessionKind(session) !== 'competition') continue;
+    if (session.games) continue;
+    if (!session.location) continue;
+    session.games = session.location;
+    session.location = '';
+    migrated = true;
+  }
+  return migrated;
+}
+
 function loadData() {
   const raw = localStorage.getItem(STORAGE_KEY);
   const fresh = {
@@ -45,6 +65,9 @@ function loadData() {
     }
     if (!Array.isArray(parsed.sessions)) {
       parsed.sessions = [];
+    }
+    if (migrateLegacyGamesLocation(parsed)) {
+      saveData(parsed);
     }
     return parsed;
   } catch {
