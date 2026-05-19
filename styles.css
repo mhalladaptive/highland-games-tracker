@@ -45,8 +45,8 @@ body.kind-training {
 body.gap-page {
   background:
     url('images/tape-measure.svg') right top / 80px auto no-repeat,
-    linear-gradient(rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.55)),
-    url('images/adaptive-thrower.jpg') center center / cover no-repeat;
+    linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.7)),
+    url('images/grass-field.jpg') center center / cover no-repeat;
   background-attachment: scroll, fixed, fixed;
 }
 
@@ -74,21 +74,6 @@ body.kind-training .comp-only {
   font-size: 1.35rem;
   font-weight: 600;
   letter-spacing: -0.01em;
-}
-
-.brand-logo {
-  display: block;
-  width: 64px;
-  height: 64px;
-  margin: 0 auto 0.6rem;
-  border: none;
-}
-
-@media (min-width: 600px) {
-  .brand-logo {
-    width: 80px;
-    height: 80px;
-  }
 }
 
 .screen-nav {
