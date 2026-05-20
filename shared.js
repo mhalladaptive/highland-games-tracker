@@ -90,6 +90,82 @@ function buildProfileFromFormValues(values) {
   };
 }
 
+// Unit system: 10 units across 4 categories (v2-plan.md "Unit system").
+// direction is 'higher' for everything except time, which is 'lower'. In
+// Stage 3a the field is stored but unused — Stage 4 milestone logic reads
+// it. Conversion rules live in Stage 3b.
+const UNIT_CATEGORIES = ['weight', 'distance', 'time', 'count'];
+
+const UNIT_CATEGORY_LABELS = {
+  weight: 'Weight',
+  distance: 'Distance',
+  time: 'Time',
+  count: 'Count',
+};
+
+const UNITS = [
+  { id: 'lb',     label: 'lb',     category: 'weight',   direction: 'higher' },
+  { id: 'kg',     label: 'kg',     category: 'weight',   direction: 'higher' },
+  { id: 'mi',     label: 'mi',     category: 'distance', direction: 'higher' },
+  { id: 'K',      label: 'K',      category: 'distance', direction: 'higher' },
+  { id: 'm',      label: 'm',      category: 'distance', direction: 'higher' },
+  { id: 'yd',     label: 'yd',     category: 'distance', direction: 'higher' },
+  { id: 'time',   label: 'time',   category: 'time',     direction: 'lower'  },
+  { id: 'reps',   label: 'reps',   category: 'count',    direction: 'higher' },
+  { id: 'rounds', label: 'rounds', category: 'count',    direction: 'higher' },
+  { id: 'cal',    label: 'cal',    category: 'count',    direction: 'higher' },
+];
+
+function getUnit(unitId) {
+  if (!unitId) return null;
+  return UNITS.find((u) => u.id === unitId) || null;
+}
+
+// A lift "has marks" if a PR is set, a Goal is set, or any session contains
+// at least one finite mark for that lift's id. Used by the unit-lock rule
+// in Stage 3a and the conversion engine in Stage 3b.
+function liftHasMarks(data, liftId) {
+  if (!data || !liftId) return false;
+  if (data.prs && Number.isFinite(data.prs[liftId])) return true;
+  if (data.goals && Number.isFinite(data.goals[liftId])) return true;
+  if (Array.isArray(data.sessions)) {
+    for (const session of data.sessions) {
+      if (!session || !session.marks) continue;
+      const marks = session.marks[liftId];
+      if (Array.isArray(marks) && marks.some((m) => Number.isFinite(m))) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// Parse "mm:ss" or "h:mm:ss" into seconds. Returns null on bad input.
+function parseTimeToSeconds(str) {
+  if (typeof str !== 'string') return null;
+  const trimmed = str.trim();
+  if (!trimmed) return null;
+  const parts = trimmed.split(':');
+  if (parts.length < 2 || parts.length > 3) return null;
+  const nums = parts.map(Number);
+  if (nums.some((n) => !Number.isFinite(n) || n < 0)) return null;
+  if (parts.length === 2) return nums[0] * 60 + nums[1];
+  return nums[0] * 3600 + nums[1] * 60 + nums[2];
+}
+
+// Format a non-negative number of seconds as "mm:ss" (under an hour) or
+// "h:mm:ss" (one hour and up). Returns '' on bad input.
+function formatSecondsAsTime(seconds) {
+  if (!Number.isFinite(seconds) || seconds < 0) return '';
+  const total = Math.round(seconds);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total - h * 3600) / 60);
+  const s = total - h * 3600 - m * 60;
+  const pad = (n) => String(n).padStart(2, '0');
+  if (h > 0) return `${h}:${pad(m)}:${pad(s)}`;
+  return `${m}:${pad(s)}`;
+}
+
 function freshData() {
   return {
     version: SCHEMA_VERSION,

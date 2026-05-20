@@ -1073,6 +1073,163 @@ test('formatMeasurement: 0 inches => 0\'', () => {
   assertEqual(formatMeasurement(0, 'distance'), `0'`);
 });
 
+// --- unit system ---
+
+test('UNITS: contains 10 units across 4 categories', () => {
+  assertEqual(UNITS.length, 10);
+  const categories = new Set(UNITS.map((u) => u.category));
+  assertEqual(categories.size, 4);
+  for (const c of UNIT_CATEGORIES) {
+    assertTrue(categories.has(c), `missing category ${c}`);
+  }
+});
+
+test('UNITS: weight has lb + kg', () => {
+  const ids = UNITS.filter((u) => u.category === 'weight').map((u) => u.id).sort();
+  assertDeepEqual(ids, ['kg', 'lb']);
+});
+
+test('UNITS: distance has mi/K/m/yd (4 units)', () => {
+  const ids = UNITS.filter((u) => u.category === 'distance').map((u) => u.id).sort();
+  assertDeepEqual(ids, ['K', 'm', 'mi', 'yd']);
+});
+
+test('UNITS: time category has exactly one unit (time)', () => {
+  const time = UNITS.filter((u) => u.category === 'time');
+  assertEqual(time.length, 1);
+  assertEqual(time[0].id, 'time');
+});
+
+test('UNITS: count has reps/rounds/cal', () => {
+  const ids = UNITS.filter((u) => u.category === 'count').map((u) => u.id).sort();
+  assertDeepEqual(ids, ['cal', 'reps', 'rounds']);
+});
+
+test('UNITS: direction is "lower" only for time, "higher" otherwise', () => {
+  for (const u of UNITS) {
+    if (u.id === 'time') assertEqual(u.direction, 'lower', `time should be lower`);
+    else assertEqual(u.direction, 'higher', `${u.id} should be higher`);
+  }
+});
+
+test('getUnit: known id returns the unit', () => {
+  const u = getUnit('lb');
+  assertTrue(u !== null);
+  assertEqual(u.category, 'weight');
+});
+
+test('getUnit: unknown id returns null', () => {
+  assertEqual(getUnit('parsec'), null);
+});
+
+test('getUnit: empty / falsy id returns null', () => {
+  assertEqual(getUnit(''), null);
+  assertEqual(getUnit(null), null);
+  assertEqual(getUnit(undefined), null);
+});
+
+// --- liftHasMarks ---
+
+test('liftHasMarks: empty data => false', () => {
+  assertEqual(liftHasMarks({}, 'deadlift'), false);
+});
+
+test('liftHasMarks: PR set => true', () => {
+  assertEqual(liftHasMarks({ prs: { deadlift: 365 } }, 'deadlift'), true);
+});
+
+test('liftHasMarks: Goal set => true', () => {
+  assertEqual(liftHasMarks({ goals: { deadlift: 400 } }, 'deadlift'), true);
+});
+
+test('liftHasMarks: session mark exists => true', () => {
+  const data = { sessions: [{ marks: { deadlift: [365] } }] };
+  assertEqual(liftHasMarks(data, 'deadlift'), true);
+});
+
+test('liftHasMarks: session marks empty array => false', () => {
+  const data = { sessions: [{ marks: { deadlift: [] } }] };
+  assertEqual(liftHasMarks(data, 'deadlift'), false);
+});
+
+test('liftHasMarks: other lift has marks but not this one => false', () => {
+  const data = { prs: { 'overhead-press': 185 }, sessions: [{ marks: { 'overhead-press': [185] } }] };
+  assertEqual(liftHasMarks(data, 'deadlift'), false);
+});
+
+test('liftHasMarks: missing liftId / null data => false', () => {
+  assertEqual(liftHasMarks({}, ''), false);
+  assertEqual(liftHasMarks(null, 'deadlift'), false);
+});
+
+// --- time parse / format ---
+
+test('parseTimeToSeconds: "5:30" => 330', () => {
+  assertEqual(parseTimeToSeconds('5:30'), 330);
+});
+
+test('parseTimeToSeconds: "1:00:00" => 3600', () => {
+  assertEqual(parseTimeToSeconds('1:00:00'), 3600);
+});
+
+test('parseTimeToSeconds: "0:00" => 0', () => {
+  assertEqual(parseTimeToSeconds('0:00'), 0);
+});
+
+test('parseTimeToSeconds: leading/trailing spaces tolerated', () => {
+  assertEqual(parseTimeToSeconds('  2:15  '), 135);
+});
+
+test('parseTimeToSeconds: empty / null / non-string => null', () => {
+  assertEqual(parseTimeToSeconds(''), null);
+  assertEqual(parseTimeToSeconds(null), null);
+  assertEqual(parseTimeToSeconds(330), null);
+});
+
+test('parseTimeToSeconds: single-part "5" => null (needs at least mm:ss)', () => {
+  assertEqual(parseTimeToSeconds('5'), null);
+});
+
+test('parseTimeToSeconds: non-numeric parts => null', () => {
+  assertEqual(parseTimeToSeconds('abc:def'), null);
+});
+
+test('parseTimeToSeconds: negative parts => null', () => {
+  assertEqual(parseTimeToSeconds('-1:30'), null);
+});
+
+test('formatSecondsAsTime: 330 => "5:30"', () => {
+  assertEqual(formatSecondsAsTime(330), '5:30');
+});
+
+test('formatSecondsAsTime: 3600 => "1:00:00"', () => {
+  assertEqual(formatSecondsAsTime(3600), '1:00:00');
+});
+
+test('formatSecondsAsTime: 0 => "0:00"', () => {
+  assertEqual(formatSecondsAsTime(0), '0:00');
+});
+
+test('formatSecondsAsTime: 59 => "0:59"', () => {
+  assertEqual(formatSecondsAsTime(59), '0:59');
+});
+
+test('formatSecondsAsTime: 3725 => "1:02:05"', () => {
+  assertEqual(formatSecondsAsTime(3725), '1:02:05');
+});
+
+test('formatSecondsAsTime: null / NaN / negative => empty string', () => {
+  assertEqual(formatSecondsAsTime(null), '');
+  assertEqual(formatSecondsAsTime(NaN), '');
+  assertEqual(formatSecondsAsTime(-10), '');
+});
+
+test('round-trip: parse(format(s)) === s for various seconds', () => {
+  for (const s of [0, 1, 59, 60, 330, 3599, 3600, 3725, 86399]) {
+    assertEqual(parseTimeToSeconds(formatSecondsAsTime(s)), s);
+  }
+});
+
 // --- Harness ---
 
 function runTests() {
