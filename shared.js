@@ -140,6 +140,84 @@ function liftHasMarks(data, liftId) {
   return false;
 }
 
+// Apply a snapshot of the Set page's form state to the stored data, returning
+// the next-state slices (prs, prMeta, goals, userLifts). Pure logic — no DOM,
+// no localStorage — so app.js can keep the DOM-reading thin and the rules
+// stay easy to test.
+//
+//   throwSnapshots: [{ id, prValue, goalValue, prDate, prLocation }]
+//   liftCardSnapshots: [{ id, status: 'new'|'saved', name, protocol, unit,
+//                         prValue, goalValue }]
+//   options.idGenerator: returns a fresh id for 'new' lifts (defaults to
+//                        crypto.randomUUID when available, otherwise a random
+//                        fallback). Injectable for deterministic tests.
+//
+// A 'saved' lift that doesn't appear in liftCardSnapshots is treated as
+// soft-deleted: active becomes false, but its userLifts entry, prs/goals,
+// and any session marks for its id stay in storage so historical data is
+// not destroyed.
+function applyFormSnapshotsToData(currentData, throwSnapshots, liftCardSnapshots, options) {
+  const opts = options || {};
+  const idGenerator = opts.idGenerator || (() => {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+    return 'lift-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+  });
+
+  const prs = Object.assign({}, currentData && currentData.prs);
+  const prMeta = Object.assign({}, currentData && currentData.prMeta);
+  const goals = Object.assign({}, currentData && currentData.goals);
+  const userLifts = ((currentData && currentData.userLifts) || []).map((l) => Object.assign({}, l));
+
+  for (const t of throwSnapshots || []) {
+    if (!t || !t.id) continue;
+    if (Number.isFinite(t.prValue)) prs[t.id] = t.prValue;
+    else delete prs[t.id];
+    if (Number.isFinite(t.goalValue)) goals[t.id] = t.goalValue;
+    else delete goals[t.id];
+    const date = (t.prDate || '').trim();
+    const location = (t.prLocation || '').trim();
+    if (date || location) {
+      const meta = {};
+      if (date) meta.date = date;
+      if (location) meta.location = location;
+      prMeta[t.id] = meta;
+    } else {
+      delete prMeta[t.id];
+    }
+  }
+
+  const presentLiftIds = new Set();
+  for (const c of liftCardSnapshots || []) {
+    if (!c) continue;
+    let id = c.id;
+    if (c.status === 'new' || !id) id = idGenerator();
+    presentLiftIds.add(id);
+    const name = (c.name || '').trim();
+    const protocol = (c.protocol || '').trim();
+    const unit = c.unit || 'lb';
+    let lift = userLifts.find((l) => l.id === id);
+    if (lift) {
+      lift.name = name;
+      lift.protocol = protocol;
+      lift.unit = unit;
+      lift.active = true;
+    } else {
+      userLifts.push({ id, name, protocol, unit, active: true });
+    }
+    if (Number.isFinite(c.prValue)) prs[id] = c.prValue;
+    else delete prs[id];
+    if (Number.isFinite(c.goalValue)) goals[id] = c.goalValue;
+    else delete goals[id];
+  }
+  for (const l of userLifts) {
+    if (l.active && !presentLiftIds.has(l.id)) l.active = false;
+  }
+
+  return { prs, prMeta, goals, userLifts };
+}
+
 // Parse "mm:ss" or "h:mm:ss" into seconds. Returns null on bad input.
 function parseTimeToSeconds(str) {
   if (typeof str !== 'string') return null;

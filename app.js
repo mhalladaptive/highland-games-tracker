@@ -1,6 +1,75 @@
-function buildRow(item, baselineValue, stoneWeightValue, baselineMeta) {
+function buildThrowValueInputs(slot, item, value) {
+  const wrap = document.createElement('div');
+  wrap.className = 'value-inputs';
+  wrap.dataset.slot = slot;
+
+  if (item.measurementType === 'weight') {
+    const w = document.createElement('div');
+    w.className = 'input-wrap';
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.inputMode = 'decimal';
+    input.min = '0';
+    input.step = 'any';
+    input.className = 'field';
+    input.dataset.field = 'weight';
+    input.placeholder = '0';
+    input.setAttribute('aria-label', `${item.name} ${slot} weight in pounds`);
+    if (Number.isFinite(value)) input.value = value;
+    w.appendChild(input);
+    const unit = document.createElement('span');
+    unit.className = 'unit';
+    unit.textContent = 'lb';
+    w.appendChild(unit);
+    wrap.appendChild(w);
+    return wrap;
+  }
+
+  const { feet, inches } = inchesToFeetInches(value);
+  const feetWrap = document.createElement('div');
+  feetWrap.className = 'input-wrap';
+  const feetInput = document.createElement('input');
+  feetInput.type = 'number';
+  feetInput.inputMode = 'decimal';
+  feetInput.min = '0';
+  feetInput.step = 'any';
+  feetInput.className = 'field';
+  feetInput.dataset.field = 'feet';
+  feetInput.placeholder = '0';
+  feetInput.setAttribute('aria-label', `${item.name} ${slot} feet`);
+  if (feet !== '') feetInput.value = feet;
+  feetWrap.appendChild(feetInput);
+  const feetUnit = document.createElement('span');
+  feetUnit.className = 'unit';
+  feetUnit.textContent = 'ft';
+  feetWrap.appendChild(feetUnit);
+
+  const inchesWrap = document.createElement('div');
+  inchesWrap.className = 'input-wrap';
+  const inchesInput = document.createElement('input');
+  inchesInput.type = 'number';
+  inchesInput.inputMode = 'decimal';
+  inchesInput.min = '0';
+  inchesInput.step = 'any';
+  inchesInput.className = 'field';
+  inchesInput.dataset.field = 'inches';
+  inchesInput.placeholder = '0';
+  inchesInput.setAttribute('aria-label', `${item.name} ${slot} inches`);
+  if (inches !== '') inchesInput.value = inches;
+  inchesWrap.appendChild(inchesInput);
+  const inchesUnit = document.createElement('span');
+  inchesUnit.className = 'unit';
+  inchesUnit.textContent = 'in';
+  inchesWrap.appendChild(inchesUnit);
+
+  wrap.appendChild(feetWrap);
+  wrap.appendChild(inchesWrap);
+  return wrap;
+}
+
+function buildThrowRow(item, prValue, goalValue, prMetaEntry) {
   const row = document.createElement('div');
-  row.className = 'item-row';
+  row.className = 'item-row throw-row';
   row.dataset.itemId = item.id;
   row.dataset.measurementType = item.measurementType;
 
@@ -14,105 +83,23 @@ function buildRow(item, baselineValue, stoneWeightValue, baselineMeta) {
   metaSpan.textContent = metaLabel(item);
   label.appendChild(nameSpan);
   label.appendChild(metaSpan);
-
-  const inputs = document.createElement('div');
-  inputs.className = 'item-inputs';
-
-  if (item.measurementType === 'weight') {
-    const wrap = document.createElement('div');
-    wrap.className = 'input-wrap';
-    const input = document.createElement('input');
-    input.type = 'number';
-    input.inputMode = 'decimal';
-    input.min = '0';
-    input.step = 'any';
-    input.className = 'field';
-    input.dataset.field = 'weight';
-    input.placeholder = '0';
-    input.setAttribute('aria-label', `${item.name} weight in pounds`);
-    if (Number.isFinite(baselineValue)) input.value = baselineValue;
-    wrap.appendChild(input);
-    const unit = document.createElement('span');
-    unit.className = 'unit';
-    unit.textContent = 'lb';
-    wrap.appendChild(unit);
-    inputs.appendChild(wrap);
-  } else {
-    const { feet, inches } = inchesToFeetInches(baselineValue);
-
-    const feetWrap = document.createElement('div');
-    feetWrap.className = 'input-wrap';
-    const feetInput = document.createElement('input');
-    feetInput.type = 'number';
-    feetInput.inputMode = 'decimal';
-    feetInput.min = '0';
-    feetInput.step = 'any';
-    feetInput.className = 'field';
-    feetInput.dataset.field = 'feet';
-    feetInput.placeholder = '0';
-    feetInput.setAttribute('aria-label', `${item.name} feet`);
-    if (feet !== '') feetInput.value = feet;
-    feetWrap.appendChild(feetInput);
-    const feetUnit = document.createElement('span');
-    feetUnit.className = 'unit';
-    feetUnit.textContent = 'ft';
-    feetWrap.appendChild(feetUnit);
-
-    const inchesWrap = document.createElement('div');
-    inchesWrap.className = 'input-wrap';
-    const inchesInput = document.createElement('input');
-    inchesInput.type = 'number';
-    inchesInput.inputMode = 'decimal';
-    inchesInput.min = '0';
-    inchesInput.step = 'any';
-    inchesInput.className = 'field';
-    inchesInput.dataset.field = 'inches';
-    inchesInput.placeholder = '0';
-    inchesInput.setAttribute('aria-label', `${item.name} inches`);
-    if (inches !== '') inchesInput.value = inches;
-    inchesWrap.appendChild(inchesInput);
-    const inchesUnit = document.createElement('span');
-    inchesUnit.className = 'unit';
-    inchesUnit.textContent = 'in';
-    inchesWrap.appendChild(inchesUnit);
-
-    inputs.appendChild(feetWrap);
-    inputs.appendChild(inchesWrap);
-  }
-
   row.appendChild(label);
-  row.appendChild(inputs);
 
-  if (item.capturesStoneWeight) {
-    const extra = document.createElement('div');
-    extra.className = 'item-extra';
+  const prGoal = document.createElement('div');
+  prGoal.className = 'pr-goal-fields';
 
-    const extraLabel = document.createElement('span');
-    extraLabel.className = 'extra-label';
-    extraLabel.textContent = 'Stone thrown';
-    extra.appendChild(extraLabel);
-
-    const wrap = document.createElement('div');
-    wrap.className = 'input-wrap';
-    const input = document.createElement('input');
-    input.type = 'number';
-    input.inputMode = 'decimal';
-    input.min = '0';
-    input.step = 'any';
-    input.className = 'field';
-    input.dataset.field = 'stoneWeight';
-    input.placeholder = 'optional';
-    input.setAttribute('aria-label', `${item.name} actual stone weight in pounds`);
-    if (Number.isFinite(stoneWeightValue)) input.value = stoneWeightValue;
-    wrap.appendChild(input);
-    const unit = document.createElement('span');
-    unit.className = 'unit';
-    unit.textContent = 'lb';
-    wrap.appendChild(unit);
-    extra.appendChild(wrap);
-
-    row.appendChild(extra);
+  for (const slot of ['pr', 'goal']) {
+    const slotWrap = document.createElement('div');
+    slotWrap.className = `slot slot-${slot}`;
+    const slotLabel = document.createElement('span');
+    slotLabel.className = 'slot-label';
+    slotLabel.textContent = slot === 'pr' ? 'PR' : 'Goal';
+    slotWrap.appendChild(slotLabel);
+    const value = slot === 'pr' ? prValue : goalValue;
+    slotWrap.appendChild(buildThrowValueInputs(slot, item, value));
+    prGoal.appendChild(slotWrap);
   }
+  row.appendChild(prGoal);
 
   const meta = document.createElement('div');
   meta.className = 'item-meta-fields';
@@ -127,8 +114,8 @@ function buildRow(item, baselineValue, stoneWeightValue, baselineMeta) {
   dateInput.type = 'date';
   dateInput.className = 'field meta-date';
   dateInput.dataset.field = 'metaDate';
-  dateInput.setAttribute('aria-label', `${item.name} baseline date`);
-  if (baselineMeta && baselineMeta.date) dateInput.value = baselineMeta.date;
+  dateInput.setAttribute('aria-label', `${item.name} PR date`);
+  if (prMetaEntry && prMetaEntry.date) dateInput.value = prMetaEntry.date;
   dateGroup.appendChild(dateInput);
   meta.appendChild(dateGroup);
 
@@ -143,14 +130,146 @@ function buildRow(item, baselineValue, stoneWeightValue, baselineMeta) {
   locInput.className = 'field meta-location';
   locInput.dataset.field = 'metaLocation';
   locInput.placeholder = 'optional';
-  locInput.setAttribute('aria-label', `${item.name} baseline location`);
-  if (baselineMeta && baselineMeta.location) locInput.value = baselineMeta.location;
+  locInput.setAttribute('aria-label', `${item.name} PR location`);
+  if (prMetaEntry && prMetaEntry.location) locInput.value = prMetaEntry.location;
   locGroup.appendChild(locInput);
   meta.appendChild(locGroup);
 
   row.appendChild(meta);
-
   return row;
+}
+
+function buildUnitDropdown(selectedUnitId) {
+  const select = document.createElement('select');
+  select.className = 'field unit-select';
+  for (const cat of UNIT_CATEGORIES) {
+    const og = document.createElement('optgroup');
+    og.label = UNIT_CATEGORY_LABELS[cat];
+    for (const u of UNITS) {
+      if (u.category !== cat) continue;
+      const opt = document.createElement('option');
+      opt.value = u.id;
+      opt.textContent = u.label;
+      if (u.id === selectedUnitId) opt.selected = true;
+      og.appendChild(opt);
+    }
+    select.appendChild(og);
+  }
+  return select;
+}
+
+function buildLiftValueInput(dataField, value, isTime, ariaLabel) {
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.inputMode = isTime ? 'numeric' : 'decimal';
+  input.className = 'field';
+  input.dataset.field = dataField;
+  input.placeholder = isTime ? 'mm:ss' : '0';
+  input.setAttribute('aria-label', ariaLabel);
+  if (Number.isFinite(value)) {
+    input.value = isTime ? formatSecondsAsTime(value) : String(value);
+  }
+  return input;
+}
+
+function swapLiftValueInputType(card, dataField, isTime) {
+  const input = card.querySelector(`[data-field="${dataField}"]`);
+  if (!input) return;
+  input.inputMode = isTime ? 'numeric' : 'decimal';
+  input.placeholder = isTime ? 'mm:ss' : '0';
+}
+
+function buildLiftCard(lift, data, isNew) {
+  const card = document.createElement('div');
+  card.className = 'lift-card';
+  card.dataset.liftId = lift.id;
+  card.dataset.liftStatus = isNew ? 'new' : 'saved';
+
+  const header = document.createElement('div');
+  header.className = 'lift-card-header';
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text';
+  nameInput.className = 'field lift-name-field';
+  nameInput.dataset.field = 'liftName';
+  nameInput.placeholder = 'Lift name';
+  nameInput.setAttribute('aria-label', 'Lift name');
+  nameInput.value = lift.name || '';
+  header.appendChild(nameInput);
+  const deleteBtn = document.createElement('button');
+  deleteBtn.type = 'button';
+  deleteBtn.className = 'lift-delete-btn';
+  deleteBtn.dataset.action = 'delete-lift';
+  deleteBtn.textContent = '×';
+  deleteBtn.setAttribute('aria-label', `Remove ${lift.name || 'lift'}`);
+  deleteBtn.addEventListener('click', () => card.remove());
+  header.appendChild(deleteBtn);
+  card.appendChild(header);
+
+  const protoField = document.createElement('label');
+  protoField.className = 'lift-field';
+  const protoLabel = document.createElement('span');
+  protoLabel.className = 'lift-field-label';
+  protoLabel.textContent = 'Protocol';
+  protoField.appendChild(protoLabel);
+  const protoInput = document.createElement('input');
+  protoInput.type = 'text';
+  protoInput.className = 'field';
+  protoInput.dataset.field = 'liftProtocol';
+  protoInput.placeholder = '1RM, AMRAP, 3x5...';
+  protoInput.setAttribute('aria-label', 'Lift protocol');
+  protoInput.value = lift.protocol || '';
+  protoField.appendChild(protoInput);
+  card.appendChild(protoField);
+
+  const unitField = document.createElement('label');
+  unitField.className = 'lift-field';
+  const unitLabel = document.createElement('span');
+  unitLabel.className = 'lift-field-label';
+  unitLabel.textContent = 'Unit';
+  unitField.appendChild(unitLabel);
+  const unitSelect = buildUnitDropdown(lift.unit || 'lb');
+  unitSelect.dataset.field = 'liftUnit';
+  unitSelect.setAttribute('aria-label', 'Lift unit');
+  const locked = !isNew && liftHasMarks(data, lift.id);
+  if (locked) {
+    unitSelect.disabled = true;
+    unitSelect.title = 'Unit is locked because this lift has marks. Conversion comes in Stage 3b.';
+    unitField.classList.add('lift-field--locked');
+  }
+  unitField.appendChild(unitSelect);
+  card.appendChild(unitField);
+
+  const unitObj = getUnit(lift.unit || 'lb');
+  const isTime = unitObj && unitObj.category === 'time';
+  const prValue = data.prs ? data.prs[lift.id] : null;
+  const goalValue = data.goals ? data.goals[lift.id] : null;
+
+  const prField = document.createElement('label');
+  prField.className = 'lift-field';
+  const prLabel = document.createElement('span');
+  prLabel.className = 'lift-field-label';
+  prLabel.textContent = 'PR';
+  prField.appendChild(prLabel);
+  prField.appendChild(buildLiftValueInput('liftPr', prValue, isTime, 'Lift PR'));
+  card.appendChild(prField);
+
+  const goalField = document.createElement('label');
+  goalField.className = 'lift-field';
+  const goalLabel = document.createElement('span');
+  goalLabel.className = 'lift-field-label';
+  goalLabel.textContent = 'Goal';
+  goalField.appendChild(goalLabel);
+  goalField.appendChild(buildLiftValueInput('liftGoal', goalValue, isTime, 'Lift Goal'));
+  card.appendChild(goalField);
+
+  unitSelect.addEventListener('change', () => {
+    const next = getUnit(unitSelect.value);
+    const nextIsTime = next && next.category === 'time';
+    swapLiftValueInputType(card, 'liftPr', nextIsTime);
+    swapLiftValueInputType(card, 'liftGoal', nextIsTime);
+  });
+
+  return card;
 }
 
 function renderForm(data) {
@@ -160,55 +279,95 @@ function renderForm(data) {
   liftsList.innerHTML = '';
 
   for (const item of ITEMS) {
-    const baseline = data.prs ? data.prs[item.id] : null;
-    const baselineValue = Number.isFinite(baseline) ? baseline : null;
-    const stoneWeight = data.stoneWeights ? data.stoneWeights[item.id] : null;
-    const stoneWeightValue = Number.isFinite(stoneWeight) ? stoneWeight : null;
-    const baselineMeta = data.prMeta ? data.prMeta[item.id] : null;
-    const row = buildRow(item, baselineValue, stoneWeightValue, baselineMeta);
-    if (item.category === 'throw') {
-      throwsList.appendChild(row);
-    } else {
-      liftsList.appendChild(row);
-    }
+    if (item.category !== 'throw') continue;
+    const pr = data.prs ? data.prs[item.id] : null;
+    const prValue = Number.isFinite(pr) ? pr : null;
+    const goal = data.goals ? data.goals[item.id] : null;
+    const goalValue = Number.isFinite(goal) ? goal : null;
+    const prMetaEntry = data.prMeta ? data.prMeta[item.id] : null;
+    throwsList.appendChild(buildThrowRow(item, prValue, goalValue, prMetaEntry));
+  }
+
+  const lifts = (data.userLifts || []).filter((l) => l.active);
+  for (const lift of lifts) {
+    liftsList.appendChild(buildLiftCard(lift, data, false));
   }
 }
 
-function collectFormData() {
-  const prs = {};
-  const stoneWeights = {};
-  const prMeta = {};
-  const rows = document.querySelectorAll('.item-row');
-  rows.forEach((row) => {
+function readThrowSlotValue(row, slot, type) {
+  const wrap = row.querySelector(`.value-inputs[data-slot="${slot}"]`);
+  if (!wrap) return null;
+  if (type === 'weight') {
+    return readNumber(wrap.querySelector('[data-field="weight"]'));
+  }
+  const f = readNumber(wrap.querySelector('[data-field="feet"]'));
+  const i = readNumber(wrap.querySelector('[data-field="inches"]'));
+  if (f === null && i === null) return null;
+  return feetInchesToInches(f ?? 0, i ?? 0);
+}
+
+function readLiftCardValue(card, dataField, isTime) {
+  const input = card.querySelector(`[data-field="${dataField}"]`);
+  if (!input) return null;
+  const raw = (input.value || '').trim();
+  if (!raw) return null;
+  if (isTime) return parseTimeToSeconds(raw);
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 0) return null;
+  return n;
+}
+
+function collectFormData(currentData) {
+  const throwSnapshots = [];
+  document.querySelectorAll('.throw-row').forEach((row) => {
     const id = row.dataset.itemId;
     const type = row.dataset.measurementType;
-    if (type === 'weight') {
-      const w = readNumber(row.querySelector('[data-field="weight"]'));
-      if (w !== null) prs[id] = w;
-    } else {
-      const f = readNumber(row.querySelector('[data-field="feet"]'));
-      const i = readNumber(row.querySelector('[data-field="inches"]'));
-      if (f !== null || i !== null) {
-        prs[id] = feetInchesToInches(f ?? 0, i ?? 0);
-      }
-    }
-    const stoneInput = row.querySelector('[data-field="stoneWeight"]');
-    if (stoneInput) {
-      const sw = readNumber(stoneInput);
-      if (sw !== null) stoneWeights[id] = sw;
-    }
+    const prValue = readThrowSlotValue(row, 'pr', type);
+    const goalValue = readThrowSlotValue(row, 'goal', type);
     const dateInput = row.querySelector('[data-field="metaDate"]');
     const locInput = row.querySelector('[data-field="metaLocation"]');
-    const date = dateInput && dateInput.value ? dateInput.value.trim() : '';
-    const location = locInput && locInput.value ? locInput.value.trim() : '';
-    if (date || location) {
-      const meta = {};
-      if (date) meta.date = date;
-      if (location) meta.location = location;
-      prMeta[id] = meta;
-    }
+    throwSnapshots.push({
+      id,
+      prValue: Number.isFinite(prValue) ? prValue : null,
+      goalValue: Number.isFinite(goalValue) ? goalValue : null,
+      prDate: dateInput && dateInput.value ? dateInput.value : '',
+      prLocation: locInput && locInput.value ? locInput.value : '',
+    });
   });
-  return { prs, stoneWeights, prMeta };
+
+  const liftCardSnapshots = [];
+  document.querySelectorAll('.lift-card').forEach((card) => {
+    const id = card.dataset.liftId;
+    const status = card.dataset.liftStatus === 'new' ? 'new' : 'saved';
+    const unit = card.querySelector('[data-field="liftUnit"]').value || 'lb';
+    const unitObj = getUnit(unit);
+    const isTime = unitObj && unitObj.category === 'time';
+    liftCardSnapshots.push({
+      id,
+      status,
+      name: card.querySelector('[data-field="liftName"]').value || '',
+      protocol: card.querySelector('[data-field="liftProtocol"]').value || '',
+      unit,
+      prValue: readLiftCardValue(card, 'liftPr', isTime),
+      goalValue: readLiftCardValue(card, 'liftGoal', isTime),
+    });
+  });
+
+  return applyFormSnapshotsToData(currentData, throwSnapshots, liftCardSnapshots);
+}
+
+let newLiftCounter = 0;
+function handleAddLift() {
+  newLiftCounter++;
+  const tmpId = `new-${newLiftCounter}`;
+  const card = buildLiftCard(
+    { id: tmpId, name: '', protocol: '', unit: 'lb', active: true },
+    loadData(),
+    true
+  );
+  document.getElementById('lifts-list').appendChild(card);
+  const nameInput = card.querySelector('[data-field="liftName"]');
+  if (nameInput) nameInput.focus();
 }
 
 function showStatus(message) {
@@ -281,7 +440,7 @@ function importData(file) {
       (Array.isArray(current.sessions) && current.sessions.length > 0);
     if (hasExistingData) {
       const ok = window.confirm(
-        'This will replace your current baselines and sessions with the imported data. Continue?'
+        'This will replace your saved data with the imported data. Continue?'
       );
       if (!ok) {
         showDataStatus('Restore cancelled.');
@@ -388,16 +547,19 @@ function init() {
     openProfileModal();
   }
 
-  const form = document.getElementById('baseline-form');
+  const form = document.getElementById('pr-goal-form');
   form.addEventListener('submit', (event) => {
     event.preventDefault();
     const current = loadData();
-    const updates = collectFormData();
+    const updates = collectFormData(current);
     const next = { ...current, ...updates };
     saveData(next);
     renderForm(next);
-    showStatus('Baseline saved.');
+    showStatus('PRs & Goals saved.');
   });
+
+  const addLiftBtn = document.getElementById('add-lift-btn');
+  if (addLiftBtn) addLiftBtn.addEventListener('click', handleAddLift);
 
   const exportBtn = document.getElementById('export-btn');
   if (exportBtn) exportBtn.addEventListener('click', exportData);

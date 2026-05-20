@@ -1230,6 +1230,174 @@ test('round-trip: parse(format(s)) === s for various seconds', () => {
   }
 });
 
+// --- applyFormSnapshotsToData (Set PRs & Goals page logic) ---
+
+function baseV2Data() {
+  return {
+    version: 2,
+    profile: {},
+    prs: {},
+    prMeta: {},
+    goals: {},
+    goalMeta: {},
+    stoneWeights: {},
+    userLifts: [],
+    sessions: [],
+  };
+}
+
+const fixedIdGen = (() => {
+  let n = 0;
+  return () => { n++; return `gen-${n}`; };
+})();
+
+test('applyFormSnapshotsToData: throw PR + Goal captured into prs / goals', () => {
+  const data = baseV2Data();
+  const next = applyFormSnapshotsToData(data, [
+    { id: 'braemar-stone', prValue: 420, goalValue: 432, prDate: '2026-05-01', prLocation: 'Field' },
+  ], [], { idGenerator: fixedIdGen });
+  assertEqual(next.prs['braemar-stone'], 420);
+  assertEqual(next.goals['braemar-stone'], 432);
+  assertEqual(next.prMeta['braemar-stone'].date, '2026-05-01');
+  assertEqual(next.prMeta['braemar-stone'].location, 'Field');
+});
+
+test('applyFormSnapshotsToData: null PR / null Goal removes existing entries', () => {
+  const data = baseV2Data();
+  data.prs['heavy-hammer'] = 800;
+  data.goals['heavy-hammer'] = 900;
+  data.prMeta['heavy-hammer'] = { date: '2025-01-01', location: 'old' };
+  const next = applyFormSnapshotsToData(data, [
+    { id: 'heavy-hammer', prValue: null, goalValue: null, prDate: '', prLocation: '' },
+  ], [], { idGenerator: fixedIdGen });
+  assertEqual(next.prs['heavy-hammer'], undefined);
+  assertEqual(next.goals['heavy-hammer'], undefined);
+  assertEqual(next.prMeta['heavy-hammer'], undefined);
+});
+
+test('applyFormSnapshotsToData: new lift card gets a generated id and active=true', () => {
+  const localGen = (() => { let n = 0; return () => { n++; return `id-${n}`; }; })();
+  const data = baseV2Data();
+  const next = applyFormSnapshotsToData(data, [], [
+    { id: 'new-1', status: 'new', name: 'Front Squat', protocol: '1RM', unit: 'lb', prValue: 300, goalValue: 315 },
+  ], { idGenerator: localGen });
+  assertEqual(next.userLifts.length, 1);
+  const lift = next.userLifts[0];
+  assertEqual(lift.id, 'id-1');
+  assertEqual(lift.name, 'Front Squat');
+  assertEqual(lift.protocol, '1RM');
+  assertEqual(lift.unit, 'lb');
+  assertEqual(lift.active, true);
+  assertEqual(next.prs['id-1'], 300);
+  assertEqual(next.goals['id-1'], 315);
+});
+
+test('applyFormSnapshotsToData: existing lift gets name/protocol/unit updated, stays active', () => {
+  const data = baseV2Data();
+  data.userLifts.push({ id: 'deadlift', name: 'Deadlift', protocol: '10RM', unit: 'lb', active: true });
+  data.prs.deadlift = 365;
+  const next = applyFormSnapshotsToData(data, [], [
+    { id: 'deadlift', status: 'saved', name: 'Deadlift (sumo)', protocol: '5RM', unit: 'lb', prValue: 385, goalValue: 405 },
+  ], { idGenerator: fixedIdGen });
+  assertEqual(next.userLifts.length, 1);
+  const lift = next.userLifts[0];
+  assertEqual(lift.name, 'Deadlift (sumo)');
+  assertEqual(lift.protocol, '5RM');
+  assertEqual(lift.active, true);
+  assertEqual(next.prs.deadlift, 385);
+  assertEqual(next.goals.deadlift, 405);
+});
+
+test('applyFormSnapshotsToData: missing lift card => active becomes false (soft-delete)', () => {
+  const data = baseV2Data();
+  data.userLifts.push({ id: 'deadlift', name: 'Deadlift', protocol: '', unit: 'lb', active: true });
+  data.prs.deadlift = 365;
+  data.goals.deadlift = 405;
+  data.sessions.push({ id: 1, date: '2026-05-01', marks: { deadlift: [365] }, stoneWeights: {} });
+  const next = applyFormSnapshotsToData(data, [], [], { idGenerator: fixedIdGen });
+  const lift = next.userLifts.find((l) => l.id === 'deadlift');
+  assertEqual(lift.active, false);
+  // PR / Goal / session marks preserved
+  assertEqual(next.prs.deadlift, 365);
+  assertEqual(next.goals.deadlift, 405);
+});
+
+test('applyFormSnapshotsToData: soft-deleted lift returning as a card flips active back to true', () => {
+  const data = baseV2Data();
+  data.userLifts.push({ id: 'deadlift', name: 'Deadlift', protocol: '', unit: 'lb', active: false });
+  const next = applyFormSnapshotsToData(data, [], [
+    { id: 'deadlift', status: 'saved', name: 'Deadlift', protocol: '', unit: 'lb', prValue: null, goalValue: null },
+  ], { idGenerator: fixedIdGen });
+  const lift = next.userLifts.find((l) => l.id === 'deadlift');
+  assertEqual(lift.active, true);
+});
+
+test('applyFormSnapshotsToData: card with time unit stores seconds', () => {
+  const data = baseV2Data();
+  const next = applyFormSnapshotsToData(data, [], [
+    { id: 'new-1', status: 'new', name: 'Mile run', protocol: '', unit: 'time', prValue: 330, goalValue: 300 },
+  ], { idGenerator: () => 'mile-id' });
+  const lift = next.userLifts.find((l) => l.id === 'mile-id');
+  assertEqual(lift.unit, 'time');
+  assertEqual(next.prs['mile-id'], 330);
+  assertEqual(next.goals['mile-id'], 300);
+});
+
+test('applyFormSnapshotsToData: unit-lock signal — locked unit (lift has marks) is respected by liftHasMarks', () => {
+  // A direct integration check: a lift that has a PR is reported as having marks,
+  // which is what the Set page uses to disable the unit dropdown.
+  const data = baseV2Data();
+  data.userLifts.push({ id: 'deadlift', name: 'Deadlift', protocol: '', unit: 'lb', active: true });
+  data.prs.deadlift = 365;
+  assertEqual(liftHasMarks(data, 'deadlift'), true);
+  // The card snapshot trying to switch the unit will not be blocked by the
+  // pure function — the lock lives in the UI. Stage 3b adds the conversion
+  // engine; for now we assert the data signal is correct.
+});
+
+test('applyFormSnapshotsToData: default idGenerator produces unique ids', () => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    const data = baseV2Data();
+    const next = applyFormSnapshotsToData(data, [], [
+      { id: 'new-1', status: 'new', name: 'A', protocol: '', unit: 'lb', prValue: null, goalValue: null },
+      { id: 'new-2', status: 'new', name: 'B', protocol: '', unit: 'lb', prValue: null, goalValue: null },
+    ]);
+    const ids = next.userLifts.map((l) => l.id);
+    assertEqual(ids.length, 2);
+    assertTrue(ids[0] !== ids[1], 'generated ids must be unique');
+  }
+});
+
+test('applyFormSnapshotsToData: name and protocol are trimmed', () => {
+  const data = baseV2Data();
+  const next = applyFormSnapshotsToData(data, [], [
+    { id: 'new-1', status: 'new', name: '  Pull Up  ', protocol: '  AMRAP  ', unit: 'reps', prValue: 10, goalValue: 20 },
+  ], { idGenerator: () => 'pull-id' });
+  const lift = next.userLifts[0];
+  assertEqual(lift.name, 'Pull Up');
+  assertEqual(lift.protocol, 'AMRAP');
+});
+
+test('applyFormSnapshotsToData: throw with date only writes prMeta with date and no location', () => {
+  const data = baseV2Data();
+  const next = applyFormSnapshotsToData(data, [
+    { id: 'braemar-stone', prValue: 420, goalValue: null, prDate: '2026-05-01', prLocation: '' },
+  ], [], { idGenerator: fixedIdGen });
+  assertEqual(next.prMeta['braemar-stone'].date, '2026-05-01');
+  assertEqual(next.prMeta['braemar-stone'].location, undefined);
+});
+
+test('applyFormSnapshotsToData: does not mutate the input data object', () => {
+  const data = baseV2Data();
+  data.prs['braemar-stone'] = 100;
+  data.userLifts.push({ id: 'd', name: 'D', protocol: '', unit: 'lb', active: true });
+  const snapshot = JSON.stringify(data);
+  applyFormSnapshotsToData(data, [
+    { id: 'braemar-stone', prValue: 999, goalValue: null, prDate: '', prLocation: '' },
+  ], [], { idGenerator: fixedIdGen });
+  assertEqual(JSON.stringify(data), snapshot);
+});
+
 // --- Harness ---
 
 function runTests() {

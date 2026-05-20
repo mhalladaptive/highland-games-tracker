@@ -1064,3 +1064,131 @@ body.kind-training .comp-only {
   display: flex;
   flex-direction: column;
 }
+
+.pr-goal-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.pr-goal-fields .slot {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.pr-goal-fields .slot-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  color: var(--muted);
+  flex: 0 0 38px;
+}
+
+.pr-goal-fields .value-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+}
+
+@media (min-width: 600px) {
+  .pr-goal-fields {
+    flex-direction: row;
+    gap: 1.25rem;
+  }
+  .pr-goal-fields .slot {
+    flex: 1;
+    justify-content: flex-end;
+  }
+  .pr-goal-fields .value-inputs {
+    flex: 0 0 auto;
+  }
+}
+
+.lift-card {
+  position: relative;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.lift-card:last-child {
+  border-bottom: none;
+}
+
+.lift-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lift-name-field {
+  flex: 1;
+  font-weight: 500;
+}
+
+.lift-delete-btn {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.lift-delete-btn:hover {
+  background: #fceaea;
+  color: var(--error);
+  border-color: rgba(201, 48, 48, 0.4);
+}
+
+.lift-field {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.lift-field-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  color: var(--muted);
+  flex: 0 0 70px;
+}
+
+.lift-field .field {
+  flex: 1;
+}
+
+.lift-field--locked .unit-select {
+  background: #f4f4f6;
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.add-lift-row {
+  padding: 0.6rem 1rem 0.9rem;
+  background: #fafafa;
+  border-top: 1px solid var(--border);
+}
+
+.add-lift-btn {
+  width: 100%;
+  text-align: center;
+  color: var(--accent);
+  border-style: dashed;
+}
+
+.add-lift-btn:hover {
+  background: #eef6f0;
+}

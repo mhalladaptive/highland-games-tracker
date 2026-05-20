@@ -20,24 +20,27 @@
 
   <main class="container">
     <p class="intro">
-      Enter your baseline marks for each event and lift. These are the
-      reference numbers your sessions get measured against. You can
-      leave any item blank and come back to it later.
+      Set your personal records and goals for each event and lift. PRs
+      are the marks you've already hit; goals are what you're working
+      toward. Leave anything blank to fill in later.
     </p>
 
-    <form id="baseline-form" novalidate>
+    <form id="pr-goal-form" novalidate>
       <section class="group" data-category="throw">
         <h2>Throws</h2>
         <div class="items" id="throws-list"></div>
       </section>
 
       <section class="group" data-category="lift">
-        <h2>Lifts</h2>
+        <h2>Strength &amp; Conditioning</h2>
         <div class="items" id="lifts-list"></div>
+        <div class="add-lift-row">
+          <button type="button" id="add-lift-btn" class="ghost-btn add-lift-btn">+ Add lift</button>
+        </div>
       </section>
 
       <div class="actions">
-        <button type="submit" class="save-btn">Save Baseline</button>
+        <button type="submit" class="save-btn">Save PRs &amp; Goals</button>
         <p id="status" class="status" role="status" aria-live="polite"></p>
       </div>
     </form>
