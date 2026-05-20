@@ -941,6 +941,39 @@ test('buildProfileFromFormValues: empty input still yields setupCompletedAt time
   assertMatch(p.setupCompletedAt, /^\d{4}-\d{2}-\d{2}T/);
 });
 
+test('buildProfileFromFormValues: male gender defaults weightSchedule to mens', () => {
+  const p = buildProfileFromFormValues({ gender: 'male' });
+  assertEqual(p.weightSchedule, 'mens');
+});
+
+test('buildProfileFromFormValues: female gender defaults weightSchedule to womens', () => {
+  const p = buildProfileFromFormValues({ gender: 'female' });
+  assertEqual(p.weightSchedule, 'womens');
+});
+
+test('buildProfileFromFormValues: nonbinary leaves weightSchedule empty for explicit choice', () => {
+  const p = buildProfileFromFormValues({ gender: 'nonbinary' });
+  assertEqual(p.weightSchedule, '');
+});
+
+test('buildProfileFromFormValues: unspecified gender leaves weightSchedule empty', () => {
+  const p = buildProfileFromFormValues({ gender: 'unspecified' });
+  assertEqual(p.weightSchedule, '');
+});
+
+test('buildProfileFromFormValues: explicit weightSchedule overrides gender default', () => {
+  const p = buildProfileFromFormValues({ gender: 'male', weightSchedule: 'womens' });
+  assertEqual(p.weightSchedule, 'womens');
+});
+
+test('defaultWeightScheduleForGender: male/female map to mens/womens; others empty', () => {
+  assertEqual(defaultWeightScheduleForGender('male'), 'mens');
+  assertEqual(defaultWeightScheduleForGender('female'), 'womens');
+  assertEqual(defaultWeightScheduleForGender('nonbinary'), '');
+  assertEqual(defaultWeightScheduleForGender('unspecified'), '');
+  assertEqual(defaultWeightScheduleForGender(''), '');
+});
+
 test('fresh install profile: empty object with no setupCompletedAt triggers first-launch', () => {
   localStorage.removeItem(STORAGE_KEY);
   const data = loadData();

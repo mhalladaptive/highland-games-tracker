@@ -59,7 +59,10 @@ Five pieces:
 5. **Profile capture modal** (`index.html`, `styles.css`, `app.js`). On
    first launch — when `profile.setupCompletedAt` is absent — a modal
    collects name, gender, weight schedule, class, and tier. All fields
-   optional. **Fires on `index.html` only** (decided — it's the home page;
+   optional, but **weight schedule defaults to match gender** — `mens`
+   for Male, `womens` for Female (overridable); Non-binary and
+   Prefer-not-to-say choose explicitly (`v2-plan.md` → Profile).
+   **Fires on `index.html` only** (decided — it's the home page;
    `session.html`/`gap.html` are secondary entry points). On completion it
    writes `profile` including `setupCompletedAt` and does not reappear.
    The Profile schema and the class/tier taxonomy are in `v2-plan.md` →
@@ -103,6 +106,9 @@ Stage 2 is done when all of these are true:
 - [ ] First launch on `index.html` (no `profile.setupCompletedAt`) shows
       the profile modal; all fields optional; on completion it writes
       `profile` with `setupCompletedAt` and never reappears.
+- [ ] `weightSchedule` defaults to match gender — `mens` for Male,
+      `womens` for Female (overridable); Non-binary and
+      Prefer-not-to-say choose explicitly.
 - [ ] The tier dropdown appears/hides per the selected class, per the
       `v2-plan.md` taxonomy.
 - [ ] The test suite is updated to the v2 shape and passing, with new

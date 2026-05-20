@@ -67,12 +67,23 @@ function getProfileClass(classId) {
   return PROFILE_CLASSES.find((c) => c.id === classId) || null;
 }
 
+// weightSchedule defaults to match gender for Male/Female athletes — per
+// v2-plan.md "Profile". Non-binary and Prefer-not-to-say pick explicitly,
+// so an empty value stays empty for them.
+function defaultWeightScheduleForGender(gender) {
+  if (gender === 'male') return 'mens';
+  if (gender === 'female') return 'womens';
+  return '';
+}
+
 function buildProfileFromFormValues(values) {
   const v = values || {};
+  const gender = v.gender || 'unspecified';
+  const weightSchedule = v.weightSchedule || defaultWeightScheduleForGender(gender);
   return {
     name: typeof v.name === 'string' ? v.name.trim() : '',
-    gender: v.gender || 'unspecified',
-    weightSchedule: v.weightSchedule || '',
+    gender,
+    weightSchedule,
     class: v.class || '',
     tier: v.tier || '',
     setupCompletedAt: v.setupCompletedAt || new Date().toISOString(),

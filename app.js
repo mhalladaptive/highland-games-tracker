@@ -338,6 +338,19 @@ function syncProfileTierField() {
   }
 }
 
+// Mirror the buildProfileFromFormValues default into the UI: when the user
+// picks a Male/Female gender and hasn't chosen a weight schedule yet, fill
+// the dropdown so they see what will be saved. An explicit pick (anything
+// non-empty in the dropdown) is never overwritten.
+function syncProfileWeightScheduleField() {
+  const genderSelect = document.getElementById('profile-gender');
+  const scheduleSelect = document.getElementById('profile-weight-schedule');
+  if (!genderSelect || !scheduleSelect) return;
+  if (scheduleSelect.value) return;
+  const matched = defaultWeightScheduleForGender(genderSelect.value);
+  if (matched) scheduleSelect.value = matched;
+}
+
 function openProfileModal() {
   const modal = document.getElementById('profile-modal');
   if (!modal) return;
@@ -345,6 +358,9 @@ function openProfileModal() {
   const classSelect = document.getElementById('profile-class');
   classSelect.addEventListener('change', syncProfileTierField);
   syncProfileTierField();
+  const genderSelect = document.getElementById('profile-gender');
+  genderSelect.addEventListener('change', syncProfileWeightScheduleField);
+  syncProfileWeightScheduleField();
   const form = document.getElementById('profile-form');
   form.addEventListener('submit', () => {
     const profile = buildProfileFromFormValues({
