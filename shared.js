@@ -23,6 +23,62 @@ const ITEMS = [
 const STORAGE_KEY = 'highland-games-tracker-v1';
 const SCHEMA_VERSION = 2;
 
+// Class / tier taxonomy used by the profile capture modal (and Stage 3+).
+// Source: v2-plan.md "Class taxonomy" — Open, Masters, Adaptive, Other groups.
+// Tiers vary by class; an empty tiers array means the tier dropdown should
+// hide entirely when this class is selected.
+const MASTERS_TIERS = [
+  { id: 'm40', label: 'M40' },
+  { id: 'm45', label: 'M45' },
+  { id: 'm50', label: 'M50' },
+  { id: 'm55', label: 'M55' },
+  { id: 'm60', label: 'M60' },
+  { id: 'm65', label: 'M65+' },
+];
+
+const ADAPTIVE_TIERS = [
+  { id: 'open',       label: 'Open' },
+  { id: 'masters-40', label: 'Masters 40+' },
+  { id: 'senior-50',  label: 'Senior Master 50+' },
+];
+
+const PROFILE_CLASSES = [
+  { id: 'pro',                 label: 'Pro',                            group: 'Open',     tiers: [] },
+  { id: 'amateur-a',           label: 'Amateur A',                      group: 'Open',     tiers: [] },
+  { id: 'amateur-b',           label: 'Amateur B',                      group: 'Open',     tiers: [] },
+  { id: 'amateur-c',           label: 'Amateur C',                      group: 'Open',     tiers: [] },
+  { id: 'amateur-unspecified', label: 'Amateur (unspecified)',          group: 'Open',     tiers: [] },
+  { id: 'novice',              label: 'Novice',                         group: 'Open',     tiers: [] },
+  { id: 'lightweight',         label: 'Lightweight',                    group: 'Open',     tiers: [] },
+  { id: 'junior',              label: 'Junior',                         group: 'Open',     tiers: [] },
+  { id: 'masters',             label: 'Masters',                        group: 'Masters',  tiers: MASTERS_TIERS },
+  { id: 'lightweight-masters', label: 'Lightweight Masters',            group: 'Masters',  tiers: MASTERS_TIERS },
+  { id: 'para-seated',         label: 'Para-Seated',                    group: 'Adaptive', tiers: ADAPTIVE_TIERS },
+  { id: 'para-standing-upper', label: 'Para Standing Upper Limb Loss',  group: 'Adaptive', tiers: ADAPTIVE_TIERS },
+  { id: 'para-standing-lower', label: 'Para Standing Lower Limb Loss',  group: 'Adaptive', tiers: ADAPTIVE_TIERS },
+  { id: 'para-standing-neuro', label: 'Para Standing Neuro/Muscular',   group: 'Adaptive', tiers: ADAPTIVE_TIERS },
+  { id: 'unspecified',         label: 'Not specified / training only',  group: 'Other',    tiers: [] },
+];
+
+const PROFILE_CLASS_GROUPS = ['Open', 'Masters', 'Adaptive', 'Other'];
+
+function getProfileClass(classId) {
+  if (!classId) return null;
+  return PROFILE_CLASSES.find((c) => c.id === classId) || null;
+}
+
+function buildProfileFromFormValues(values) {
+  const v = values || {};
+  return {
+    name: typeof v.name === 'string' ? v.name.trim() : '',
+    gender: v.gender || 'unspecified',
+    weightSchedule: v.weightSchedule || '',
+    class: v.class || '',
+    tier: v.tier || '',
+    setupCompletedAt: v.setupCompletedAt || new Date().toISOString(),
+  };
+}
+
 function freshData() {
   return {
     version: SCHEMA_VERSION,

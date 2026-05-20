@@ -57,6 +57,57 @@
     </section>
   </main>
 
+  <dialog id="profile-modal" class="profile-modal" aria-labelledby="profile-modal-title">
+    <form id="profile-form" class="profile-form" method="dialog">
+      <h2 id="profile-modal-title" class="profile-modal-title">Welcome to Highland Games Tracker</h2>
+      <p class="profile-intro">
+        Tell us a bit about yourself so future milestones can show your class
+        at the time. Every field is optional — leave anything blank you'd
+        rather skip, or fill it in later.
+      </p>
+
+      <label class="profile-field">
+        <span class="profile-field-label">Name</span>
+        <input type="text" id="profile-name" class="field" autocomplete="name" />
+      </label>
+
+      <label class="profile-field">
+        <span class="profile-field-label">Gender</span>
+        <select id="profile-gender" class="field">
+          <option value="unspecified">Prefer not to say</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="nonbinary">Non-binary</option>
+        </select>
+      </label>
+
+      <label class="profile-field">
+        <span class="profile-field-label">Weight schedule</span>
+        <select id="profile-weight-schedule" class="field">
+          <option value="">Pick later</option>
+          <option value="mens">Men's</option>
+          <option value="womens">Women's</option>
+        </select>
+      </label>
+
+      <label class="profile-field">
+        <span class="profile-field-label">Class</span>
+        <select id="profile-class" class="field">
+          <option value="">Pick later</option>
+        </select>
+      </label>
+
+      <label class="profile-field" id="profile-tier-field" hidden>
+        <span class="profile-field-label">Tier</span>
+        <select id="profile-tier" class="field"></select>
+      </label>
+
+      <div class="profile-actions">
+        <button type="submit" id="profile-submit" class="save-btn">Continue</button>
+      </div>
+    </form>
+  </dialog>
+
   <script src="shared.js"></script>
   <script src="app.js"></script>
 </body>

@@ -298,9 +298,79 @@ function importData(file) {
   reader.readAsText(file);
 }
 
+function populateProfileClassOptions() {
+  const select = document.getElementById('profile-class');
+  if (!select) return;
+  // Keep the "Pick later" first option; remove any previously-built groups.
+  Array.from(select.querySelectorAll('optgroup')).forEach((og) => og.remove());
+  for (const groupName of PROFILE_CLASS_GROUPS) {
+    const og = document.createElement('optgroup');
+    og.label = groupName;
+    for (const cls of PROFILE_CLASSES) {
+      if (cls.group !== groupName) continue;
+      const opt = document.createElement('option');
+      opt.value = cls.id;
+      opt.textContent = cls.label;
+      og.appendChild(opt);
+    }
+    select.appendChild(og);
+  }
+}
+
+function syncProfileTierField() {
+  const classSelect = document.getElementById('profile-class');
+  const tierField = document.getElementById('profile-tier-field');
+  const tierSelect = document.getElementById('profile-tier');
+  if (!classSelect || !tierField || !tierSelect) return;
+  const cls = getProfileClass(classSelect.value);
+  const tiers = cls && cls.tiers ? cls.tiers : [];
+  tierSelect.innerHTML = '';
+  if (tiers.length === 0) {
+    tierField.hidden = true;
+    return;
+  }
+  tierField.hidden = false;
+  for (const tier of tiers) {
+    const opt = document.createElement('option');
+    opt.value = tier.id;
+    opt.textContent = tier.label;
+    tierSelect.appendChild(opt);
+  }
+}
+
+function openProfileModal() {
+  const modal = document.getElementById('profile-modal');
+  if (!modal) return;
+  populateProfileClassOptions();
+  const classSelect = document.getElementById('profile-class');
+  classSelect.addEventListener('change', syncProfileTierField);
+  syncProfileTierField();
+  const form = document.getElementById('profile-form');
+  form.addEventListener('submit', () => {
+    const profile = buildProfileFromFormValues({
+      name: document.getElementById('profile-name').value,
+      gender: document.getElementById('profile-gender').value,
+      weightSchedule: document.getElementById('profile-weight-schedule').value,
+      class: classSelect.value,
+      tier: document.getElementById('profile-tier').value,
+    });
+    const current = loadData();
+    current.profile = profile;
+    saveData(current);
+  }, { once: true });
+  if (typeof modal.showModal === 'function') {
+    modal.showModal();
+  } else {
+    modal.setAttribute('open', '');
+  }
+}
+
 function init() {
   const data = loadData();
   renderForm(data);
+  if (!data.profile || !data.profile.setupCompletedAt) {
+    openProfileModal();
+  }
 
   const form = document.getElementById('baseline-form');
   form.addEventListener('submit', (event) => {

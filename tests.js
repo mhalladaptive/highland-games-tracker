@@ -847,6 +847,121 @@ test('validateBackup: v2 prMeta as array => error', () => {
   assertTrue(typeof validateBackup(bad) === 'string');
 });
 
+// --- profile capture / class taxonomy ---
+
+test('PROFILE_CLASSES: 15 entries across 4 groups', () => {
+  assertEqual(PROFILE_CLASSES.length, 15);
+  const groups = new Set(PROFILE_CLASSES.map((c) => c.group));
+  assertEqual(groups.size, 4);
+  for (const g of ['Open', 'Masters', 'Adaptive', 'Other']) {
+    assertTrue(groups.has(g), `missing group ${g}`);
+  }
+});
+
+test('PROFILE_CLASSES: every class has id, label, group, tiers array', () => {
+  for (const cls of PROFILE_CLASSES) {
+    assertTrue(typeof cls.id === 'string' && cls.id.length > 0, `id on ${cls.label}`);
+    assertTrue(typeof cls.label === 'string' && cls.label.length > 0, `label on ${cls.id}`);
+    assertTrue(typeof cls.group === 'string' && cls.group.length > 0, `group on ${cls.id}`);
+    assertTrue(Array.isArray(cls.tiers), `tiers array on ${cls.id}`);
+  }
+});
+
+test('PROFILE_CLASSES: Open and Other classes carry no tiers', () => {
+  for (const cls of PROFILE_CLASSES) {
+    if (cls.group === 'Open' || cls.group === 'Other') {
+      assertEqual(cls.tiers.length, 0, `${cls.id} should have no tiers`);
+    }
+  }
+});
+
+test('PROFILE_CLASSES: Masters classes have 6 tiers (M40..M65+)', () => {
+  const masters = PROFILE_CLASSES.filter((c) => c.group === 'Masters');
+  assertEqual(masters.length, 2);
+  for (const cls of masters) {
+    assertEqual(cls.tiers.length, 6, `${cls.id} tier count`);
+  }
+});
+
+test('PROFILE_CLASSES: Adaptive classes have 3 tiers (Open/Masters 40+/Senior 50+)', () => {
+  const adaptive = PROFILE_CLASSES.filter((c) => c.group === 'Adaptive');
+  assertEqual(adaptive.length, 4);
+  for (const cls of adaptive) {
+    assertEqual(cls.tiers.length, 3, `${cls.id} tier count`);
+  }
+});
+
+test('getProfileClass: known id returns the class', () => {
+  const cls = getProfileClass('masters');
+  assertTrue(cls !== null);
+  assertEqual(cls.label, 'Masters');
+});
+
+test('getProfileClass: unknown id returns null', () => {
+  assertEqual(getProfileClass('not-a-class'), null);
+});
+
+test('getProfileClass: empty / falsy id returns null', () => {
+  assertEqual(getProfileClass(''), null);
+  assertEqual(getProfileClass(null), null);
+  assertEqual(getProfileClass(undefined), null);
+});
+
+test('buildProfileFromFormValues: trims name and applies defaults', () => {
+  const p = buildProfileFromFormValues({
+    name: '  Matt  ',
+    setupCompletedAt: '2026-05-19T00:00:00.000Z',
+  });
+  assertEqual(p.name, 'Matt');
+  assertEqual(p.gender, 'unspecified');
+  assertEqual(p.weightSchedule, '');
+  assertEqual(p.class, '');
+  assertEqual(p.tier, '');
+  assertEqual(p.setupCompletedAt, '2026-05-19T00:00:00.000Z');
+});
+
+test('buildProfileFromFormValues: passes through provided fields', () => {
+  const p = buildProfileFromFormValues({
+    name: 'Test',
+    gender: 'male',
+    weightSchedule: 'mens',
+    class: 'amateur-b',
+    tier: '',
+    setupCompletedAt: '2026-05-19T00:00:00.000Z',
+  });
+  assertEqual(p.name, 'Test');
+  assertEqual(p.gender, 'male');
+  assertEqual(p.weightSchedule, 'mens');
+  assertEqual(p.class, 'amateur-b');
+  assertEqual(p.tier, '');
+});
+
+test('buildProfileFromFormValues: empty input still yields setupCompletedAt timestamp', () => {
+  const p = buildProfileFromFormValues({});
+  assertMatch(p.setupCompletedAt, /^\d{4}-\d{2}-\d{2}T/);
+});
+
+test('fresh install profile: empty object with no setupCompletedAt triggers first-launch', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  const data = loadData();
+  assertDeepEqual(data.profile, {});
+  assertTrue(!data.profile.setupCompletedAt, 'no setupCompletedAt on fresh install');
+});
+
+test('migration: v1 data has no profile, so first-launch still fires after migrate', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    version: 1,
+    baselines: { deadlift: 365 },
+    baselineMeta: {},
+    stoneWeights: {},
+    sessions: [],
+  }));
+  const data = loadData();
+  assertDeepEqual(data.profile, {});
+  assertTrue(!data.profile.setupCompletedAt, 'migrated v1 has no setupCompletedAt');
+});
+
 test('import path: v1 payload validates, migrates, then loads as v2', () => {
   localStorage.removeItem(STORAGE_KEY);
   // Mirrors what importData does after a v1 backup file is selected:
