@@ -21,6 +21,65 @@ const ITEMS = [
 ];
 
 const STORAGE_KEY = 'highland-games-tracker-v1';
+const SCHEMA_VERSION = 2;
+
+function freshData() {
+  return {
+    version: SCHEMA_VERSION,
+    profile: {},
+    prs: {},
+    prMeta: {},
+    goals: {},
+    goalMeta: {},
+    stoneWeights: {},
+    userLifts: [],
+    sessions: [],
+  };
+}
+
+// Build v2 userLifts entries from v1 hard-coded lift items that carry a
+// baseline value. Names/protocols come from ITEMS; v1 ids are preserved so
+// existing session marks still resolve. Lifts without a baseline and all
+// throws are skipped.
+function buildUserLiftsFromV1(v1Prs) {
+  const out = [];
+  if (!v1Prs || typeof v1Prs !== 'object') return out;
+  for (const item of ITEMS) {
+    if (item.category !== 'lift') continue;
+    const value = v1Prs[item.id];
+    if (!Number.isFinite(value)) continue;
+    out.push({
+      id: item.id,
+      name: item.name,
+      protocol: item.protocol || '',
+      unit: 'lb',
+      active: true,
+    });
+  }
+  return out;
+}
+
+// v1 -> v2 storage schema migration. Idempotent — short-circuits on
+// data.version === 2. Returns true when it mutated the data so callers
+// (loadData, importData) can persist.
+function migrateSchemaV1toV2(data) {
+  if (!data || typeof data !== 'object') return false;
+  if (data.version === SCHEMA_VERSION) return false;
+  data.prs = data.baselines && typeof data.baselines === 'object' && !Array.isArray(data.baselines)
+    ? data.baselines
+    : {};
+  data.prMeta = data.baselineMeta && typeof data.baselineMeta === 'object' && !Array.isArray(data.baselineMeta)
+    ? data.baselineMeta
+    : {};
+  delete data.baselines;
+  delete data.baselineMeta;
+  if (!data.goals || typeof data.goals !== 'object' || Array.isArray(data.goals)) data.goals = {};
+  if (!data.goalMeta || typeof data.goalMeta !== 'object' || Array.isArray(data.goalMeta)) data.goalMeta = {};
+  if (!Array.isArray(data.userLifts)) data.userLifts = buildUserLiftsFromV1(data.prs);
+  if (!data.profile || typeof data.profile !== 'object' || Array.isArray(data.profile)) data.profile = {};
+  data.version = SCHEMA_VERSION;
+  return true;
+}
 
 // Legacy migration carried over from the v1 fork: the original app had no
 // dedicated Highland Games field, so competition sessions stored the Games
@@ -45,34 +104,27 @@ function migrateLegacyGamesLocation(data) {
 
 function loadData() {
   const raw = localStorage.getItem(STORAGE_KEY);
-  const fresh = {
-    version: 1,
-    baselines: {},
-    baselineMeta: {},
-    stoneWeights: {},
-    sessions: [],
-  };
-  if (!raw) return fresh;
+  if (!raw) return freshData();
   try {
     const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== 'object' || !parsed.baselines) {
-      return fresh;
-    }
-    if (!parsed.baselineMeta || typeof parsed.baselineMeta !== 'object') {
-      parsed.baselineMeta = {};
-    }
-    if (!parsed.stoneWeights || typeof parsed.stoneWeights !== 'object') {
-      parsed.stoneWeights = {};
-    }
-    if (!Array.isArray(parsed.sessions)) {
-      parsed.sessions = [];
-    }
-    if (migrateLegacyGamesLocation(parsed)) {
-      saveData(parsed);
-    }
+    if (!parsed || typeof parsed !== 'object') return freshData();
+    const isV2Shape = parsed.prs && typeof parsed.prs === 'object' && !Array.isArray(parsed.prs);
+    const isV1Shape = parsed.baselines && typeof parsed.baselines === 'object' && !Array.isArray(parsed.baselines);
+    if (!isV2Shape && !isV1Shape) return freshData();
+    let mutated = false;
+    if (migrateSchemaV1toV2(parsed)) mutated = true;
+    if (!parsed.prMeta || typeof parsed.prMeta !== 'object') parsed.prMeta = {};
+    if (!parsed.goals || typeof parsed.goals !== 'object') parsed.goals = {};
+    if (!parsed.goalMeta || typeof parsed.goalMeta !== 'object') parsed.goalMeta = {};
+    if (!parsed.stoneWeights || typeof parsed.stoneWeights !== 'object') parsed.stoneWeights = {};
+    if (!Array.isArray(parsed.userLifts)) parsed.userLifts = [];
+    if (!parsed.profile || typeof parsed.profile !== 'object' || Array.isArray(parsed.profile)) parsed.profile = {};
+    if (!Array.isArray(parsed.sessions)) parsed.sessions = [];
+    if (migrateLegacyGamesLocation(parsed)) mutated = true;
+    if (mutated) saveData(parsed);
     return parsed;
   } catch {
-    return fresh;
+    return freshData();
   }
 }
 
@@ -185,21 +237,32 @@ function validateBackup(parsed) {
   if (!parsed || typeof parsed !== 'object') {
     return 'File is not a valid object.';
   }
-  if (parsed.appName !== 'highland-games-tracker') {
+  if (parsed.appName !== 'highland-games-tracker' && parsed.appName !== 'comeback-tracker') {
     return 'Not a Highland Games Tracker backup file.';
   }
   if (!parsed.data || typeof parsed.data !== 'object') {
     return 'Backup file is missing the data section.';
   }
-  if (parsed.data.version !== 1) {
+  if (parsed.data.version !== 1 && parsed.data.version !== 2) {
     return `Unsupported data version: ${parsed.data.version}.`;
   }
-  if (!parsed.data.baselines || typeof parsed.data.baselines !== 'object' || Array.isArray(parsed.data.baselines)) {
-    return 'Backup file is missing or has invalid baselines.';
-  }
-  if (parsed.data.baselineMeta !== undefined) {
-    if (typeof parsed.data.baselineMeta !== 'object' || parsed.data.baselineMeta === null || Array.isArray(parsed.data.baselineMeta)) {
-      return 'Backup baselineMeta is the wrong type.';
+  if (parsed.data.version === 1) {
+    if (!parsed.data.baselines || typeof parsed.data.baselines !== 'object' || Array.isArray(parsed.data.baselines)) {
+      return 'Backup file is missing or has invalid baselines.';
+    }
+    if (parsed.data.baselineMeta !== undefined) {
+      if (typeof parsed.data.baselineMeta !== 'object' || parsed.data.baselineMeta === null || Array.isArray(parsed.data.baselineMeta)) {
+        return 'Backup baselineMeta is the wrong type.';
+      }
+    }
+  } else {
+    if (!parsed.data.prs || typeof parsed.data.prs !== 'object' || Array.isArray(parsed.data.prs)) {
+      return 'Backup file is missing or has invalid prs.';
+    }
+    if (parsed.data.prMeta !== undefined) {
+      if (typeof parsed.data.prMeta !== 'object' || parsed.data.prMeta === null || Array.isArray(parsed.data.prMeta)) {
+        return 'Backup prMeta is the wrong type.';
+      }
     }
   }
   if (parsed.data.stoneWeights !== undefined) {

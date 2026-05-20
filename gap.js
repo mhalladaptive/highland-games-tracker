@@ -174,9 +174,9 @@ function renderGap(data) {
   liftsList.innerHTML = '';
 
   const itemsWithInfo = ITEMS.map((item) => {
-    const baselineRaw = data.baselines ? data.baselines[item.id] : null;
+    const baselineRaw = data.prs ? data.prs[item.id] : null;
     const baseline = Number.isFinite(baselineRaw) ? baselineRaw : null;
-    const baselineMeta = data.baselineMeta ? data.baselineMeta[item.id] : null;
+    const baselineMeta = data.prMeta ? data.prMeta[item.id] : null;
     const bestDetails = bestSinceReturnDetails(data, item.id, currentFilter);
     const pct = (baseline !== null && bestDetails && Number.isFinite(bestDetails.value))
       ? percentOfBaseline(bestDetails.value, baseline)

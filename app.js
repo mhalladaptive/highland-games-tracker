@@ -160,11 +160,11 @@ function renderForm(data) {
   liftsList.innerHTML = '';
 
   for (const item of ITEMS) {
-    const baseline = data.baselines[item.id];
+    const baseline = data.prs ? data.prs[item.id] : null;
     const baselineValue = Number.isFinite(baseline) ? baseline : null;
     const stoneWeight = data.stoneWeights ? data.stoneWeights[item.id] : null;
     const stoneWeightValue = Number.isFinite(stoneWeight) ? stoneWeight : null;
-    const baselineMeta = data.baselineMeta ? data.baselineMeta[item.id] : null;
+    const baselineMeta = data.prMeta ? data.prMeta[item.id] : null;
     const row = buildRow(item, baselineValue, stoneWeightValue, baselineMeta);
     if (item.category === 'throw') {
       throwsList.appendChild(row);
@@ -175,21 +175,21 @@ function renderForm(data) {
 }
 
 function collectFormData() {
-  const baselines = {};
+  const prs = {};
   const stoneWeights = {};
-  const baselineMeta = {};
+  const prMeta = {};
   const rows = document.querySelectorAll('.item-row');
   rows.forEach((row) => {
     const id = row.dataset.itemId;
     const type = row.dataset.measurementType;
     if (type === 'weight') {
       const w = readNumber(row.querySelector('[data-field="weight"]'));
-      if (w !== null) baselines[id] = w;
+      if (w !== null) prs[id] = w;
     } else {
       const f = readNumber(row.querySelector('[data-field="feet"]'));
       const i = readNumber(row.querySelector('[data-field="inches"]'));
       if (f !== null || i !== null) {
-        baselines[id] = feetInchesToInches(f ?? 0, i ?? 0);
+        prs[id] = feetInchesToInches(f ?? 0, i ?? 0);
       }
     }
     const stoneInput = row.querySelector('[data-field="stoneWeight"]');
@@ -205,10 +205,10 @@ function collectFormData() {
       const meta = {};
       if (date) meta.date = date;
       if (location) meta.location = location;
-      baselineMeta[id] = meta;
+      prMeta[id] = meta;
     }
   });
-  return { baselines, stoneWeights, baselineMeta };
+  return { prs, stoneWeights, prMeta };
 }
 
 function showStatus(message) {
@@ -272,9 +272,12 @@ function importData(file) {
       showDataStatus(error, true);
       return;
     }
+    // v1 imports get migrated into v2 shape before saving so localStorage
+    // always lands at the current schema version.
+    migrateSchemaV1toV2(parsed.data);
     const current = loadData();
     const hasExistingData =
-      Object.keys(current.baselines || {}).length > 0 ||
+      Object.keys(current.prs || {}).length > 0 ||
       (Array.isArray(current.sessions) && current.sessions.length > 0);
     if (hasExistingData) {
       const ok = window.confirm(

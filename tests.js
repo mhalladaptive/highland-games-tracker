@@ -169,42 +169,38 @@ test('todayISO: matches yyyy-mm-dd format', () => {
 
 // --- loadData ---
 
-test('loadData: empty storage => fresh shape', () => {
-  localStorage.removeItem(STORAGE_KEY);
-  assertDeepEqual(loadData(), {
-    version: 1,
-    baselines: {},
-    baselineMeta: {},
+function freshV2Shape() {
+  return {
+    version: 2,
+    profile: {},
+    prs: {},
+    prMeta: {},
+    goals: {},
+    goalMeta: {},
     stoneWeights: {},
+    userLifts: [],
     sessions: [],
-  });
+  };
+}
+
+test('loadData: empty storage => v2 fresh shape', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  assertDeepEqual(loadData(), freshV2Shape());
 });
 
-test('loadData: corrupt JSON => fresh shape', () => {
+test('loadData: corrupt JSON => v2 fresh shape', () => {
   localStorage.removeItem(STORAGE_KEY);
   localStorage.setItem(STORAGE_KEY, '{not valid json');
-  assertDeepEqual(loadData(), {
-    version: 1,
-    baselines: {},
-    baselineMeta: {},
-    stoneWeights: {},
-    sessions: [],
-  });
+  assertDeepEqual(loadData(), freshV2Shape());
 });
 
-test('loadData: data missing baselines key => fresh shape', () => {
+test('loadData: data missing baselines and prs => v2 fresh shape', () => {
   localStorage.removeItem(STORAGE_KEY);
   localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, something: 'else' }));
-  assertDeepEqual(loadData(), {
-    version: 1,
-    baselines: {},
-    baselineMeta: {},
-    stoneWeights: {},
-    sessions: [],
-  });
+  assertDeepEqual(loadData(), freshV2Shape());
 });
 
-test('loadData: missing stoneWeights => filled in as empty object', () => {
+test('loadData: v1 missing stoneWeights => filled, baseline moved to prs', () => {
   localStorage.removeItem(STORAGE_KEY);
   localStorage.setItem(STORAGE_KEY, JSON.stringify({
     version: 1,
@@ -212,10 +208,11 @@ test('loadData: missing stoneWeights => filled in as empty object', () => {
   }));
   const data = loadData();
   assertDeepEqual(data.stoneWeights, {});
-  assertEqual(data.baselines.deadlift, 365);
+  assertEqual(data.prs.deadlift, 365);
+  assertEqual(data.version, 2);
 });
 
-test('loadData: missing sessions => filled in as empty array', () => {
+test('loadData: v1 missing sessions => filled in as empty array', () => {
   localStorage.removeItem(STORAGE_KEY);
   localStorage.setItem(STORAGE_KEY, JSON.stringify({
     version: 1,
@@ -339,20 +336,24 @@ test('migration: legacy session with no kind defaults to competition and migrate
 
 // --- save + load round-trips ---
 
-test('save + load: round-trip preserves baselines', () => {
+test('save + load: v2 round-trip preserves prs', () => {
   localStorage.removeItem(STORAGE_KEY);
   const fixture = {
-    version: 1,
-    baselines: { deadlift: 365, 'braemar-stone': 426 },
-    baselineMeta: {},
+    version: 2,
+    profile: {},
+    prs: { deadlift: 365, 'braemar-stone': 426 },
+    prMeta: {},
+    goals: {},
+    goalMeta: {},
     stoneWeights: {},
+    userLifts: [],
     sessions: [],
   };
   saveData(fixture);
   assertDeepEqual(loadData(), fixture);
 });
 
-test('save + load: round-trip preserves sessions with attempts', () => {
+test('save + load: v2 round-trip preserves sessions with attempts', () => {
   localStorage.removeItem(STORAGE_KEY);
   const session = {
     id: 1234567890,
@@ -361,17 +362,21 @@ test('save + load: round-trip preserves sessions with attempts', () => {
     stoneWeights: { 'braemar-stone': 22 },
   };
   const fixture = {
-    version: 1,
-    baselines: {},
-    baselineMeta: {},
+    version: 2,
+    profile: {},
+    prs: {},
+    prMeta: {},
+    goals: {},
+    goalMeta: {},
     stoneWeights: {},
+    userLifts: [],
     sessions: [session],
   };
   saveData(fixture);
   assertDeepEqual(loadData(), fixture);
 });
 
-test('save + load: preserves unknown future fields', () => {
+test('save + load: preserves unknown future fields through migration', () => {
   localStorage.removeItem(STORAGE_KEY);
   const fixture = {
     version: 1,
@@ -492,6 +497,24 @@ function makeBackup(overrides) {
   }, overrides || {});
 }
 
+function makeV2Backup(overrides) {
+  return Object.assign({
+    appName: 'highland-games-tracker',
+    exportedAt: '2026-05-16T00:00:00.000Z',
+    data: {
+      version: 2,
+      profile: {},
+      prs: {},
+      prMeta: {},
+      goals: {},
+      goalMeta: {},
+      stoneWeights: {},
+      userLifts: [],
+      sessions: [],
+    },
+  }, overrides || {});
+}
+
 test('validateBackup: well-formed envelope => null', () => {
   assertEqual(validateBackup(makeBackup()), null);
 });
@@ -515,9 +538,9 @@ test('validateBackup: missing data section => error', () => {
   assertTrue(typeof validateBackup(bad) === 'string');
 });
 
-test('validateBackup: wrong version => error', () => {
+test('validateBackup: unsupported version (3) => error', () => {
   const bad = makeBackup();
-  bad.data.version = 2;
+  bad.data.version = 3;
   const out = validateBackup(bad);
   assertTrue(typeof out === 'string' && out.includes('version'));
 });
@@ -622,9 +645,9 @@ test('sessionKind: unknown kind value => competition', () => {
   assertEqual(sessionKind({ kind: 'mystery' }), 'competition');
 });
 
-// --- loadData backward compatibility for baselineMeta ---
+// --- loadData backward compatibility for prMeta ---
 
-test('loadData: missing baselineMeta => filled in as empty object', () => {
+test('loadData: v1 missing baselineMeta => prMeta filled in as empty object', () => {
   localStorage.removeItem(STORAGE_KEY);
   localStorage.setItem(STORAGE_KEY, JSON.stringify({
     version: 1,
@@ -633,24 +656,28 @@ test('loadData: missing baselineMeta => filled in as empty object', () => {
     sessions: [],
   }));
   const data = loadData();
-  assertDeepEqual(data.baselineMeta, {});
-  assertEqual(data.baselines.deadlift, 365);
+  assertDeepEqual(data.prMeta, {});
+  assertEqual(data.prs.deadlift, 365);
 });
 
-test('save + load: round-trip preserves baselineMeta', () => {
+test('save + load: v2 round-trip preserves prMeta', () => {
   localStorage.removeItem(STORAGE_KEY);
   const fixture = {
-    version: 1,
-    baselines: { 'braemar-stone': 339.5 },
-    baselineMeta: { 'braemar-stone': { date: '2019-10-12', location: 'Radford Highlander Festival' } },
+    version: 2,
+    profile: {},
+    prs: { 'braemar-stone': 339.5 },
+    prMeta: { 'braemar-stone': { date: '2019-10-12', location: 'Radford Highlander Festival' } },
+    goals: {},
+    goalMeta: {},
     stoneWeights: {},
+    userLifts: [],
     sessions: [],
   };
   saveData(fixture);
   assertDeepEqual(loadData(), fixture);
 });
 
-test('save + load: round-trip preserves session location and games', () => {
+test('save + load: v2 round-trip preserves session location and games', () => {
   localStorage.removeItem(STORAGE_KEY);
   const session = {
     id: 1234567890,
@@ -662,14 +689,188 @@ test('save + load: round-trip preserves session location and games', () => {
     stoneWeights: {},
   };
   const fixture = {
-    version: 1,
-    baselines: {},
-    baselineMeta: {},
+    version: 2,
+    profile: {},
+    prs: {},
+    prMeta: {},
+    goals: {},
+    goalMeta: {},
     stoneWeights: {},
+    userLifts: [],
     sessions: [session],
   };
   saveData(fixture);
   assertDeepEqual(loadData(), fixture);
+});
+
+// --- v1 -> v2 schema migration ---
+
+test('migrateSchemaV1toV2: renames baselines -> prs', () => {
+  const data = { version: 1, baselines: { deadlift: 365 }, baselineMeta: {} };
+  const changed = migrateSchemaV1toV2(data);
+  assertEqual(changed, true);
+  assertEqual(data.prs.deadlift, 365);
+  assertEqual(data.baselines, undefined);
+  assertEqual(data.version, 2);
+});
+
+test('migrateSchemaV1toV2: renames baselineMeta -> prMeta', () => {
+  const data = {
+    version: 1,
+    baselines: {},
+    baselineMeta: { deadlift: { date: '2026-01-01', location: 'Gym' } },
+  };
+  migrateSchemaV1toV2(data);
+  assertEqual(data.prMeta.deadlift.date, '2026-01-01');
+  assertEqual(data.prMeta.deadlift.location, 'Gym');
+  assertEqual(data.baselineMeta, undefined);
+});
+
+test('migrateSchemaV1toV2: adds empty goals/goalMeta/userLifts/profile', () => {
+  const data = { version: 1, baselines: {}, baselineMeta: {} };
+  migrateSchemaV1toV2(data);
+  assertDeepEqual(data.goals, {});
+  assertDeepEqual(data.goalMeta, {});
+  assertTrue(Array.isArray(data.userLifts));
+  assertEqual(data.userLifts.length, 0);
+  assertDeepEqual(data.profile, {});
+});
+
+test('migrateSchemaV1toV2: v1 lifts with baselines become userLifts entries with ids preserved', () => {
+  const data = {
+    version: 1,
+    baselines: { deadlift: 365, 'overhead-press': 185 },
+    baselineMeta: {},
+  };
+  migrateSchemaV1toV2(data);
+  const ids = data.userLifts.map((l) => l.id).sort();
+  assertDeepEqual(ids, ['deadlift', 'overhead-press']);
+  const deadlift = data.userLifts.find((l) => l.id === 'deadlift');
+  assertEqual(deadlift.name, 'Deadlift');
+  assertEqual(deadlift.protocol, '10RM (40 sec)');
+  assertEqual(deadlift.unit, 'lb');
+  assertEqual(deadlift.active, true);
+});
+
+test('migrateSchemaV1toV2: lifts without baselines are not added to userLifts', () => {
+  const data = { version: 1, baselines: { deadlift: 365 }, baselineMeta: {} };
+  migrateSchemaV1toV2(data);
+  assertEqual(data.userLifts.length, 1);
+  assertEqual(data.userLifts[0].id, 'deadlift');
+});
+
+test('migrateSchemaV1toV2: throws are not added to userLifts even with baselines', () => {
+  const data = {
+    version: 1,
+    baselines: { 'braemar-stone': 420, deadlift: 365 },
+    baselineMeta: {},
+  };
+  migrateSchemaV1toV2(data);
+  const ids = data.userLifts.map((l) => l.id);
+  assertTrue(ids.indexOf('braemar-stone') === -1, 'throw should not be in userLifts');
+  assertTrue(ids.indexOf('deadlift') !== -1, 'lift should be in userLifts');
+});
+
+test('migrateSchemaV1toV2: idempotent on v2 data', () => {
+  const v2 = freshV2Shape();
+  v2.prs = { deadlift: 365 };
+  const before = JSON.stringify(v2);
+  const changed = migrateSchemaV1toV2(v2);
+  assertEqual(changed, false);
+  assertEqual(JSON.stringify(v2), before);
+});
+
+test('migration persists: second loadData reads v2 directly, baselines key gone from storage', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    version: 1,
+    baselines: { deadlift: 365 },
+    baselineMeta: {},
+    stoneWeights: {},
+    sessions: [],
+  }));
+  loadData();
+  const raw = localStorage.getItem(STORAGE_KEY);
+  const stored = JSON.parse(raw);
+  assertEqual(stored.version, 2);
+  assertEqual(stored.baselines, undefined);
+  assertEqual(stored.prs.deadlift, 365);
+  // second loadData is a no-op shape-wise
+  const reloaded = loadData();
+  assertEqual(reloaded.version, 2);
+  assertEqual(reloaded.prs.deadlift, 365);
+});
+
+test('migration: empty v1 baselines/baselineMeta produce empty v2 maps', () => {
+  const data = { version: 1, baselines: {}, baselineMeta: {} };
+  migrateSchemaV1toV2(data);
+  assertDeepEqual(data.prs, {});
+  assertDeepEqual(data.prMeta, {});
+  assertEqual(data.userLifts.length, 0);
+});
+
+// --- v1 backup import & validateBackup combinations ---
+
+test('validateBackup: comeback-tracker + v1 envelope => null', () => {
+  const ok = makeBackup({ appName: 'comeback-tracker' });
+  assertEqual(validateBackup(ok), null);
+});
+
+test('validateBackup: comeback-tracker + v2 envelope => null', () => {
+  const ok = makeV2Backup({ appName: 'comeback-tracker' });
+  assertEqual(validateBackup(ok), null);
+});
+
+test('validateBackup: highland-games-tracker + v1 envelope => null', () => {
+  assertEqual(validateBackup(makeBackup()), null);
+});
+
+test('validateBackup: highland-games-tracker + v2 envelope => null', () => {
+  assertEqual(validateBackup(makeV2Backup()), null);
+});
+
+test('validateBackup: v2 missing prs => error', () => {
+  const bad = makeV2Backup();
+  delete bad.data.prs;
+  assertTrue(typeof validateBackup(bad) === 'string');
+});
+
+test('validateBackup: v2 prs as array => error', () => {
+  const bad = makeV2Backup();
+  bad.data.prs = [];
+  assertTrue(typeof validateBackup(bad) === 'string');
+});
+
+test('validateBackup: v2 prMeta as array => error', () => {
+  const bad = makeV2Backup();
+  bad.data.prMeta = [];
+  assertTrue(typeof validateBackup(bad) === 'string');
+});
+
+test('import path: v1 payload validates, migrates, then loads as v2', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  // Mirrors what importData does after a v1 backup file is selected:
+  // validateBackup -> migrateSchemaV1toV2 -> saveData
+  const payload = makeBackup({
+    appName: 'comeback-tracker',
+    data: {
+      version: 1,
+      baselines: { deadlift: 365 },
+      baselineMeta: { deadlift: { date: '2026-01-01', location: 'Gym' } },
+      stoneWeights: {},
+      sessions: [],
+    },
+  });
+  assertEqual(validateBackup(payload), null);
+  migrateSchemaV1toV2(payload.data);
+  saveData(payload.data);
+  const data = loadData();
+  assertEqual(data.version, 2);
+  assertEqual(data.prs.deadlift, 365);
+  assertEqual(data.prMeta.deadlift.date, '2026-01-01');
+  assertEqual(data.userLifts.length, 1);
+  assertEqual(data.userLifts[0].id, 'deadlift');
+  assertEqual(data.userLifts[0].name, 'Deadlift');
 });
 
 // --- percentOfBaseline ---
