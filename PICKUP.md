@@ -24,9 +24,9 @@ Context to load before we start:
 2. Read SESSION_NOTES.md, newest entry first — the journal of how we
    got here.
 
-3. Skim the spec sketches as the model for a cowork spec sketch:
-   v2-stage2-spec.md, v2-stage3a-spec.md, v2-stage3b-spec.md (all
-   shipped).
+3. Skim the spec sketches as the model for a cowork spec sketch — they
+   now live in docs/specs/: v2-stage2-spec.md, v2-stage3a-spec.md,
+   v2-stage3b-spec.md (all shipped).
 
 4. Skim the highland-games-tracker entries in the skills ledger:
    ~/Documents/Obsidian Vault/Reference/Higgins Method/skills-ledger.md
