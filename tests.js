@@ -1540,6 +1540,25 @@ test('dropdown state: brand-new lift card => enabled even when same id appears i
   assertEqual(dropdownOptionIds(card).length, 10);
 });
 
+test('live conversion: saved unmarked lift preserves typed PR/Goal on unit change', () => {
+  // Regression: live conversion is for saved MARKED lifts only. A saved
+  // unmarked Weight/Distance lift used to fall through the gate and have
+  // its inputs blanked on unit change (recompute-from-null-saved-values),
+  // wiping anything the athlete had just typed.
+  const data = baseV2Data();
+  data.userLifts.push({ id: 'sq', name: 'Squat', protocol: '1RM', unit: 'lb', active: true });
+  const card = buildLiftCard(data.userLifts[0], data, false);
+  const prInput = card.querySelector('[data-field="liftPr"]');
+  const goalInput = card.querySelector('[data-field="liftGoal"]');
+  prInput.value = '225';
+  goalInput.value = '245';
+  const select = card.querySelector('[data-field="liftUnit"]');
+  select.value = 'kg';
+  select.dispatchEvent(new Event('change'));
+  assertEqual(prInput.value, '225');
+  assertEqual(goalInput.value, '245');
+});
+
 // --- Session-mark sweep on Save (Stage 3b risk-bearing path) ---
 
 test('session sweep: unit change converts that lift\'s marks across all sessions', () => {

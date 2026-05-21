@@ -271,7 +271,7 @@ function buildLiftCard(lift, data, isNew) {
   goalField.appendChild(buildLiftValueInput('liftGoal', goalValue, isTime, 'Lift Goal'));
   card.appendChild(goalField);
 
-  const liveConvert = !isNew && canConvertCategory;
+  const liveConvert = !isNew && hasMarks && canConvertCategory;
   unitSelect.addEventListener('change', () => {
     const next = getUnit(unitSelect.value);
     const nextIsTime = next && next.category === 'time';
