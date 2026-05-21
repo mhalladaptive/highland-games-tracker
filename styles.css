@@ -352,6 +352,10 @@ body.kind-training .comp-only {
   .item-row--session .item-extra {
     justify-content: flex-start;
   }
+  .throw-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 
 .edit-banner {
@@ -1091,20 +1095,6 @@ body.kind-training .comp-only {
   align-items: center;
   gap: 0.4rem;
   flex: 1;
-}
-
-@media (min-width: 600px) {
-  .pr-goal-fields {
-    flex-direction: row;
-    gap: 1.25rem;
-  }
-  .pr-goal-fields .slot {
-    flex: 1;
-    justify-content: flex-end;
-  }
-  .pr-goal-fields .value-inputs {
-    flex: 0 0 auto;
-  }
 }
 
 .lift-card {
