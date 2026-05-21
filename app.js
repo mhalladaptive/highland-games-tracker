@@ -139,10 +139,11 @@ function buildThrowRow(item, prValue, goalValue, prMetaEntry) {
   return row;
 }
 
-function buildUnitDropdown(selectedUnitId) {
+function buildUnitDropdown(selectedUnitId, categoryFilter) {
   const select = document.createElement('select');
   select.className = 'field unit-select';
   for (const cat of UNIT_CATEGORIES) {
+    if (categoryFilter && cat !== categoryFilter) continue;
     const og = document.createElement('optgroup');
     og.label = UNIT_CATEGORY_LABELS[cat];
     for (const u of UNITS) {
@@ -227,15 +228,23 @@ function buildLiftCard(lift, data, isNew) {
   unitLabel.className = 'lift-field-label';
   unitLabel.textContent = 'Unit';
   unitField.appendChild(unitLabel);
-  const unitSelect = buildUnitDropdown(lift.unit || 'lb');
+  const savedUnit = lift.unit || 'lb';
+  const savedCategory = (getUnit(savedUnit) || {}).category;
+  const hasMarks = !isNew && liftHasMarks(data, lift.id);
+  const canConvertCategory = savedCategory === 'weight' || savedCategory === 'distance';
+  let unitSelect;
+  if (hasMarks && canConvertCategory) {
+    unitSelect = buildUnitDropdown(savedUnit, savedCategory);
+  } else {
+    unitSelect = buildUnitDropdown(savedUnit);
+    if (hasMarks) {
+      unitSelect.disabled = true;
+      unitSelect.title = 'Unit is locked: Time and Count units do not convert between each other.';
+      unitField.classList.add('lift-field--locked');
+    }
+  }
   unitSelect.dataset.field = 'liftUnit';
   unitSelect.setAttribute('aria-label', 'Lift unit');
-  const locked = !isNew && liftHasMarks(data, lift.id);
-  if (locked) {
-    unitSelect.disabled = true;
-    unitSelect.title = 'Unit is locked because this lift has marks. Conversion comes in Stage 3b.';
-    unitField.classList.add('lift-field--locked');
-  }
   unitField.appendChild(unitSelect);
   card.appendChild(unitField);
 
