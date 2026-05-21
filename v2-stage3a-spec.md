@@ -221,6 +221,76 @@ focused, feat:/fix:/chore:/refactor: prefixes, one concern each). Do
 not push — give me the push commands when the local commits are ready.
 ```
 
+## Review prompt for the gpt review pass
+
+```
+You are gpt — the Reviewer in the Higgins Method, a solo build system.
+A build was done by ccode (Claude Code, a separate model); your job is
+an independent cross-check. This is Stage 3a of the Highland Games
+Tracker v2 project — the first half of a split Stage 3. Skill level:
+L1 — Supported. Project risk: Normal.
+
+WHAT TO READ — all attached to this conversation:
+- v2-stage3a-spec.md — the Stage 3a spec sketch. Its "Acceptance
+  criteria" section is the bar the build must meet; its "Risk note"
+  and "Known interim state" say where to concentrate and what is
+  expected rather than a bug.
+- v2-plan.md — the full v2 design (Stage 3 section, Lift entry model,
+  Unit system, Storage schema v2).
+- shared.js, app.js, index.html, styles.css — the code Stage 3a
+  rewrote or added to.
+- tests.js — the test suite.
+- session.js — so you can confirm Log Session was left untouched.
+- higgins-method.md — your Reviewer role, the L1 level, the "one
+  review pass" rule.
+
+CONCENTRATE HERE (the risk surface)
+Stage 3a does not rewrite stored data — that is Stage 3b. The careful
+parts of 3a are:
+- The unit-lock rule. liftHasMarks(data, liftId) must return true if a
+  PR, a Goal, OR any session mark exists for that lift id. A miss lets
+  a unit be silently changed under existing data.
+- Soft-delete. The card's X sets active:false; the userLifts entry and
+  any session marks for that id must be retained, never deleted.
+- New-lift id assignment. The temporary "new-N" id must be replaced
+  with a stable unique id (crypto.randomUUID) on save — no collisions,
+  no loss.
+- applyFormSnapshotsToData — the pure data-rules function (id
+  assignment, soft-delete by absence, trimming, write-or-delete of
+  PR/Goal). Confirm it does not mutate its input.
+- The 3a/3b boundary. Confirm NO unit-conversion logic was built —
+  no same-category auto-convert, no cross-category handling. In 3a the
+  unit only locks; 3b converts.
+
+ALSO CHECK
+- The Set Baseline page is fully replaced; the nav label reads "Set
+  PRs & Goals" on all four pages.
+- Throws write PR to prs (with date/location to prMeta) and Goal to
+  goals.
+- The unit dropdown carries all 10 units in 4 optgroups.
+- Time-unit lifts use mm:ss inputs and store seconds;
+  parseTimeToSeconds / formatSecondsAsTime round-trip correctly.
+- Whether the build meets each item in the spec's Acceptance criteria.
+
+HOW TO REPORT
+- Classify every finding: Critical / Major / Minor / Nit.
+  Critical = data loss or corruption, or an acceptance criterion unmet.
+- Be specific: file, function, what is wrong, why it matters.
+- Separate real defects from style preferences.
+- This is a personal/community vanilla-JS localStorage app at L1 /
+  Normal risk — calibrate to that. Don't demand enterprise hardening,
+  don't redesign; review what is there against the spec.
+
+METHOD CONSTRAINT
+This is the one review pass. A second round happens only if this pass
+finds something Critical. Give one complete review — findings by
+severity, then a one-line verdict: ship as-is, ship after fixes, or
+fix-and-re-review (Critical only).
+```
+
+Attach the listed files only — don't paste ccode's build report; gpt's
+review must be an independent read.
+
 ---
 
 *End of sketch. Update only via cowork session.*

@@ -6,6 +6,168 @@ of what got decided when.
 
 ---
 
+## 2026-05-21 — Stage 3a shipped; Stage 3b planned, built, shipped
+
+Long session, the evening of 2026-05-20 into the 21st. Ran the Higgins
+loop twice more — Stage 3a from review to ship, and Stage 3b end to end
+(plan → spec → build → review → fix → ship). Stage 3 is now complete.
+
+### Stage 3a — reviewed, smoke-tested, fixed, shipped
+
+- Picked up the Stage 3a build from the prior session. First catch: the
+  four Stage 3a build commits had already been pushed to `origin/main`
+  before review — a step out of Higgins order (Ship follows Review).
+  Low-stakes here; flagged.
+- gpt review: clean — one Nit only (stale "baselines" wording in
+  `index.html`'s backup copy). Fixed by hand, commit `314331c`.
+- Browser smoke test (cowork-driven, app served locally over
+  `http://localhost:8000`): found one Major a code review structurally
+  could not — at desktop widths (≥600px) each throw row laid PR and Goal
+  side by side, overflowing the fixed 560px card and clipping the Goal
+  field's inches input. Mobile was fine.
+- Fix (Option A): stack PR and Goal vertically at all widths, matching
+  mobile. ccode built it, commit `7c98211`; re-smoke confirmed; 166/166
+  tests green.
+- Shipped — pushed, tagged `v2.0.0-stage3a`. Stage 3a ledger entry
+  written.
+
+### Stage 3b — planned, built, shipped
+
+- Planning conversation resolved the four questions `v2-plan.md` left
+  open on the conversion engine: Count and Time lifts with marks stay
+  fully locked (only Weight and Distance convert); conversions round the
+  stored values; conversion shows live on unit change; no confirmation
+  dialog. Cowork wrote `v2-stage3b-spec.md`.
+- ccode built it: six commits (`e4e4418`…`4e7dc5e`) — the `convertValue`
+  helper and `toBase` factors, the unlocked category-filtered dropdown,
+  live conversion, the Save-time session-mark sweep, the "Strength and
+  Conditioning Milestones" heading rename, and tests.
+- gpt review: one Major — the `liveConvert` gate omitted the `hasMarks`
+  check, so a saved unmarked lift's unit change blanked
+  typed-but-unsaved PR/Goal. One Minor, one Nit. Verdict: ship after
+  fixes.
+- Browser smoke test: the conversion engine verified end to end on
+  injected test data — live conversion, the session-mark sweep, other
+  lifts and throw marks untouched. The Major was reproduced.
+- Near-miss worth recording: the smoke test first appeared to show the
+  conversion engine completely dead (`convertValue` undefined), nearly
+  reported as a Critical. False alarm — the browser was serving a stale,
+  cached pre-3b `shared.js`. Caught by checking the file on disk.
+  `python3 -m http.server` sends no cache headers; stale cache bit the
+  smoke test three times — hard reload each. See the Stage 3b ledger
+  entry.
+- ccode fixed the Major, commit `4f5c177` (`liveConvert` gate now
+  includes `hasMarks`) plus a regression test. Re-smoke confirmed; full
+  suite 195/195.
+- Shipped — pushed, tagged `v2.0.0-stage3b`. Stage 3b ledger entry
+  written.
+
+### Where it stands
+
+Stage 3 is complete — 3a and 3b both shipped and tagged. Next is
+**Stage 4** — the celebration system and the Log Session changes, the
+big behavioral stage, and where `goalMeta` and the unit `direction`
+field finally get consumed. The L1 gate (code walkthrough) is still
+pending from 2026-05-19; the Stage 3b ledger recommends clearing it
+before Stage 4.
+
+### Housekeeping
+
+- This session's docs sweep: this `SESSION_NOTES` entry, `PICKUP.md`
+  refreshed for Stage 4, and the new files (`v2-stage3b-spec.md`, the
+  gpt review docs) — one `docs:` commit.
+- The leftover `stage-2-walkthrough-study-sheet.pdf` in the repo is safe
+  to `rm` (the real copy is in the Higgins Method folder).
+
+---
+
+## 2026-05-20 — Stage 2 shipped, L1 gate walkthrough, Stage 3a built
+
+Long session, the evening of the 19th into the 20th. Ran the Higgins
+loop twice — Stage 2 end to end, and Stage 3 up through the 3a build.
+
+### Method correction — the important one
+
+Early on, cowork overstepped: it took the v2 plan and started writing
+Stage 2 code directly. That is ccode's job. Oak caught it and pointed
+cowork back at the Higgins Method. Recalibrated for the rest of the
+session and going forward: **cowork plans (writes the spec sketch),
+ccode builds, gpt reviews.** Recovery was cheap — nothing had been
+committed. The lesson, logged in the skills ledger: the spec→build
+handoff is where the L1 learning lives; cowork must not cross it.
+
+### Stage 2 — shipped
+
+- Cowork wrote `v2-stage2-spec.md` and handed it to ccode.
+- ccode built it: storage schema bump v1→v2 (`baselines`→`prs`,
+  `baselineMeta`→`prMeta`, added `goals` / `goalMeta` / `userLifts` /
+  `profile`), the v1→v2 migration, the first-launch profile modal.
+- gpt review: no Critical or Major; one Minor — `weightSchedule` did
+  not default to match gender. Fixed (commit `c5d6f49`).
+- Browser smoke test: clean.
+- Shipped: pushed to `origin/main`, tagged `v2.0.0-stage2`. Commits
+  `ff4a380`, `edcd127`, `dcea47b`, `c5d6f49`.
+
+### L1 gate walkthrough — not cleared this pass
+
+- Walked all ten code files with cowork, Oak describing each in his
+  own words.
+- Result: the file→role map is solid; the mechanism layer — how
+  `shared.js`'s data layer and migration work, how a page's JS builds
+  the DOM — is the gap.
+- Honest verdict: **L1 gate not cleared this pass.** Re-attempt is
+  close: re-read the files (shared.js first), then re-walk.
+- First real skills-ledger entry filled in (`skills-ledger.md`, Higgins
+  Method folder).
+- A printable study sheet was built — `stage-2-walkthrough-study-sheet.pdf`,
+  Higgins Method folder — to study before the re-walk.
+
+### Stage 3 — split into 3a + 3b, and 3a built
+
+- **Split decision.** Stage 3 as written bundled too much. Split it:
+  **3a** = the Set PRs & Goals page (page rewrite, throws with
+  PR+Goal, user-defined lift cards, the unit dropdown, soft-delete).
+  **3b** = the unit conversion engine (rewrites stored data — built
+  and reviewed on its own).
+- **The seam.** In 3a a lift's unit locks once it has any mark; 3b is
+  what unlocks it, with conversion.
+- **Decision:** the v1 stone-weight input is dropped from the Set page
+  — a stone's weight is neither a PR nor a Goal; it stays per-session
+  on Log Session.
+- Cowork wrote `v2-stage3a-spec.md` and handed it to ccode.
+- ccode built Stage 3a: 4 commits (`0df048c`, `ed6999a`, `9767bdb`,
+  `bee8cea`), 166/166 tests pass (cowork confirmed headless). The
+  3a/3b split held — no conversion engine, Log Session untouched.
+
+### Where it stopped — for tomorrow
+
+Stage 3a is built locally: **4 commits ahead of `origin/main`, not
+reviewed, not smoke-tested, not pushed.** Tomorrow:
+
+1. gpt review of Stage 3a — the review prompt is ready at the bottom
+   of `v2-stage3a-spec.md`.
+2. Browser smoke test — a checklist is derivable from the spec's
+   acceptance criteria.
+3. Fix anything found → ship (push + tag `v2.0.0-stage3a`) → the
+   Stage 3a ledger entry.
+4. Then plan Stage 3b.
+
+### Housekeeping / environment
+
+- Antigravity (the IDE) broke via a Google update mid-session; ccode
+  now runs in a standalone terminal with VS Code alongside.
+- Cowork's sandbox can create files but cannot delete them in the repo
+  or `.git` — so git commits, reverts, tag pushes, and file removals
+  are run by Oak on the real machine.
+- Untracked / uncommitted in the repo: the gpt review doc (`Code
+  Review Stage 2 Highland Games Tracker.md`), a leftover copy of the
+  study-sheet PDF (safe to `rm`), uncommitted edits to
+  `v2-stage2-spec.md`, and a small uncommitted edit to
+  `v2-stage3a-spec.md` (the gpt review prompt appended this session).
+  One `docs:` commit sweeps the lot.
+
+---
+
 ## 2026-05-19 — v2 design session + Stage 1 ship
 
 Big session. Two distinct phases: shipping Stage 1 (the rebrand) and

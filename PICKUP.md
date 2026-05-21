@@ -7,43 +7,62 @@ Copy the block below into a new session when you want to resume v2 work.
 
 ```
 Picking up v2 work on Highland Games Tracker (~/dev/highland-games-tracker).
-Context I want you to load before we start:
 
-1. Read v2-plan.md from root to bottom — this is the full v2 design we
-   landed in the 2026-05-19 design session. Most of it is non-negotiable
-   product decisions; flag anything that reads as my recommendation vs.
-   a locked-in decision before assuming.
+YOUR ROLE — read this first. This is a Cowork session. Under the Higgins
+Method, cowork is the PLANNER: cowork turns ideas into spec sketches and
+hands them to ccode (Claude Code), who builds; gpt (ChatGPT) reviews.
+Cowork does NOT write or edit the app's code.
 
-2. Read SESSION_NOTES.md and skim at least the most recent entry. That's
-   the journal of how we got here and the reasoning behind the design
-   calls in v2-plan.md.
+Context to load before we start:
 
-3. Current state: Stage 1 (Fork + Rebrand) is shipped and tagged at
-   v2.0.0-rebrand on origin/main. Stages 2 through 5 are designed but
-   not implemented. Latest commit on main should be one of the docs
-   commits from the design session.
+1. Read v2-plan.md root to bottom — the full v2 design from the
+   2026-05-19 design session. Mostly locked product decisions; flag
+   anything that reads as a recommendation vs. a decision before
+   assuming. Stage 4 (celebration system + Log Session) is the next
+   unbuilt stage — read that section closely.
 
-4. Open thread that didn't get locked: the shareable celebration card
-   visual design (colors, typography, exact layout) — deferred to a
-   build-and-react prototype when we hit Stage 4 implementation.
+2. Read SESSION_NOTES.md, newest entry first — the journal of how we
+   got here.
 
-Where I want to start today: [LET CLAUDE KNOW what you want to do — Stage 2
-implementation, more design conversation on something specific, a different
-direction entirely, etc.]
+3. Skim the spec sketches as the model for a cowork spec sketch:
+   v2-stage2-spec.md, v2-stage3a-spec.md, v2-stage3b-spec.md (all
+   shipped).
 
-Reminders about how I want to work, from the v1.x and v2-design sessions:
+4. Skim the highland-games-tracker entries in the skills ledger:
+   ~/Documents/Obsidian Vault/Reference/Higgins Method/skills-ledger.md
 
+Current state:
+
+- Stages 1, 2, 3a, and 3b are SHIPPED and tagged — v2.0.0-rebrand,
+  v2.0.0-stage2, v2.0.0-stage3a, v2.0.0-stage3b. Stage 3 (the Set PRs &
+  Goals page + the unit conversion engine) is complete.
+- Stage 4 — the celebration system and the Log Session changes — is the
+  next stage. Not started. It is the big behavioral stage, and where
+  goalMeta and the unit direction field finally get used.
+- L1 gate: attempted 2026-05-19, NOT cleared. The standing edge is
+  reading the mechanism layer of the code. A study sheet is in the
+  Higgins Method folder. The Stage 3b ledger entry recommends clearing
+  the gate before Stage 4.
+
+Where I want to start today: [STATE YOUR GOAL — the two candidates are
+(a) the L1 gate re-walk: open the repo and describe each file in your
+own words, shared.js first; or (b) planning Stage 4. The ledger's
+recommendation is to clear the gate first.]
+
+How I want to work:
+
+- Keep the roles clean: cowork plans, ccode builds, gpt reviews.
 - Slow down on multiple-choice questions. Walk through your thinking,
-  ask open questions, let me reach the right answer rather than picking
-  from your menu.
-- Atomic commits matching the v1 style (small, focused, descriptive
-  commit messages). One concern per commit when possible.
+  ask open questions, let me reach the answer rather than picking from
+  a menu.
+- Atomic commits, v1 style (small, focused, descriptive). One concern
+  per commit. (Guidance for ccode, carried in the spec.)
+- Don't push to GitHub on my behalf; hand me the push and tag commands.
 - Teach mode — I'm learning vibe-coding and appreciate teachable
   moments noted naturally as we go.
-- If you write code, also run the syntax check and confirm before
-  committing.
-- Don't push to GitHub on my behalf; hand me the push commands when
-  the local commits are ready.
+- Smoke-test hygiene: when the app is served locally for a smoke test,
+  the browser can serve stale cached files — hard-reload (Cmd+Shift+R)
+  each page before testing it.
 ```
 
 ---
