@@ -271,11 +271,23 @@ function buildLiftCard(lift, data, isNew) {
   goalField.appendChild(buildLiftValueInput('liftGoal', goalValue, isTime, 'Lift Goal'));
   card.appendChild(goalField);
 
+  const liveConvert = !isNew && canConvertCategory;
   unitSelect.addEventListener('change', () => {
     const next = getUnit(unitSelect.value);
     const nextIsTime = next && next.category === 'time';
     swapLiftValueInputType(card, 'liftPr', nextIsTime);
     swapLiftValueInputType(card, 'liftGoal', nextIsTime);
+    if (!liveConvert || !next) return;
+    const prInput = card.querySelector('[data-field="liftPr"]');
+    const goalInput = card.querySelector('[data-field="liftGoal"]');
+    if (prInput) {
+      const conv = Number.isFinite(prValue) ? convertValue(prValue, savedUnit, next.id) : null;
+      prInput.value = conv == null ? '' : String(conv);
+    }
+    if (goalInput) {
+      const conv = Number.isFinite(goalValue) ? convertValue(goalValue, savedUnit, next.id) : null;
+      goalInput.value = conv == null ? '' : String(conv);
+    }
   });
 
   return card;
