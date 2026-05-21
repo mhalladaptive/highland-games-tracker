@@ -597,4 +597,6 @@ function init() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+  if (document.getElementById('pr-goal-form')) init();
+});

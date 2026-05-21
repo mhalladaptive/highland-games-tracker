@@ -1398,6 +1398,260 @@ test('applyFormSnapshotsToData: does not mutate the input data object', () => {
   assertEqual(JSON.stringify(data), snapshot);
 });
 
+// --- convertValue (Stage 3b unit conversion) ---
+
+test('convertValue: lb -> kg uses the international factor and rounds to 1 dp', () => {
+  // 225 * 0.45359237 = 102.0832... -> 102.1
+  assertEqual(convertValue(225, 'lb', 'kg'), 102.1);
+});
+
+test('convertValue: kg -> lb uses the international factor and rounds to 1 dp', () => {
+  // 100 / 0.45359237 = 220.462... -> 220.5
+  assertEqual(convertValue(100, 'kg', 'lb'), 220.5);
+});
+
+test('convertValue: same unit returns the (rounded) input value', () => {
+  assertEqual(convertValue(225, 'lb', 'lb'), 225);
+  assertEqual(convertValue(7.25, 'kg', 'kg'), 7.3);
+});
+
+test('convertValue: round-trip drift is bounded to about 0.1 (rounding-only)', () => {
+  // 225 lb -> 102.1 kg -> 225.1 lb. Accepted per Resolved decisions #2.
+  const there = convertValue(225, 'lb', 'kg');
+  const back = convertValue(there, 'kg', 'lb');
+  assertEqual(there, 102.1);
+  assertEqual(back, 225.1);
+  assertTrue(Math.abs(back - 225) <= 0.15, 'round-trip drift should be ~0.1');
+});
+
+test('convertValue: mi -> K uses meters/1000', () => {
+  // 1 mi = 1609.344 m = 1.609 K -> 1.6
+  assertEqual(convertValue(1, 'mi', 'K'), 1.6);
+});
+
+test('convertValue: K -> mi inverts the mi -> K factor', () => {
+  // 1.6 K = 1600 m / 1609.344 = 0.994 mi -> 1.0
+  assertEqual(convertValue(1.6, 'K', 'mi'), 1);
+});
+
+test('convertValue: m -> yd uses 1 / 0.9144', () => {
+  // 1 m = 1.0936... yd -> 1.1
+  assertEqual(convertValue(1, 'm', 'yd'), 1.1);
+});
+
+test('convertValue: yd -> m uses 0.9144', () => {
+  // 1 yd = 0.9144 m -> 0.9
+  assertEqual(convertValue(1, 'yd', 'm'), 0.9);
+});
+
+test('convertValue: rounds to exactly one decimal place', () => {
+  // Half-and-up: 0.45 lb -> kg = 0.204... -> 0.2; 0.5 kg -> lb = 1.10... -> 1.1
+  assertEqual(convertValue(0.5, 'kg', 'lb'), 1.1);
+  assertEqual(convertValue(0.45, 'lb', 'kg'), 0.2);
+});
+
+test('convertValue: cross-category returns null (lb -> mi)', () => {
+  assertEqual(convertValue(225, 'lb', 'mi'), null);
+});
+
+test('convertValue: Time units return null (no within-category conversion)', () => {
+  assertEqual(convertValue(60, 'time', 'time'), null);
+});
+
+test('convertValue: Count units return null (reps/rounds/cal do not interconvert)', () => {
+  assertEqual(convertValue(10, 'reps', 'rounds'), null);
+  assertEqual(convertValue(10, 'reps', 'reps'), null);
+  assertEqual(convertValue(100, 'cal', 'reps'), null);
+});
+
+test('convertValue: unknown unit returns null', () => {
+  assertEqual(convertValue(1, 'parsec', 'm'), null);
+  assertEqual(convertValue(1, 'm', 'parsec'), null);
+});
+
+test('convertValue: non-finite value returns null', () => {
+  assertEqual(convertValue(NaN, 'lb', 'kg'), null);
+  assertEqual(convertValue(Infinity, 'lb', 'kg'), null);
+  assertEqual(convertValue(null, 'lb', 'kg'), null);
+  assertEqual(convertValue(undefined, 'lb', 'kg'), null);
+});
+
+// --- buildLiftCard unit dropdown (Stage 3b three-state) ---
+
+function dropdownOptionIds(card) {
+  return Array.from(card.querySelectorAll('[data-field="liftUnit"] option')).map((o) => o.value);
+}
+
+test('dropdown state: lift with no marks => enabled, all 10 units', () => {
+  const data = baseV2Data();
+  const lift = { id: 'sq', name: 'Squat', protocol: '1RM', unit: 'lb', active: true };
+  const card = buildLiftCard(lift, data, false);
+  const select = card.querySelector('[data-field="liftUnit"]');
+  assertEqual(select.disabled, false);
+  assertEqual(dropdownOptionIds(card).length, 10);
+});
+
+test('dropdown state: marked Weight lift => enabled, filtered to weight (lb, kg)', () => {
+  const data = baseV2Data();
+  data.userLifts.push({ id: 'sq', name: 'Squat', protocol: '1RM', unit: 'lb', active: true });
+  data.prs.sq = 225;
+  const card = buildLiftCard(data.userLifts[0], data, false);
+  const select = card.querySelector('[data-field="liftUnit"]');
+  assertEqual(select.disabled, false);
+  assertDeepEqual(dropdownOptionIds(card), ['lb', 'kg']);
+});
+
+test('dropdown state: marked Distance lift => enabled, filtered to distance (mi, K, m, yd)', () => {
+  const data = baseV2Data();
+  data.userLifts.push({ id: 'run', name: 'Long run', protocol: '', unit: 'mi', active: true });
+  data.goals.run = 5;
+  const card = buildLiftCard(data.userLifts[0], data, false);
+  const select = card.querySelector('[data-field="liftUnit"]');
+  assertEqual(select.disabled, false);
+  assertDeepEqual(dropdownOptionIds(card), ['mi', 'K', 'm', 'yd']);
+});
+
+test('dropdown state: marked Time lift => disabled, full 10-unit list (3a lock)', () => {
+  const data = baseV2Data();
+  data.userLifts.push({ id: 'mile', name: 'Mile', protocol: '', unit: 'time', active: true });
+  data.prs.mile = 360;
+  const card = buildLiftCard(data.userLifts[0], data, false);
+  const select = card.querySelector('[data-field="liftUnit"]');
+  assertEqual(select.disabled, true);
+  assertEqual(dropdownOptionIds(card).length, 10);
+});
+
+test('dropdown state: marked Count lift => disabled, full 10-unit list (3a lock)', () => {
+  const data = baseV2Data();
+  data.userLifts.push({ id: 'pu', name: 'Pull Up', protocol: 'AMRAP', unit: 'reps', active: true });
+  data.prs.pu = 20;
+  const card = buildLiftCard(data.userLifts[0], data, false);
+  const select = card.querySelector('[data-field="liftUnit"]');
+  assertEqual(select.disabled, true);
+  assertEqual(dropdownOptionIds(card).length, 10);
+});
+
+test('dropdown state: brand-new lift card => enabled even when same id appears in marks', () => {
+  // A brand-new card with a tmp id should never be treated as marked.
+  const data = baseV2Data();
+  const card = buildLiftCard({ id: 'new-1', name: '', protocol: '', unit: 'lb', active: true }, data, true);
+  const select = card.querySelector('[data-field="liftUnit"]');
+  assertEqual(select.disabled, false);
+  assertEqual(dropdownOptionIds(card).length, 10);
+});
+
+// --- Session-mark sweep on Save (Stage 3b risk-bearing path) ---
+
+test('session sweep: unit change converts that lift\'s marks across all sessions', () => {
+  const data = baseV2Data();
+  data.userLifts.push({ id: 'sq', name: 'Squat', protocol: '1RM', unit: 'lb', active: true });
+  data.prs.sq = 225;
+  data.sessions.push({ id: 1, date: '2026-04-01', marks: { sq: [185, 205, 225] }, stoneWeights: {} });
+  data.sessions.push({ id: 2, date: '2026-05-01', marks: { sq: [205] }, stoneWeights: {} });
+  const next = applyFormSnapshotsToData(data, [], [
+    { id: 'sq', status: 'saved', name: 'Squat', protocol: '1RM', unit: 'kg', prValue: 102.1, goalValue: null },
+  ], { idGenerator: fixedIdGen });
+  // 185 lb -> 83.9 kg; 205 lb -> 93.0 kg; 225 lb -> 102.1 kg.
+  assertDeepEqual(next.sessions[0].marks.sq, [83.9, 93, 102.1]);
+  assertDeepEqual(next.sessions[1].marks.sq, [93]);
+  // The userLifts entry now carries the new unit.
+  assertEqual(next.userLifts.find((l) => l.id === 'sq').unit, 'kg');
+  // PR arrives already converted; written as-is, not double-converted.
+  assertEqual(next.prs.sq, 102.1);
+});
+
+test('session sweep: unchanged unit leaves session marks byte-identical', () => {
+  const data = baseV2Data();
+  data.userLifts.push({ id: 'sq', name: 'Squat', protocol: '1RM', unit: 'lb', active: true });
+  data.prs.sq = 225;
+  data.sessions.push({ id: 1, date: '2026-04-01', marks: { sq: [185, 205, 225] }, stoneWeights: {} });
+  const before = JSON.stringify(data.sessions[0].marks);
+  const next = applyFormSnapshotsToData(data, [], [
+    { id: 'sq', status: 'saved', name: 'Squat', protocol: '1RM', unit: 'lb', prValue: 235, goalValue: null },
+  ], { idGenerator: fixedIdGen });
+  assertEqual(JSON.stringify(next.sessions[0].marks), before);
+});
+
+test('session sweep: only the changed lift\'s marks convert; other lifts\' marks untouched', () => {
+  const data = baseV2Data();
+  data.userLifts.push({ id: 'sq', name: 'Squat', protocol: '1RM', unit: 'lb', active: true });
+  data.userLifts.push({ id: 'dl', name: 'Deadlift', protocol: '1RM', unit: 'lb', active: true });
+  data.prs.sq = 225;
+  data.prs.dl = 315;
+  data.sessions.push({ id: 1, date: '2026-04-01', marks: { sq: [225], dl: [315] }, stoneWeights: {} });
+  const next = applyFormSnapshotsToData(data, [], [
+    { id: 'sq', status: 'saved', name: 'Squat', protocol: '1RM', unit: 'kg', prValue: 102.1, goalValue: null },
+    { id: 'dl', status: 'saved', name: 'Deadlift', protocol: '1RM', unit: 'lb', prValue: 315, goalValue: null },
+  ], { idGenerator: fixedIdGen });
+  assertDeepEqual(next.sessions[0].marks.sq, [102.1]);
+  assertDeepEqual(next.sessions[0].marks.dl, [315]);
+});
+
+test('session sweep: throw marks are never touched by a lift unit change', () => {
+  const data = baseV2Data();
+  data.userLifts.push({ id: 'sq', name: 'Squat', protocol: '1RM', unit: 'lb', active: true });
+  data.prs.sq = 225;
+  data.sessions.push({
+    id: 1, date: '2026-04-01',
+    marks: { sq: [225], 'braemar-stone': [420, 426] },
+    stoneWeights: {},
+  });
+  const next = applyFormSnapshotsToData(data, [
+    { id: 'braemar-stone', prValue: 426, goalValue: 432, prDate: '', prLocation: '' },
+  ], [
+    { id: 'sq', status: 'saved', name: 'Squat', protocol: '1RM', unit: 'kg', prValue: 102.1, goalValue: null },
+  ], { idGenerator: fixedIdGen });
+  assertDeepEqual(next.sessions[0].marks['braemar-stone'], [420, 426]);
+});
+
+test('session sweep: lift with no session marks does not error', () => {
+  const data = baseV2Data();
+  data.userLifts.push({ id: 'sq', name: 'Squat', protocol: '1RM', unit: 'lb', active: true });
+  data.prs.sq = 225;
+  data.sessions.push({ id: 1, date: '2026-04-01', marks: {}, stoneWeights: {} });
+  const next = applyFormSnapshotsToData(data, [], [
+    { id: 'sq', status: 'saved', name: 'Squat', protocol: '1RM', unit: 'kg', prValue: 102.1, goalValue: null },
+  ], { idGenerator: fixedIdGen });
+  assertEqual(next.userLifts.find((l) => l.id === 'sq').unit, 'kg');
+  assertDeepEqual(next.sessions[0].marks, {});
+});
+
+test('session sweep: cross-category unit field leaves marks untouched (defensive)', () => {
+  // A cross-category unit change cannot reach Save through the filtered
+  // dropdown, but if data is forced in by tests or migration, marks must
+  // not be silently mis-converted — convertValue returns null and the mark
+  // stays as-is.
+  const data = baseV2Data();
+  data.userLifts.push({ id: 'mile', name: 'Mile', protocol: '', unit: 'time', active: true });
+  data.prs.mile = 360;
+  data.sessions.push({ id: 1, date: '2026-04-01', marks: { mile: [360, 355] }, stoneWeights: {} });
+  const next = applyFormSnapshotsToData(data, [], [
+    { id: 'mile', status: 'saved', name: 'Mile', protocol: '', unit: 'mi', prValue: 1, goalValue: null },
+  ], { idGenerator: fixedIdGen });
+  // No conversion attempted (time -> mi is cross-category): marks untouched.
+  assertDeepEqual(next.sessions[0].marks.mile, [360, 355]);
+});
+
+test('session sweep: applyFormSnapshotsToData returns sessions in its return object', () => {
+  const data = baseV2Data();
+  data.sessions.push({ id: 1, date: '2026-04-01', marks: {}, stoneWeights: {} });
+  const next = applyFormSnapshotsToData(data, [], [], { idGenerator: fixedIdGen });
+  assertTrue(Array.isArray(next.sessions), 'sessions should be returned');
+  assertEqual(next.sessions.length, 1);
+});
+
+test('session sweep: does not mutate input sessions object', () => {
+  const data = baseV2Data();
+  data.userLifts.push({ id: 'sq', name: 'Squat', protocol: '1RM', unit: 'lb', active: true });
+  data.prs.sq = 225;
+  data.sessions.push({ id: 1, date: '2026-04-01', marks: { sq: [185, 225] }, stoneWeights: {} });
+  const snapshot = JSON.stringify(data.sessions);
+  applyFormSnapshotsToData(data, [], [
+    { id: 'sq', status: 'saved', name: 'Squat', protocol: '1RM', unit: 'kg', prValue: 102.1, goalValue: null },
+  ], { idGenerator: fixedIdGen });
+  assertEqual(JSON.stringify(data.sessions), snapshot);
+});
+
 // --- Harness ---
 
 function runTests() {
