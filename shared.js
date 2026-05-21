@@ -103,13 +103,16 @@ const UNIT_CATEGORY_LABELS = {
   count: 'Count',
 };
 
+// toBase is the multiplier to convert one of this unit to the category base
+// (Weight: kg; Distance: m). Used by convertValue for same-category
+// conversions. Time and Count units have no toBase — they do not convert.
 const UNITS = [
-  { id: 'lb',     label: 'lb',     category: 'weight',   direction: 'higher' },
-  { id: 'kg',     label: 'kg',     category: 'weight',   direction: 'higher' },
-  { id: 'mi',     label: 'mi',     category: 'distance', direction: 'higher' },
-  { id: 'K',      label: 'K',      category: 'distance', direction: 'higher' },
-  { id: 'm',      label: 'm',      category: 'distance', direction: 'higher' },
-  { id: 'yd',     label: 'yd',     category: 'distance', direction: 'higher' },
+  { id: 'lb',     label: 'lb',     category: 'weight',   direction: 'higher', toBase: 0.45359237 },
+  { id: 'kg',     label: 'kg',     category: 'weight',   direction: 'higher', toBase: 1          },
+  { id: 'mi',     label: 'mi',     category: 'distance', direction: 'higher', toBase: 1609.344   },
+  { id: 'K',      label: 'K',      category: 'distance', direction: 'higher', toBase: 1000       },
+  { id: 'm',      label: 'm',      category: 'distance', direction: 'higher', toBase: 1          },
+  { id: 'yd',     label: 'yd',     category: 'distance', direction: 'higher', toBase: 0.9144     },
   { id: 'time',   label: 'time',   category: 'time',     direction: 'lower'  },
   { id: 'reps',   label: 'reps',   category: 'count',    direction: 'higher' },
   { id: 'rounds', label: 'rounds', category: 'count',    direction: 'higher' },
@@ -119,6 +122,22 @@ const UNITS = [
 function getUnit(unitId) {
   if (!unitId) return null;
   return UNITS.find((u) => u.id === unitId) || null;
+}
+
+// Convert a numeric value between two units in the same Weight or Distance
+// category, rounded to one decimal place. Returns null on bad input (unknown
+// unit, cross-category, Time/Count units, non-finite value) — never silently
+// returns a wrong number.
+function convertValue(value, fromUnitId, toUnitId) {
+  if (!Number.isFinite(value)) return null;
+  const from = getUnit(fromUnitId);
+  const to = getUnit(toUnitId);
+  if (!from || !to) return null;
+  if (from.category !== to.category) return null;
+  if (from.category !== 'weight' && from.category !== 'distance') return null;
+  if (!Number.isFinite(from.toBase) || !Number.isFinite(to.toBase) || to.toBase === 0) return null;
+  const result = (value * from.toBase) / to.toBase;
+  return Math.round(result * 10) / 10;
 }
 
 // A lift "has marks" if a PR is set, a Goal is set, or any session contains
