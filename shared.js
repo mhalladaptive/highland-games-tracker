@@ -160,9 +160,9 @@ function liftHasMarks(data, liftId) {
 }
 
 // Apply a snapshot of the Set page's form state to the stored data, returning
-// the next-state slices (prs, prMeta, goals, userLifts). Pure logic — no DOM,
-// no localStorage — so app.js can keep the DOM-reading thin and the rules
-// stay easy to test.
+// the next-state slices (prs, prMeta, goals, userLifts, sessions). Pure logic
+// — no DOM, no localStorage — so app.js can keep the DOM-reading thin and
+// the rules stay easy to test.
 //
 //   throwSnapshots: [{ id, prValue, goalValue, prDate, prLocation }]
 //   liftCardSnapshots: [{ id, status: 'new'|'saved', name, protocol, unit,
@@ -175,6 +175,13 @@ function liftHasMarks(data, liftId) {
 // soft-deleted: active becomes false, but its userLifts entry, prs/goals,
 // and any session marks for its id stay in storage so historical data is
 // not destroyed.
+//
+// When a saved lift's unit changes within Weight or Distance, every one of
+// that lift's historical session marks is converted via convertValue (Stage
+// 3b). The submitted PR/Goal arrive already converted from the live
+// re-rendered inputs and are written as-is. Unchanged-unit saves leave
+// session marks byte-identical; throw marks and other lifts' marks are
+// never touched.
 function applyFormSnapshotsToData(currentData, throwSnapshots, liftCardSnapshots, options) {
   const opts = options || {};
   const idGenerator = opts.idGenerator || (() => {
@@ -188,6 +195,11 @@ function applyFormSnapshotsToData(currentData, throwSnapshots, liftCardSnapshots
   const prMeta = Object.assign({}, currentData && currentData.prMeta);
   const goals = Object.assign({}, currentData && currentData.goals);
   const userLifts = ((currentData && currentData.userLifts) || []).map((l) => Object.assign({}, l));
+  const sessions = ((currentData && currentData.sessions) || []).map((s) => {
+    const copy = Object.assign({}, s);
+    copy.marks = Object.assign({}, s && s.marks);
+    return copy;
+  });
 
   for (const t of throwSnapshots || []) {
     if (!t || !t.id) continue;
@@ -217,6 +229,22 @@ function applyFormSnapshotsToData(currentData, throwSnapshots, liftCardSnapshots
     const protocol = (c.protocol || '').trim();
     const unit = c.unit || 'lb';
     let lift = userLifts.find((l) => l.id === id);
+    if (lift && lift.unit && lift.unit !== unit) {
+      const fromCat = (getUnit(lift.unit) || {}).category;
+      const toCat = (getUnit(unit) || {}).category;
+      if (fromCat === toCat && (fromCat === 'weight' || fromCat === 'distance')) {
+        for (const session of sessions) {
+          if (!session || !session.marks) continue;
+          const marks = session.marks[id];
+          if (!Array.isArray(marks)) continue;
+          session.marks[id] = marks.map((m) => {
+            if (!Number.isFinite(m)) return m;
+            const converted = convertValue(m, lift.unit, unit);
+            return converted == null ? m : converted;
+          });
+        }
+      }
+    }
     if (lift) {
       lift.name = name;
       lift.protocol = protocol;
@@ -234,7 +262,7 @@ function applyFormSnapshotsToData(currentData, throwSnapshots, liftCardSnapshots
     if (l.active && !presentLiftIds.has(l.id)) l.active = false;
   }
 
-  return { prs, prMeta, goals, userLifts };
+  return { prs, prMeta, goals, userLifts, sessions };
 }
 
 // Parse "mm:ss" or "h:mm:ss" into seconds. Returns null on bad input.
