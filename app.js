@@ -443,7 +443,7 @@ function importData(file) {
     let parsed;
     try {
       parsed = JSON.parse(event.target.result);
-    } catch (err) {
+    } catch {
       showDataStatus('Could not parse the file as JSON.', true);
       return;
     }
