@@ -228,7 +228,7 @@ function applyFormSnapshotsToData(currentData, throwSnapshots, liftCardSnapshots
     const name = (c.name || '').trim();
     const protocol = (c.protocol || '').trim();
     const unit = c.unit || 'lb';
-    let lift = userLifts.find((l) => l.id === id);
+    const lift = userLifts.find((l) => l.id === id);
     if (lift && lift.unit && lift.unit !== unit) {
       const fromCat = (getUnit(lift.unit) || {}).category;
       const toCat = (getUnit(unit) || {}).category;
