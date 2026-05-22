@@ -1230,6 +1230,37 @@ test('round-trip: parse(format(s)) === s for various seconds', () => {
   }
 });
 
+// --- formatLiftMark ---
+
+test('formatLiftMark: 102.5 kg', () => {
+  assertEqual(formatLiftMark(102.5, 'kg'), '102.5 kg');
+});
+
+test('formatLiftMark: 225 lb', () => {
+  assertEqual(formatLiftMark(225, 'lb'), '225 lb');
+});
+
+test('formatLiftMark: 12 reps', () => {
+  assertEqual(formatLiftMark(12, 'reps'), '12 reps');
+});
+
+test('formatLiftMark: time mark renders as mm:ss', () => {
+  assertEqual(formatLiftMark(225, 'time'), '3:45');
+});
+
+test('formatLiftMark: time mark over an hour renders as h:mm:ss', () => {
+  assertEqual(formatLiftMark(3725, 'time'), '1:02:05');
+});
+
+test('formatLiftMark: unknown unit => empty string', () => {
+  assertEqual(formatLiftMark(100, 'banana'), '');
+});
+
+test('formatLiftMark: NaN / negative => empty string', () => {
+  assertEqual(formatLiftMark(NaN, 'kg'), '');
+  assertEqual(formatLiftMark(-5, 'kg'), '');
+});
+
 // --- applyFormSnapshotsToData (Set PRs & Goals page logic) ---
 
 function baseV2Data() {

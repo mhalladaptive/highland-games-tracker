@@ -556,3 +556,15 @@ function formatMeasurement(value, measurementType) {
   }
   return `${feet}' ${formatNumber(inches)}"`;
 }
+
+// Format a numeric lift mark by the lift's unit. Time marks are stored as
+// seconds and render as mm:ss / h:mm:ss; every other unit renders as the
+// numeric value followed by the unit label ("102.5 kg", "12 reps"). Pure —
+// no DOM. Returns '' on bad input or unknown unit.
+function formatLiftMark(value, unitId) {
+  if (!Number.isFinite(value) || value < 0) return '';
+  const unit = getUnit(unitId);
+  if (!unit) return '';
+  if (unit.category === 'time') return formatSecondsAsTime(value);
+  return `${formatNumber(value)} ${unit.label}`;
+}
