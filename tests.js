@@ -1709,7 +1709,7 @@ function renderResults(results) {
   summary.textContent = failed === 0
     ? `${passed} / ${total} passed`
     : `${passed} / ${total} passed — ${failed} failed`;
-  summary.className = 'test-summary ' + (failed === 0 ? 'all-passed' : 'has-failures');
+  summary.className = `test-summary ${failed === 0 ? 'all-passed' : 'has-failures'}`;
   summary.hidden = false;
 
   for (const r of results) {

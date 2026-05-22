@@ -5,7 +5,7 @@ function buildStatSpan(label, value) {
   labelEl.className = 'stat-label';
   labelEl.textContent = label;
   wrap.appendChild(labelEl);
-  wrap.appendChild(document.createTextNode(' ' + value));
+  wrap.appendChild(document.createTextNode(` ${value}`));
   return wrap;
 }
 
@@ -120,7 +120,7 @@ function buildGapRow(item, baseline, baselineMeta, bestDetails) {
 
   const pctBtn = document.createElement('button');
   pctBtn.type = 'button';
-  pctBtn.className = 'gap-percent' + (atOrPast ? ' at-or-past' : '');
+  pctBtn.className = `gap-percent${atOrPast ? ' at-or-past' : ''}`;
   pctBtn.textContent = `${Math.round(pct)}%`;
   pctBtn.setAttribute('aria-expanded', 'false');
   pctBtn.setAttribute('aria-controls', detailsId);
@@ -133,7 +133,7 @@ function buildGapRow(item, baseline, baselineMeta, bestDetails) {
   const bar = document.createElement('div');
   bar.className = 'gap-bar';
   const fill = document.createElement('div');
-  fill.className = 'gap-bar-fill' + (atOrPast ? ' at-or-past' : '');
+  fill.className = `gap-bar-fill${atOrPast ? ' at-or-past' : ''}`;
   fill.style.width = `${Math.min(100, pct)}%`;
   bar.appendChild(fill);
   row.appendChild(bar);

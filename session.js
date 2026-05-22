@@ -199,7 +199,7 @@ function setSelectedKind(kind) {
 function autoGrowTextarea(textarea) {
   if (!textarea) return;
   textarea.style.height = 'auto';
-  textarea.style.height = textarea.scrollHeight + 'px';
+  textarea.style.height = `${textarea.scrollHeight}px`;
 }
 
 function collectFormData() {

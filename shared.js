@@ -188,7 +188,7 @@ function applyFormSnapshotsToData(currentData, throwSnapshots, liftCardSnapshots
     if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
       return crypto.randomUUID();
     }
-    return 'lift-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    return `lift-${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
   });
 
   const prs = Object.assign({}, currentData && currentData.prs);
