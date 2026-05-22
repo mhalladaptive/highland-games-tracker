@@ -79,7 +79,7 @@ was split for less. The split, decided in the 2026-05-21 planning session:
 4. **Rename the S&C section + intro text** (`session.html`). The lift section
    heading `Lifts` becomes **`Strength and Conditioning Milestones`**. Add
    **intro text** below the heading framing the section as
-   milestone-logging-only (proposed copy in Resolved decisions #3). The notes
+   milestone-logging-only (final copy in Resolved decisions #3). The notes
    textarea label `Lifts notes` becomes **`S&C notes`**. The stored data field
    stays **`liftsNotes`** — display labels only, no schema change.
 
@@ -203,16 +203,16 @@ the intro text, and the 3→10 cap but leaves these open:
    a new athlete that lifts are defined on the Set page. "Set PRs & Goals page"
    is a link to `index.html`.
 
-3. **Intro text — proposed copy.** A short line under the heading, framing the
+3. **Intro text — final copy.** A short line under the heading, framing the
    section per `v2-plan.md`'s positioning ("celebrate the moments, not track
-   every rep"):
+   every rep"). Finalized with Oak on 2026-05-22 — render verbatim:
 
-   > *Not a daily lift log. Record a milestone here only when a session is
-   > worth marking — a 1RM test, a max-effort day, a planned PR attempt. Most
+   > *Not a daily planned lift log - record a S&C Milestone only when a
+   > session is worth marking; like a 1RM test, AMRAP PR attempt, etc. Most
    > days, leave it blank.*
 
-   Final wording is Oak's call / builder-flexible; the framing
-   (milestone-only, blank-is-normal) is the decided part.
+   The framing (milestone-only, blank-is-normal) and the exact wording are
+   both decided — build the copy as written.
 
 4. **No schema change.** The notes field stays `liftsNotes` in storage; only its
    on-screen label becomes "S&C notes." `session.milestones[]` is a 4b
@@ -284,13 +284,16 @@ lift on the Set page, edit the old session, save — confirm the marks survive.
 
 ## Open items
 
-None blocking.
+None. Both items that were open here are resolved (with Oak, 2026-05-22):
 
-- The intro-text wording (Resolved decisions #3) is proposed copy — Oak may
-  adjust it; not a build blocker.
-- The `gap.js` interim-state is a cowork **scoping recommendation**, not a
-  design decision: 4a leaves See the Gap untouched for Stage 5 to replace.
-  Confirm with Oak before handoff.
+- **Intro-text wording** — finalized; the decided copy is in Resolved
+  decisions #3.
+- **The `gap.js` interim-state** — Oak confirmed the scoping recommendation:
+  Stage 4a leaves See the Gap untouched and Stage 5 replaces it wholesale.
+  The smoke test treats See the Gap's incompleteness for v2-added lifts as
+  expected (see Known interim state), not a 4a defect.
+
+The spec is handoff-ready for the ccode session.
 
 ## Handoff prompt for the next ccode session
 
@@ -313,10 +316,10 @@ move 3a made on the Set page — plus the 3->10 S&C attempt cap and the
 celebration system (4b) or recompute-on-edit (4c) — no milestones, no
 cards, no PR auto-update.
 
-The spec's open items are non-blocking — build to it as written. Note
-the Resolved decisions section, and the Risk note: the careful surface
-is the edit path — editing a session must not drop the marks of a
-since-removed lift.
+The spec has no open items — build to it as written. Note the Resolved
+decisions section, and the Risk note: the careful surface is the edit
+path — editing a session must not drop the marks of a since-removed
+lift.
 
 Skill level: L1 — Supported. Project risk: Normal — 4a rewrites no
 historical data; the care goes to the edit path. Reviewer: gpt.
