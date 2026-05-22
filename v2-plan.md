@@ -187,7 +187,7 @@ window show "no marks logged."
 
 ### Storage schema (v2)
 
-```
+```json
 {
   version: 2,
   profile: { ... },       // see Profile below
@@ -203,7 +203,7 @@ window show "no marks logged."
 
 ### Profile
 
-```
+```json
 profile: {
   name: string,                // optional
   gender: 'male' | 'female' | 'nonbinary' | 'unspecified',
