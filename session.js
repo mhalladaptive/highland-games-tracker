@@ -258,10 +258,12 @@ function renderForm(prefillMarks, prefillStoneWeights, options) {
 
   const data = loadData();
   const userLifts = Array.isArray(data.userLifts) ? data.userLifts : [];
+  let liftRowsRendered = 0;
   for (const lift of userLifts) {
     if (!lift.active) continue;
     const attempts = Array.isArray(marks[lift.id]) ? marks[lift.id] : [];
     liftsList.appendChild(buildLiftRow(lift, attempts, false));
+    liftRowsRendered++;
   }
 
   // When editing a past session, also render a row for any inactive lift the
@@ -275,7 +277,20 @@ function renderForm(prefillMarks, prefillStoneWeights, options) {
       const attempts = Array.isArray(marks[lift.id]) ? marks[lift.id] : [];
       if (attempts.length === 0) continue;
       liftsList.appendChild(buildLiftRow(lift, attempts, true));
+      liftRowsRendered++;
     }
+  }
+
+  if (liftRowsRendered === 0) {
+    const empty = document.createElement('p');
+    empty.className = 'empty-state lifts-empty';
+    empty.appendChild(document.createTextNode('No S&C lifts yet — add them on the '));
+    const link = document.createElement('a');
+    link.href = 'index.html';
+    link.textContent = 'Set PRs & Goals page';
+    empty.appendChild(link);
+    empty.appendChild(document.createTextNode('.'));
+    liftsList.appendChild(empty);
   }
 }
 
