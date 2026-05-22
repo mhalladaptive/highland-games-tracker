@@ -6,7 +6,7 @@ of what got decided when.
 
 ---
 
-## 2026-05-21 (later) — L1 gate re-walk, and the gate got redesigned
+## 2026-05-21 (later) — L1 gate re-walk, gate redesign, Stage 4 planning
 
 A second session on the 21st. It began as the L1 gate re-walk the Stage
 3b notes recommended before Stage 4 — shared.js first. It turned into
@@ -40,13 +40,39 @@ reps, not from a checkpoint that blocks the match. `higgins-method.md`
 is now v0.4; the cheat sheet and START-HERE updated to match; the skills
 ledger has a 2026-05-21 entry for the session.
 
+### Stage 4 — split A/B/C, 4a spec'd
+
+After the gate work Oak chose to start Stage 4 rather than close the
+session. Stage 4 as written in `v2-plan.md` bundles ~8 pieces — the Log
+Session page rework plus the whole celebration system — bigger than
+Stage 3 was when it got split. Decided to split it three ways:
+
+- 4a — Log Session catches up: render S&C from `userLifts`, the 3→10
+  attempt cap, the section rename + intro. No celebration logic.
+- 4b — the celebration system: milestone detection at save, the cards,
+  the queue, the badge-and-replay.
+- 4c — recompute-on-edit plus the chain prompt: the risk-bearing
+  derived-data work, isolated for a focused review the way 3b was.
+
+Planned 4a in full. Three gaps `v2-plan.md` left open were resolved: a
+removed lift in an edited session renders with a "removed" tag and stays
+editable (so an edit can't silently drop its marks); an empty S&C
+section shows a linked pointer to the Set page; the milestone-framing
+intro copy was drafted. Cowork wrote the 4a spec sketch —
+`docs/specs/v2-stage4a-spec.md` — handoff-ready, with the ccode and gpt
+prompts built in.
+
 ### Where it stands
 
-Stage 4 is still the next build. The L1 gate is now clearable — under the
-new definition Oak is roughly one ~1-hour session from L1.1 (a cold-read
-of a lighter file, gap.js the natural pick). Today's shared.js depth is
-banked as the drill for the eventual L1.3 stripe. The old "clear the gate
-before Stage 4" recommendation is superseded: under v0.4 you interleave.
+Stage 4a is spec'd and handoff-ready — the next move on the build is a
+ccode session from `docs/specs/v2-stage4a-spec.md`, then gpt review. 4b
+and 4c get their own planning once 4a ships.
+
+The L1 gate is now clearable under v0.4 — Oak is roughly one ~1-hour
+session from the L1.1 sub-gate (a cold-read of a lighter file, gap.js
+the natural pick), and v0.4 interleaves it with builds rather than
+blocking on it. Today's shared.js depth is banked as the drill for the
+eventual L1.3 stripe.
 
 ---
 

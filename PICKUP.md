@@ -26,7 +26,8 @@ Context to load before we start:
 
 3. Skim the spec sketches as the model for a cowork spec sketch — they
    now live in docs/specs/: v2-stage2-spec.md, v2-stage3a-spec.md,
-   v2-stage3b-spec.md (all shipped).
+   v2-stage3b-spec.md (all shipped), and v2-stage4a-spec.md (spec'd,
+   build pending).
 
 4. Skim the highland-games-tracker entries in the skills ledger:
    ~/Documents/Obsidian Vault/Reference/Higgins Method/skills-ledger.md
@@ -36,9 +37,13 @@ Current state:
 - Stages 1, 2, 3a, and 3b are SHIPPED and tagged — v2.0.0-rebrand,
   v2.0.0-stage2, v2.0.0-stage3a, v2.0.0-stage3b. Stage 3 (the Set PRs &
   Goals page + the unit conversion engine) is complete.
-- Stage 4 — the celebration system and the Log Session changes — is the
-  next stage. Not started. It is the big behavioral stage, and where
-  goalMeta and the unit direction field finally get used.
+- Stage 4 is split three ways (decided 2026-05-21): 4a — Log Session
+  catches up to userLifts (the 3→10 attempt cap, the rename); 4b — the
+  celebration system; 4c — recompute-on-edit + the chain prompt. 4a is
+  spec'd and handoff-ready (docs/specs/v2-stage4a-spec.md, with the
+  ccode and gpt prompts built in); 4b and 4c are not yet planned.
+  Stage 4 is where goalMeta and the unit direction field finally get
+  used.
 - L1 gate: redesigned 2026-05-21 (Higgins Method v0.4). No longer one
   whole-project walkthrough — it is three interleaved ~1-hour sub-gates,
   L1.1 / L1.2 / L1.3, each a functional cold-read of one file at the
@@ -47,11 +52,11 @@ Current state:
   lighter file — gap.js is the natural pick. See higgins-method.md v0.4
   and the 2026-05-21 skills-ledger entry.
 
-Where I want to start today: [STATE YOUR GOAL. The main thread is Stage
-4 — the celebration system and Log Session changes. The L1 gate now
-interleaves rather than blocking: a good rhythm is to open a session
-with the L1.1 sub-gate (a ~1-hour functional cold-read of gap.js), then
-move into Stage 4 work. State what you want.]
+Where I want to start today: [STATE YOUR GOAL. Stage 4a is spec'd —
+docs/specs/v2-stage4a-spec.md. Building it is a ccode session, not
+cowork. Cowork's likely next jobs: the L1.1 sub-gate (a ~1-hour
+cold-read of gap.js); or, once ccode has built 4a, the smoke test and
+then planning 4b. State what you want.]
 
 How I want to work:
 
