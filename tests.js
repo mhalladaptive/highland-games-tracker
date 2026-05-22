@@ -1702,6 +1702,284 @@ test('session sweep: does not mutate input sessions object', () => {
   assertEqual(JSON.stringify(data.sessions), snapshot);
 });
 
+// --- Stage 4a: Log Session userLifts rendering ---
+
+function makeSessionFormFixture() {
+  let fixture = document.getElementById('session-fixture');
+  if (fixture) fixture.remove();
+  fixture = document.createElement('div');
+  fixture.id = 'session-fixture';
+  fixture.innerHTML = `
+    <input id="session-date" />
+    <input id="session-location" />
+    <input id="session-games" />
+    <textarea id="throws-notes"></textarea>
+    <textarea id="lifts-notes"></textarea>
+    <div id="throws-list"></div>
+    <div id="lifts-list"></div>
+  `;
+  document.body.appendChild(fixture);
+  return fixture;
+}
+
+function removeSessionFormFixture() {
+  const f = document.getElementById('session-fixture');
+  if (f) f.remove();
+}
+
+function withSessionFixture(setupData, fn) {
+  saveData(setupData);
+  makeSessionFormFixture();
+  try {
+    fn();
+  } finally {
+    removeSessionFormFixture();
+  }
+}
+
+function buildStage4aData(extras) {
+  const data = baseV2Data();
+  return Object.assign(data, extras || {});
+}
+
+test('renderForm: S&C list renders one row per active userLift', () => {
+  const data = buildStage4aData({
+    userLifts: [
+      { id: 'sq',  name: 'Squat',    protocol: '1RM', unit: 'lb',   active: true  },
+      { id: 'mile',name: 'Mile',     protocol: '',    unit: 'time', active: true  },
+      { id: 'old', name: 'OldLift',  protocol: '',    unit: 'lb',   active: false },
+    ],
+  });
+  withSessionFixture(data, () => {
+    renderForm({}, {});
+    const liftRows = document.querySelectorAll('#lifts-list .item-row[data-category="lift"]');
+    assertEqual(liftRows.length, 2, 'should render 2 active lifts');
+    assertEqual(liftRows[0].dataset.itemId, 'sq');
+    assertEqual(liftRows[1].dataset.itemId, 'mile');
+    // No row for the inactive lift.
+    const oldRow = document.querySelector('[data-item-id="old"]');
+    assertEqual(oldRow, null, 'no row for inactive lift on a new session');
+  });
+});
+
+test('renderForm: no v1 ITEMS lifts render on Log Session', () => {
+  const data = buildStage4aData({ userLifts: [] });
+  withSessionFixture(data, () => {
+    renderForm({}, {});
+    // Throws still render (8 of them).
+    const throwRows = document.querySelectorAll('#throws-list .item-row[data-category="throw"]');
+    assertEqual(throwRows.length, 8);
+    // None of the v1 ITEMS lift ids appear in lifts-list.
+    for (const it of ITEMS) {
+      if (it.category !== 'lift') continue;
+      const row = document.querySelector(`#lifts-list [data-item-id="${it.id}"]`);
+      assertEqual(row, null, `no ${it.id} row on Log Session`);
+    }
+  });
+});
+
+test('renderForm: lift row attempts cap at 10', () => {
+  const data = buildStage4aData({
+    userLifts: [{ id: 'sq', name: 'Squat', protocol: '1RM', unit: 'lb', active: true }],
+  });
+  withSessionFixture(data, () => {
+    renderForm({}, {});
+    const row = document.querySelector('#lifts-list [data-item-id="sq"]');
+    assertEqual(row.querySelectorAll('.attempt').length, 1, 'starts with 1 slot');
+    const addBtn = row.querySelector('.add-attempt');
+    for (let i = 0; i < 12; i++) addBtn.click();
+    assertEqual(row.querySelectorAll('.attempt').length, 10, 'caps at 10');
+    assertEqual(addBtn.hidden, true, 'add button hidden at cap');
+  });
+});
+
+test('renderForm: throw row attempts still cap at 3', () => {
+  const data = buildStage4aData({});
+  withSessionFixture(data, () => {
+    renderForm({}, {});
+    const row = document.querySelector('#throws-list [data-item-id="braemar-stone"]');
+    // Throws pre-render all 3 slots and hide via CSS — DOM count is always 3.
+    assertEqual(row.querySelectorAll('.attempt').length, 3, 'throw row has 3 slots');
+    const addBtn = row.querySelector('.add-attempt');
+    addBtn.click(); addBtn.click(); addBtn.click();
+    assertEqual(parseInt(row.dataset.attempts, 10), 3, 'attempts caps at 3');
+  });
+});
+
+test('renderForm: lift unit drives input type — weight is decimal, time is mm:ss', () => {
+  const data = buildStage4aData({
+    userLifts: [
+      { id: 'sq',   name: 'Squat', protocol: '1RM', unit: 'kg',   active: true },
+      { id: 'mile', name: 'Mile',  protocol: '',    unit: 'time', active: true },
+    ],
+  });
+  withSessionFixture(data, () => {
+    renderForm({}, {});
+    const sqInput = document.querySelector('#lifts-list [data-item-id="sq"] [data-field="liftValue"]');
+    assertEqual(sqInput.inputMode, 'decimal');
+    assertEqual(sqInput.placeholder, '0');
+    const mileInput = document.querySelector('#lifts-list [data-item-id="mile"] [data-field="liftValue"]');
+    assertEqual(mileInput.inputMode, 'numeric');
+    assertEqual(mileInput.placeholder, 'mm:ss');
+  });
+});
+
+test('renderForm: time-unit mark renders as mm:ss; collectFormData parses back to seconds', () => {
+  const data = buildStage4aData({
+    userLifts: [{ id: 'mile', name: 'Mile', protocol: '', unit: 'time', active: true }],
+  });
+  withSessionFixture(data, () => {
+    renderForm({ mile: [225] }, {});
+    const input = document.querySelector('[data-item-id="mile"] [data-field="liftValue"][data-slot="1"]');
+    assertEqual(input.value, '3:45', 'pre-filled time renders as mm:ss');
+    // Type a new time and collect.
+    input.value = '4:10';
+    document.getElementById('session-date').value = '2026-05-22';
+    const collected = collectFormData();
+    assertDeepEqual(collected.marks.mile, [250], 'mm:ss parsed back to seconds');
+  });
+});
+
+test('collectFormData: lift mark in weight unit stored as plain number', () => {
+  const data = buildStage4aData({
+    userLifts: [{ id: 'sq', name: 'Squat', protocol: '1RM', unit: 'kg', active: true }],
+  });
+  withSessionFixture(data, () => {
+    renderForm({}, {});
+    const input = document.querySelector('[data-item-id="sq"] [data-field="liftValue"][data-slot="1"]');
+    input.value = '102.5';
+    document.getElementById('session-date').value = '2026-05-22';
+    const collected = collectFormData();
+    assertDeepEqual(collected.marks.sq, [102.5]);
+  });
+});
+
+test('findAttemptGaps: lift row with empty slot before a filled one is reported', () => {
+  const data = buildStage4aData({
+    userLifts: [{ id: 'sq', name: 'Squat', protocol: '1RM', unit: 'lb', active: true }],
+  });
+  withSessionFixture(data, () => {
+    renderForm({}, {});
+    const row = document.querySelector('[data-item-id="sq"]');
+    const addBtn = row.querySelector('.add-attempt');
+    addBtn.click(); addBtn.click(); // 3 slots total
+    const inputs = row.querySelectorAll('[data-field="liftValue"]');
+    inputs[0].value = '100';
+    // slot 2 left empty
+    inputs[2].value = '120';
+    const gaps = findAttemptGaps();
+    assertEqual(gaps.length, 1);
+    assertEqual(gaps[0].itemName, 'Squat');
+    assertEqual(gaps[0].emptySlot, 2);
+  });
+});
+
+test('findAttemptGaps: trailing empties on a lift row are not gaps', () => {
+  const data = buildStage4aData({
+    userLifts: [{ id: 'sq', name: 'Squat', protocol: '1RM', unit: 'lb', active: true }],
+  });
+  withSessionFixture(data, () => {
+    renderForm({}, {});
+    const row = document.querySelector('[data-item-id="sq"]');
+    row.querySelector('.add-attempt').click();
+    row.querySelector('.add-attempt').click();
+    const inputs = row.querySelectorAll('[data-field="liftValue"]');
+    inputs[0].value = '100';
+    // slots 2 and 3 left empty — not a gap, just unused
+    assertEqual(findAttemptGaps().length, 0);
+  });
+});
+
+test('renderForm: empty-state appears when no active lifts', () => {
+  const data = buildStage4aData({
+    userLifts: [{ id: 'old', name: 'OldLift', protocol: '', unit: 'lb', active: false }],
+  });
+  withSessionFixture(data, () => {
+    renderForm({}, {});
+    const empty = document.querySelector('#lifts-list .empty-state.lifts-empty');
+    assertTrue(empty, 'empty-state element rendered');
+    const link = empty.querySelector('a[href="index.html"]');
+    assertTrue(link, 'link to index.html present');
+    assertEqual(link.textContent, 'Set PRs & Goals page');
+    assertMatch(empty.textContent, /No S&C lifts yet/);
+  });
+});
+
+test('renderForm: editing surfaces inactive lifts that the session has marks for, with a removed tag', () => {
+  const data = buildStage4aData({
+    userLifts: [
+      { id: 'sq',  name: 'Squat',   protocol: '1RM', unit: 'lb', active: true  },
+      { id: 'old', name: 'OldLift', protocol: '',    unit: 'lb', active: false },
+    ],
+  });
+  withSessionFixture(data, () => {
+    renderForm({ sq: [200], old: [150] }, {}, { includeInactiveLiftsFromMarks: true });
+    const oldRow = document.querySelector('[data-item-id="old"]');
+    assertTrue(oldRow, 'inactive-with-marks row rendered when editing');
+    const tag = oldRow.querySelector('.removed-tag');
+    assertTrue(tag, 'removed tag present');
+    assertEqual(tag.textContent, 'removed');
+    const input = oldRow.querySelector('[data-field="liftValue"][data-slot="1"]');
+    assertEqual(input.value, '150');
+    assertEqual(input.disabled, false, 'removed-lift row is editable');
+  });
+});
+
+test('renderForm + collectFormData: editing preserves marks for a since-removed lift', () => {
+  const data = buildStage4aData({
+    userLifts: [
+      { id: 'old', name: 'OldLift', protocol: '', unit: 'lb', active: false },
+    ],
+  });
+  withSessionFixture(data, () => {
+    renderForm({ old: [150, 160] }, {}, { includeInactiveLiftsFromMarks: true });
+    document.getElementById('session-date').value = '2026-05-22';
+    const collected = collectFormData();
+    assertDeepEqual(collected.marks.old, [150, 160], 'marks survive Update Session');
+  });
+});
+
+test('renderForm: new session does NOT surface inactive lifts (even if data has marks)', () => {
+  const data = buildStage4aData({
+    userLifts: [
+      { id: 'old', name: 'OldLift', protocol: '', unit: 'lb', active: false },
+    ],
+  });
+  withSessionFixture(data, () => {
+    // No option flag — defaults to a fresh new-session render.
+    renderForm({ old: [150] }, {});
+    const oldRow = document.querySelector('[data-item-id="old"]');
+    assertEqual(oldRow, null, 'inactive lift not rendered on a new session');
+  });
+});
+
+test('buildSessionDetailsPanel: lift line resolves an inactive lift id and formats by unit', () => {
+  const userLifts = [
+    { id: 'mile', name: 'Mile', protocol: '', unit: 'time', active: false },
+  ];
+  const session = {
+    id: 1,
+    date: '2026-04-01',
+    marks: { mile: [225] },
+    stoneWeights: {},
+  };
+  const details = buildSessionDetailsPanel(session, 'details-test', userLifts);
+  const line = details.querySelector('.session-event-line');
+  assertTrue(line, 'lift line rendered for inactive lift');
+  assertMatch(line.querySelector('.session-event-name').textContent, /^Mile$/);
+  assertMatch(line.querySelector('.session-event-marks').textContent, /^3:45$/);
+});
+
+test('buildSessionDetailsPanel: lift line formats weight-unit marks via unit label', () => {
+  const userLifts = [
+    { id: 'sq', name: 'Squat', protocol: '1RM', unit: 'kg', active: true },
+  ];
+  const session = { id: 2, date: '2026-04-02', marks: { sq: [102.5, 110] }, stoneWeights: {} };
+  const details = buildSessionDetailsPanel(session, 'details-test-2', userLifts);
+  const marks = details.querySelector('.session-event-marks').textContent;
+  assertEqual(marks, '102.5 kg, 110 kg');
+});
+
 // --- Harness ---
 
 function runTests() {

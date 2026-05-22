@@ -812,4 +812,6 @@ function init() {
   document.getElementById('cancel-edit-btn').addEventListener('click', handleCancelEdit);
 }
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+  if (document.getElementById('session-form')) init();
+});
