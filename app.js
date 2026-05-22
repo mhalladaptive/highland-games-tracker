@@ -482,7 +482,9 @@ function populateProfileClassOptions() {
   const select = document.getElementById('profile-class');
   if (!select) return;
   // Keep the "Pick later" first option; remove any previously-built groups.
-  Array.from(select.querySelectorAll('optgroup')).forEach((og) => og.remove());
+  Array.from(select.querySelectorAll('optgroup')).forEach((og) => {
+    og.remove();
+  });
   for (const groupName of PROFILE_CLASS_GROUPS) {
     const og = document.createElement('optgroup');
     og.label = groupName;
