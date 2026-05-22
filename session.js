@@ -371,7 +371,7 @@ function buildSessionDetailsPanel(session, detailsId) {
     }
   }
 
-  const liftsNotesBlock = buildNotesBlock('Lifts notes', session.liftsNotes);
+  const liftsNotesBlock = buildNotesBlock('S&C notes', session.liftsNotes);
   if (liftsNotesBlock) details.appendChild(liftsNotesBlock);
 
   if (!anyLines && !throwsNotesBlock && !liftsNotesBlock) {

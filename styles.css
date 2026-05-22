@@ -133,6 +133,16 @@ body.kind-training .comp-only {
   border-bottom: 1px solid var(--border);
 }
 
+.section-intro {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--muted);
+  background: #fafafa;
+  border-bottom: 1px solid var(--border);
+}
+
 .items {
   display: flex;
   flex-direction: column;
