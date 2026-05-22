@@ -13,67 +13,88 @@ function buildAttemptSlot(item, slotIndex, value) {
   const inputsWrap = document.createElement('div');
   inputsWrap.className = 'attempt-inputs';
 
-  if (item.measurementType === 'weight') {
-    const wrap = document.createElement('div');
-    wrap.className = 'input-wrap';
-    const input = document.createElement('input');
-    input.type = 'number';
-    input.inputMode = 'decimal';
-    input.min = '0';
-    input.step = 'any';
-    input.className = 'field';
-    input.dataset.field = 'weight';
-    input.dataset.slot = slotIndex;
-    input.setAttribute('aria-label', `${item.name} attempt ${slotIndex} weight in pounds`);
-    if (Number.isFinite(value)) input.value = value;
-    wrap.appendChild(input);
-    const unit = document.createElement('span');
-    unit.className = 'unit';
-    unit.textContent = 'lb';
-    wrap.appendChild(unit);
-    inputsWrap.appendChild(wrap);
-  } else {
-    const { feet, inches } = inchesToFeetInches(Number.isFinite(value) ? value : null);
+  const { feet, inches } = inchesToFeetInches(Number.isFinite(value) ? value : null);
 
-    const feetWrap = document.createElement('div');
-    feetWrap.className = 'input-wrap';
-    const feetInput = document.createElement('input');
-    feetInput.type = 'number';
-    feetInput.inputMode = 'decimal';
-    feetInput.min = '0';
-    feetInput.step = 'any';
-    feetInput.className = 'field';
-    feetInput.dataset.field = 'feet';
-    feetInput.dataset.slot = slotIndex;
-    feetInput.setAttribute('aria-label', `${item.name} attempt ${slotIndex} feet`);
-    if (feet !== '') feetInput.value = feet;
-    feetWrap.appendChild(feetInput);
-    const feetUnit = document.createElement('span');
-    feetUnit.className = 'unit';
-    feetUnit.textContent = 'ft';
-    feetWrap.appendChild(feetUnit);
+  const feetWrap = document.createElement('div');
+  feetWrap.className = 'input-wrap';
+  const feetInput = document.createElement('input');
+  feetInput.type = 'number';
+  feetInput.inputMode = 'decimal';
+  feetInput.min = '0';
+  feetInput.step = 'any';
+  feetInput.className = 'field';
+  feetInput.dataset.field = 'feet';
+  feetInput.dataset.slot = slotIndex;
+  feetInput.setAttribute('aria-label', `${item.name} attempt ${slotIndex} feet`);
+  if (feet !== '') feetInput.value = feet;
+  feetWrap.appendChild(feetInput);
+  const feetUnit = document.createElement('span');
+  feetUnit.className = 'unit';
+  feetUnit.textContent = 'ft';
+  feetWrap.appendChild(feetUnit);
 
-    const inchesWrap = document.createElement('div');
-    inchesWrap.className = 'input-wrap';
-    const inchesInput = document.createElement('input');
-    inchesInput.type = 'number';
-    inchesInput.inputMode = 'decimal';
-    inchesInput.min = '0';
-    inchesInput.step = 'any';
-    inchesInput.className = 'field';
-    inchesInput.dataset.field = 'inches';
-    inchesInput.dataset.slot = slotIndex;
-    inchesInput.setAttribute('aria-label', `${item.name} attempt ${slotIndex} inches`);
-    if (inches !== '') inchesInput.value = inches;
-    inchesWrap.appendChild(inchesInput);
-    const inchesUnit = document.createElement('span');
-    inchesUnit.className = 'unit';
-    inchesUnit.textContent = 'in';
-    inchesWrap.appendChild(inchesUnit);
+  const inchesWrap = document.createElement('div');
+  inchesWrap.className = 'input-wrap';
+  const inchesInput = document.createElement('input');
+  inchesInput.type = 'number';
+  inchesInput.inputMode = 'decimal';
+  inchesInput.min = '0';
+  inchesInput.step = 'any';
+  inchesInput.className = 'field';
+  inchesInput.dataset.field = 'inches';
+  inchesInput.dataset.slot = slotIndex;
+  inchesInput.setAttribute('aria-label', `${item.name} attempt ${slotIndex} inches`);
+  if (inches !== '') inchesInput.value = inches;
+  inchesWrap.appendChild(inchesInput);
+  const inchesUnit = document.createElement('span');
+  inchesUnit.className = 'unit';
+  inchesUnit.textContent = 'in';
+  inchesWrap.appendChild(inchesUnit);
 
-    inputsWrap.appendChild(feetWrap);
-    inputsWrap.appendChild(inchesWrap);
+  inputsWrap.appendChild(feetWrap);
+  inputsWrap.appendChild(inchesWrap);
+
+  slot.appendChild(inputsWrap);
+  return slot;
+}
+
+const LIFT_ATTEMPT_CAP = 10;
+const THROW_ATTEMPT_CAP = 3;
+
+function buildLiftAttemptSlot(unitObj, slotIndex, value, liftName) {
+  const slot = document.createElement('div');
+  slot.className = 'attempt';
+  slot.dataset.slot = slotIndex;
+
+  const slotLabel = document.createElement('span');
+  slotLabel.className = 'attempt-label';
+  slotLabel.textContent = `Attempt ${slotIndex}`;
+  slot.appendChild(slotLabel);
+
+  const inputsWrap = document.createElement('div');
+  inputsWrap.className = 'attempt-inputs';
+
+  const wrap = document.createElement('div');
+  wrap.className = 'input-wrap';
+  const input = document.createElement('input');
+  const isTime = unitObj && unitObj.category === 'time';
+  input.type = 'text';
+  input.inputMode = isTime ? 'numeric' : 'decimal';
+  input.className = 'field';
+  input.dataset.field = 'liftValue';
+  input.dataset.slot = slotIndex;
+  input.placeholder = isTime ? 'mm:ss' : '0';
+  const unitLabel = unitObj ? unitObj.label : 'value';
+  input.setAttribute('aria-label', `${liftName} attempt ${slotIndex} ${unitLabel}`);
+  if (Number.isFinite(value)) {
+    input.value = isTime ? formatSecondsAsTime(value) : String(value);
   }
+  wrap.appendChild(input);
+  const unitSpan = document.createElement('span');
+  unitSpan.className = 'unit';
+  unitSpan.textContent = unitObj ? unitObj.label : '';
+  wrap.appendChild(unitSpan);
+  inputsWrap.appendChild(wrap);
 
   slot.appendChild(inputsWrap);
   return slot;
@@ -83,6 +104,7 @@ function buildSessionRow(item, attempts, stoneWeightValue) {
   const row = document.createElement('div');
   row.className = 'item-row item-row--session';
   row.dataset.itemId = item.id;
+  row.dataset.category = 'throw';
   row.dataset.measurementType = item.measurementType;
   row.dataset.attempts = String(Math.max(1, attempts.length));
 
@@ -101,7 +123,7 @@ function buildSessionRow(item, attempts, stoneWeightValue) {
   const attemptsContainer = document.createElement('div');
   attemptsContainer.className = 'attempts';
 
-  for (let i = 1; i <= 3; i++) {
+  for (let i = 1; i <= THROW_ATTEMPT_CAP; i++) {
     const value = attempts[i - 1];
     attemptsContainer.appendChild(buildAttemptSlot(item, i, value));
   }
@@ -112,7 +134,7 @@ function buildSessionRow(item, attempts, stoneWeightValue) {
   addBtn.textContent = '+ Add attempt';
   addBtn.addEventListener('click', () => {
     const current = parseInt(row.dataset.attempts, 10);
-    if (current < 3) {
+    if (current < THROW_ATTEMPT_CAP) {
       const next = current + 1;
       row.dataset.attempts = String(next);
       const newSlot = row.querySelector(`.attempt[data-slot="${next}"]`);
@@ -158,6 +180,57 @@ function buildSessionRow(item, attempts, stoneWeightValue) {
   return row;
 }
 
+function buildLiftRow(lift, attempts) {
+  const row = document.createElement('div');
+  row.className = 'item-row item-row--session item-row--lift';
+  row.dataset.itemId = lift.id;
+  row.dataset.category = 'lift';
+  row.dataset.unit = lift.unit || '';
+  const unitObj = getUnit(lift.unit);
+  const liftName = lift.name || '';
+
+  const label = document.createElement('div');
+  label.className = 'item-label';
+  const nameSpan = document.createElement('span');
+  nameSpan.className = 'item-name';
+  nameSpan.textContent = liftName;
+  const metaSpan = document.createElement('span');
+  metaSpan.className = 'item-meta';
+  metaSpan.textContent = lift.protocol || '';
+  label.appendChild(nameSpan);
+  label.appendChild(metaSpan);
+  row.appendChild(label);
+
+  const attemptsContainer = document.createElement('div');
+  attemptsContainer.className = 'attempts';
+
+  const visibleCount = Math.min(LIFT_ATTEMPT_CAP, Math.max(1, attempts.length));
+  for (let i = 1; i <= visibleCount; i++) {
+    attemptsContainer.appendChild(buildLiftAttemptSlot(unitObj, i, attempts[i - 1], liftName));
+  }
+
+  const addBtn = document.createElement('button');
+  addBtn.type = 'button';
+  addBtn.className = 'add-attempt';
+  addBtn.textContent = '+ Add attempt';
+  addBtn.addEventListener('click', () => {
+    const current = attemptsContainer.querySelectorAll('.attempt').length;
+    if (current < LIFT_ATTEMPT_CAP) {
+      const next = current + 1;
+      const newSlot = buildLiftAttemptSlot(unitObj, next, null, liftName);
+      attemptsContainer.insertBefore(newSlot, addBtn);
+      if (next >= LIFT_ATTEMPT_CAP) addBtn.hidden = true;
+      const input = newSlot.querySelector('input');
+      if (input) input.focus();
+    }
+  });
+  attemptsContainer.appendChild(addBtn);
+  if (visibleCount >= LIFT_ATTEMPT_CAP) addBtn.hidden = true;
+
+  row.appendChild(attemptsContainer);
+  return row;
+}
+
 function renderForm(prefillMarks, prefillStoneWeights) {
   const marks = prefillMarks || {};
   const stoneWeights = prefillStoneWeights || {};
@@ -167,15 +240,19 @@ function renderForm(prefillMarks, prefillStoneWeights) {
   liftsList.innerHTML = '';
 
   for (const item of ITEMS) {
+    if (item.category !== 'throw') continue;
     const attempts = Array.isArray(marks[item.id]) ? marks[item.id] : [];
     const stoneWeight = stoneWeights[item.id];
     const stoneWeightValue = Number.isFinite(stoneWeight) ? stoneWeight : null;
-    const row = buildSessionRow(item, attempts, stoneWeightValue);
-    if (item.category === 'throw') {
-      throwsList.appendChild(row);
-    } else {
-      liftsList.appendChild(row);
-    }
+    throwsList.appendChild(buildSessionRow(item, attempts, stoneWeightValue));
+  }
+
+  const data = loadData();
+  const userLifts = Array.isArray(data.userLifts) ? data.userLifts : [];
+  for (const lift of userLifts) {
+    if (!lift.active) continue;
+    const attempts = Array.isArray(marks[lift.id]) ? marks[lift.id] : [];
+    liftsList.appendChild(buildLiftRow(lift, attempts));
   }
 }
 
@@ -216,23 +293,16 @@ function collectFormData() {
   const marks = {};
   const stoneWeights = {};
 
-  const rows = document.querySelectorAll('.item-row');
-  rows.forEach((row) => {
+  document.querySelectorAll('.item-row[data-category="throw"]').forEach((row) => {
     const id = row.dataset.itemId;
-    const type = row.dataset.measurementType;
     const slotsShown = parseInt(row.dataset.attempts, 10) || 1;
 
     const attempts = [];
     for (let i = 1; i <= slotsShown; i++) {
-      if (type === 'weight') {
-        const w = readNumber(row.querySelector(`[data-field="weight"][data-slot="${i}"]`));
-        if (w !== null) attempts.push(w);
-      } else {
-        const f = readNumber(row.querySelector(`[data-field="feet"][data-slot="${i}"]`));
-        const inch = readNumber(row.querySelector(`[data-field="inches"][data-slot="${i}"]`));
-        if (f !== null || inch !== null) {
-          attempts.push(feetInchesToInches(f ?? 0, inch ?? 0));
-        }
+      const f = readNumber(row.querySelector(`[data-field="feet"][data-slot="${i}"]`));
+      const inch = readNumber(row.querySelector(`[data-field="inches"][data-slot="${i}"]`));
+      if (f !== null || inch !== null) {
+        attempts.push(feetInchesToInches(f ?? 0, inch ?? 0));
       }
     }
     if (attempts.length > 0) marks[id] = attempts;
@@ -244,27 +314,35 @@ function collectFormData() {
     }
   });
 
+  document.querySelectorAll('.item-row[data-category="lift"]').forEach((row) => {
+    const id = row.dataset.itemId;
+    const unitObj = getUnit(row.dataset.unit || '');
+    const isTime = unitObj && unitObj.category === 'time';
+    const attempts = [];
+    row.querySelectorAll('.attempt [data-field="liftValue"]').forEach((input) => {
+      const raw = (input.value || '').trim();
+      if (!raw) return;
+      const n = isTime ? parseTimeToSeconds(raw) : Number(raw);
+      if (Number.isFinite(n) && n >= 0) attempts.push(n);
+    });
+    if (attempts.length > 0) marks[id] = attempts;
+  });
+
   return { date, location, games, throwsNotes, liftsNotes, kind, marks, stoneWeights };
 }
 
 function findAttemptGaps() {
   const gaps = [];
-  const rows = document.querySelectorAll('.item-row');
-  rows.forEach((row) => {
+
+  document.querySelectorAll('.item-row[data-category="throw"]').forEach((row) => {
     const id = row.dataset.itemId;
-    const type = row.dataset.measurementType;
     const slotsShown = parseInt(row.dataset.attempts, 10) || 1;
 
     const slotHasValue = [];
     for (let i = 1; i <= slotsShown; i++) {
-      if (type === 'weight') {
-        const w = readNumber(row.querySelector(`[data-field="weight"][data-slot="${i}"]`));
-        slotHasValue.push(w !== null);
-      } else {
-        const f = readNumber(row.querySelector(`[data-field="feet"][data-slot="${i}"]`));
-        const inch = readNumber(row.querySelector(`[data-field="inches"][data-slot="${i}"]`));
-        slotHasValue.push(f !== null || inch !== null);
-      }
+      const f = readNumber(row.querySelector(`[data-field="feet"][data-slot="${i}"]`));
+      const inch = readNumber(row.querySelector(`[data-field="inches"][data-slot="${i}"]`));
+      slotHasValue.push(f !== null || inch !== null);
     }
 
     const firstEmptyIdx = slotHasValue.indexOf(false);
@@ -272,12 +350,37 @@ function findAttemptGaps() {
 
     if (firstEmptyIdx !== -1 && firstEmptyIdx < lastFilledIdx) {
       const item = ITEMS.find((it) => it.id === id);
-      gaps.push({
-        itemName: item ? item.name : id,
-        emptySlot: firstEmptyIdx + 1,
-      });
+      gaps.push({ itemName: item ? item.name : id, emptySlot: firstEmptyIdx + 1 });
     }
   });
+
+  const data = loadData();
+  const userLifts = Array.isArray(data.userLifts) ? data.userLifts : [];
+  document.querySelectorAll('.item-row[data-category="lift"]').forEach((row) => {
+    const id = row.dataset.itemId;
+    const unitObj = getUnit(row.dataset.unit || '');
+    const isTime = unitObj && unitObj.category === 'time';
+    const slotHasValue = [];
+    row.querySelectorAll('.attempt [data-field="liftValue"]').forEach((input) => {
+      const raw = (input.value || '').trim();
+      if (!raw) {
+        slotHasValue.push(false);
+        return;
+      }
+      const n = isTime ? parseTimeToSeconds(raw) : Number(raw);
+      slotHasValue.push(Number.isFinite(n) && n >= 0);
+    });
+
+    const firstEmptyIdx = slotHasValue.indexOf(false);
+    const lastFilledIdx = slotHasValue.reduce((acc, has, i) => (has ? i : acc), -1);
+
+    if (firstEmptyIdx !== -1 && firstEmptyIdx < lastFilledIdx) {
+      const lift = userLifts.find((l) => l.id === id);
+      const name = (lift && lift.name) || row.querySelector('.item-name')?.textContent || id;
+      gaps.push({ itemName: name, emptySlot: firstEmptyIdx + 1 });
+    }
+  });
+
   return gaps;
 }
 
@@ -343,14 +446,36 @@ function buildNotesBlock(label, text) {
   return wrap;
 }
 
-function buildSessionDetailsPanel(session, detailsId) {
+function buildSessionLiftLine(lift, marks) {
+  const line = document.createElement('div');
+  line.className = 'session-event-line';
+
+  const nameSpan = document.createElement('span');
+  nameSpan.className = 'session-event-name';
+  nameSpan.textContent = lift.name || '';
+  line.appendChild(nameSpan);
+
+  line.appendChild(document.createTextNode(' — '));
+
+  const marksText = marks
+    .map((m) => formatLiftMark(m, lift.unit))
+    .filter((s) => s !== '')
+    .join(', ');
+  const marksSpan = document.createElement('span');
+  marksSpan.className = 'session-event-marks';
+  marksSpan.textContent = marksText;
+  line.appendChild(marksSpan);
+
+  return line;
+}
+
+function buildSessionDetailsPanel(session, detailsId, userLifts) {
   const details = document.createElement('div');
   details.id = detailsId;
   details.className = 'session-details';
 
   let anyLines = false;
   const throwItems = ITEMS.filter((it) => it.category === 'throw');
-  const liftItems = ITEMS.filter((it) => it.category === 'lift');
 
   for (const item of throwItems) {
     const line = buildSessionEventLine(item, session);
@@ -363,12 +488,12 @@ function buildSessionDetailsPanel(session, detailsId) {
   const throwsNotesBlock = buildNotesBlock('Throws notes', session.throwsNotes);
   if (throwsNotesBlock) details.appendChild(throwsNotesBlock);
 
-  for (const item of liftItems) {
-    const line = buildSessionEventLine(item, session);
-    if (line) {
-      anyLines = true;
-      details.appendChild(line);
-    }
+  const lifts = Array.isArray(userLifts) ? userLifts : [];
+  for (const lift of lifts) {
+    const marks = session.marks ? session.marks[lift.id] : null;
+    if (!Array.isArray(marks) || marks.length === 0) continue;
+    anyLines = true;
+    details.appendChild(buildSessionLiftLine(lift, marks));
   }
 
   const liftsNotesBlock = buildNotesBlock('S&C notes', session.liftsNotes);
@@ -384,7 +509,7 @@ function buildSessionDetailsPanel(session, detailsId) {
   return details;
 }
 
-function renderSessionsList(sessions) {
+function renderSessionsList(sessions, userLifts) {
   const listEl = document.getElementById('sessions-list');
   const emptyEl = document.getElementById('sessions-empty');
   listEl.innerHTML = '';
@@ -472,7 +597,7 @@ function renderSessionsList(sessions) {
     actions.appendChild(deleteBtn);
 
     li.appendChild(actions);
-    li.appendChild(buildSessionDetailsPanel(s, detailsId));
+    li.appendChild(buildSessionDetailsPanel(s, detailsId, userLifts));
     listEl.appendChild(li);
   }
 }
@@ -544,7 +669,7 @@ function handleDelete(sessionId) {
     resetForm();
   }
 
-  renderSessionsList(data.sessions);
+  renderSessionsList(data.sessions, data.userLifts);
   showStatus('Session deleted.');
 }
 
@@ -606,7 +731,7 @@ function handleSubmit(event) {
       };
     }
     saveData(data);
-    renderSessionsList(data.sessions);
+    renderSessionsList(data.sessions, data.userLifts);
     resetForm();
     showStatus('Session updated.');
   } else {
@@ -623,7 +748,7 @@ function handleSubmit(event) {
     };
     data.sessions.push(newSession);
     saveData(data);
-    renderSessionsList(data.sessions);
+    renderSessionsList(data.sessions, data.userLifts);
     resetForm();
     showStatus(`Session logged for ${formatSessionDate(formData.date)}.`);
   }
@@ -634,7 +759,7 @@ function init() {
   document.getElementById('session-date').value = todayISO();
   setSelectedKind('competition');
   renderForm({}, {});
-  renderSessionsList(data.sessions);
+  renderSessionsList(data.sessions, data.userLifts);
 
   document.querySelectorAll('.kind-btn').forEach((btn) => {
     btn.addEventListener('click', () => setSelectedKind(btn.dataset.kind));
