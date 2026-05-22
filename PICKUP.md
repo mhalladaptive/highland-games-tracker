@@ -39,15 +39,19 @@ Current state:
 - Stage 4 — the celebration system and the Log Session changes — is the
   next stage. Not started. It is the big behavioral stage, and where
   goalMeta and the unit direction field finally get used.
-- L1 gate: attempted 2026-05-19, NOT cleared. The standing edge is
-  reading the mechanism layer of the code. A study sheet is in the
-  Higgins Method folder. The Stage 3b ledger entry recommends clearing
-  the gate before Stage 4.
+- L1 gate: redesigned 2026-05-21 (Higgins Method v0.4). No longer one
+  whole-project walkthrough — it is three interleaved ~1-hour sub-gates,
+  L1.1 / L1.2 / L1.3, each a functional cold-read of one file at the
+  front of a build. None cleared yet. The 2026-05-21 re-walk drilled
+  shared.js (the future L1.3 rung); next up is an L1.1 cold-read of a
+  lighter file — gap.js is the natural pick. See higgins-method.md v0.4
+  and the 2026-05-21 skills-ledger entry.
 
-Where I want to start today: [STATE YOUR GOAL — the two candidates are
-(a) the L1 gate re-walk: open the repo and describe each file in your
-own words, shared.js first; or (b) planning Stage 4. The ledger's
-recommendation is to clear the gate first.]
+Where I want to start today: [STATE YOUR GOAL. The main thread is Stage
+4 — the celebration system and Log Session changes. The L1 gate now
+interleaves rather than blocking: a good rhythm is to open a session
+with the L1.1 sub-gate (a ~1-hour functional cold-read of gap.js), then
+move into Stage 4 work. State what you want.]
 
 How I want to work:
 

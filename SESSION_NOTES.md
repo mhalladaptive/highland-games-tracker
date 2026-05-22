@@ -6,6 +6,50 @@ of what got decided when.
 
 ---
 
+## 2026-05-21 (later) — L1 gate re-walk, and the gate got redesigned
+
+A second session on the 21st. It began as the L1 gate re-walk the Stage
+3b notes recommended before Stage 4 — shared.js first. It turned into
+something bigger: a redesign of the L1 gate itself.
+
+### The re-walk
+
+~2.5 hours, cowork-led, Oak describing each piece of shared.js in his own
+words. Covered the data layer in real depth — the constant-vs-data
+distinction (the recurring gap from Stages 2–3b, and it finally landed),
+reading conditions, `=` vs `===`, the ternary, object vs array, the
+loadData guard pattern, and `migrateSchemaV1toV2` through the userLifts
+reconstruction. Real movement on the mechanism-layer edge the ledger
+keeps naming — but slow: 2.5 hours bought roughly two-thirds of one file.
+
+### The gate redesign — Higgins Method v0.3 → v0.4
+
+The slowness was the signal. The old L1 gate ("walk the whole project,
+describe every file") had been "pending / not cleared" across three
+shipped stages — a gate that can't be cleared isn't gating, it's a red
+mark that just travels forward. Oak's call: the gate was mis-sized — too
+much in one block, and drifting toward a mastery bar, "learning from AI
+how to code" rather than "learning to direct it."
+
+Replaced it. L1 is now three interleaved ~1-hour sub-gates — L1.1 / L1.2
+/ L1.3 — functional-depth cold-reads of one file each, ramping easy to
+hard, sitting at the front of a build so they cost no separate time.
+Three stripes, then the belt. The model is Oak's 30 years of wrestling
+coaching: drill briefly, then live-wrestle; mastery accretes from the
+reps, not from a checkpoint that blocks the match. `higgins-method.md`
+is now v0.4; the cheat sheet and START-HERE updated to match; the skills
+ledger has a 2026-05-21 entry for the session.
+
+### Where it stands
+
+Stage 4 is still the next build. The L1 gate is now clearable — under the
+new definition Oak is roughly one ~1-hour session from L1.1 (a cold-read
+of a lighter file, gap.js the natural pick). Today's shared.js depth is
+banked as the drill for the eventual L1.3 stripe. The old "clear the gate
+before Stage 4" recommendation is superseded: under v0.4 you interleave.
+
+---
+
 ## 2026-05-21 — Stage 3a shipped; Stage 3b planned, built, shipped
 
 Long session, the evening of 2026-05-20 into the 21st. Ran the Higgins
