@@ -172,6 +172,20 @@ body.kind-training .comp-only {
   font-size: 1rem;
 }
 
+.removed-tag {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--border);
+  border-radius: 6px;
+  vertical-align: 0.1em;
+}
+
 .item-meta {
   font-size: 0.8rem;
   color: var(--muted);

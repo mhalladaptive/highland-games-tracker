@@ -180,9 +180,10 @@ function buildSessionRow(item, attempts, stoneWeightValue) {
   return row;
 }
 
-function buildLiftRow(lift, attempts) {
+function buildLiftRow(lift, attempts, isRemoved) {
   const row = document.createElement('div');
   row.className = 'item-row item-row--session item-row--lift';
+  if (isRemoved) row.classList.add('item-row--removed');
   row.dataset.itemId = lift.id;
   row.dataset.category = 'lift';
   row.dataset.unit = lift.unit || '';
@@ -194,6 +195,13 @@ function buildLiftRow(lift, attempts) {
   const nameSpan = document.createElement('span');
   nameSpan.className = 'item-name';
   nameSpan.textContent = liftName;
+  if (isRemoved) {
+    nameSpan.appendChild(document.createTextNode(' '));
+    const tag = document.createElement('span');
+    tag.className = 'removed-tag';
+    tag.textContent = 'removed';
+    nameSpan.appendChild(tag);
+  }
   const metaSpan = document.createElement('span');
   metaSpan.className = 'item-meta';
   metaSpan.textContent = lift.protocol || '';
@@ -231,9 +239,10 @@ function buildLiftRow(lift, attempts) {
   return row;
 }
 
-function renderForm(prefillMarks, prefillStoneWeights) {
+function renderForm(prefillMarks, prefillStoneWeights, options) {
   const marks = prefillMarks || {};
   const stoneWeights = prefillStoneWeights || {};
+  const opts = options || {};
   const throwsList = document.getElementById('throws-list');
   const liftsList = document.getElementById('lifts-list');
   throwsList.innerHTML = '';
@@ -252,7 +261,21 @@ function renderForm(prefillMarks, prefillStoneWeights) {
   for (const lift of userLifts) {
     if (!lift.active) continue;
     const attempts = Array.isArray(marks[lift.id]) ? marks[lift.id] : [];
-    liftsList.appendChild(buildLiftRow(lift, attempts));
+    liftsList.appendChild(buildLiftRow(lift, attempts, false));
+  }
+
+  // When editing a past session, also render a row for any inactive lift the
+  // session has marks for — otherwise collectFormData would not see those
+  // marks (no row = no input to read) and "Update Session" would silently
+  // drop them. The row is tagged 'removed' but stays fully editable so a
+  // genuine typo in old data is still fixable.
+  if (opts.includeInactiveLiftsFromMarks) {
+    for (const lift of userLifts) {
+      if (lift.active) continue;
+      const attempts = Array.isArray(marks[lift.id]) ? marks[lift.id] : [];
+      if (attempts.length === 0) continue;
+      liftsList.appendChild(buildLiftRow(lift, attempts, true));
+    }
   }
 }
 
@@ -647,7 +670,7 @@ function handleEdit(sessionId) {
     autoGrowTextarea(liftsNotesInput);
   }
   setSelectedKind(session.kind || 'competition');
-  renderForm(session.marks, session.stoneWeights || {});
+  renderForm(session.marks, session.stoneWeights || {}, { includeInactiveLiftsFromMarks: true });
   document.getElementById('save-btn').textContent = 'Update Session';
   document.getElementById('edit-banner-date').textContent = formatSessionDate(session.date);
   document.getElementById('edit-banner').hidden = false;
