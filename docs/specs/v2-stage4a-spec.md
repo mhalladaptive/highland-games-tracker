@@ -294,7 +294,7 @@ None blocking.
 
 ## Handoff prompt for the next ccode session
 
-```
+```text
 ccd, this is Stage 4a of the Highland Games Tracker v2 build — the
 first of a three-way split Stage 4.
 
@@ -330,7 +330,7 @@ commits are ready.
 
 ## Review prompt for the gpt review pass
 
-```
+```text
 You are gpt — the Reviewer in the Higgins Method, a solo build system.
 A build was done by ccode (Claude Code, a separate model); your job is
 an independent cross-check. This is Stage 4a of the Highland Games
