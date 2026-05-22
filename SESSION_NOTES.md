@@ -6,7 +6,7 @@ of what got decided when.
 
 ---
 
-## 2026-05-21 (later) — L1 gate re-walk, gate redesign, Stage 4 planning
+## 2026-05-21 → 22 — gate re-walk & redesign, Stage 4 planning, Biome lint setup
 
 A second session on the 21st. It began as the L1 gate re-walk the Stage
 3b notes recommended before Stage 4 — shared.js first. It turned into
@@ -62,17 +62,68 @@ intro copy was drafted. Cowork wrote the 4a spec sketch —
 `docs/specs/v2-stage4a-spec.md` — handoff-ready, with the ccode and gpt
 prompts built in.
 
+### Linting — Biome added to the process
+
+After the 4a spec, a conversation about linting: what a linter is — it
+reads the code without running it and flags likely mistakes, a static
+net distinct from the behavioural net of the test suite — and where it
+fits the Higgins loop (a verification step at Build / self-check, ahead
+of the gpt review). Oak decided to add one.
+
+Tool: **Biome**, not ESLint. ESLint is the industry standard and the one
+to learn for professional dev — but the learning a linter gives a
+*director* (reading and acting on lint output) is tool-agnostic;
+ESLint's extra surface over Biome is configuration machinery, which is
+authoring-competence overhead. Biome — one tool, one config — gives the
+same transferable learning with far less setup friction.
+
+Cowork wrote `docs/specs/lint-setup-spec.md`: correctness rules on,
+style light, linter only (not the formatter), bring the existing code to
+a clean green pass. Run before Stage 4a so 4a is built with the linter
+live.
+
+ccode built it — Biome 2.4.15, `package.json` / `biome.json` / lockfile,
+an `npm run lint` script; one setup commit plus five atomic to-green
+commits (two narrow rule tunes — `noUnusedVariables` scoped off
+`shared.js`, `useOptionalChain` off — and three syntactic code edits).
+
+gpt review: "Ship after fixes," no Critical, one Major — but the Major
+was "I can't verify the lockfile or a clean lint run from the files I
+was given," a review-*bundle* gap, not a build defect. The bundle was
+missing `package-lock.json`; that traced partly to the spec's review
+prompt not listing the lockfile to attach. Cowork verified the part gpt
+structurally cannot: the lockfile *is* committed, and `npm run lint`,
+installed and run in the sandbox, exits 0. Static gpt review + dynamic
+cowork run = the complete picture — the same pairing as code-review +
+smoke-test in 3a/3b, and again the dynamic step caught what the static
+one could not: `npm run lint` exits 0 but isn't *silent* — 6
+`useTemplate` style infos rode along, the residual baseline-noise the
+spec's "start-clean" goal was meant to avoid. ccode cleared the 6; tests
+confirmed green.
+
+Lint setup shipped — Biome is now a verification step in the loop, and
+the project has its first dev tooling.
+
 ### Where it stands
 
-Stage 4a is spec'd and handoff-ready — the next move on the build is a
-ccode session from `docs/specs/v2-stage4a-spec.md`, then gpt review. 4b
-and 4c get their own planning once 4a ships.
+Biome lint setup is shipped. Stage 4a is spec'd and handoff-ready
+(`docs/specs/v2-stage4a-spec.md`) — the next build is a ccode session
+from that spec, built with the linter live, then gpt review. 4b and 4c
+get their own planning once 4a ships.
 
-The L1 gate is now clearable under v0.4 — Oak is roughly one ~1-hour
-session from the L1.1 sub-gate (a cold-read of a lighter file, gap.js
-the natural pick), and v0.4 interleaves it with builds rather than
-blocking on it. Today's shared.js depth is banked as the drill for the
-eventual L1.3 stripe.
+The L1 gate is clearable under v0.4 — Oak is roughly one ~1-hour session
+from the L1.1 sub-gate (a cold-read of gap.js, the natural light file),
+interleaved with a build rather than blocking on it. Today's shared.js
+depth is banked as the drill for the eventual L1.3 stripe.
+
+### Housekeeping
+
+- The session wrap (this `SESSION_NOTES` entry, the `PICKUP.md` refresh,
+  the lint-setup ledger entry) leaves uncommitted doc edits — one final
+  `docs:` commit closes them.
+- An editor-side markdown linter has been adding language tags to fenced
+  code blocks across the `.md` files this session — harmless cosmetic
+  changes that ride along in the docs commits.
 
 ---
 

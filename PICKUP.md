@@ -5,7 +5,7 @@ Copy the block below into a new session when you want to resume v2 work.
 
 ---
 
-```
+```text
 Picking up v2 work on Highland Games Tracker (~/dev/highland-games-tracker).
 
 YOUR ROLE — read this first. This is a Cowork session. Under the Higgins
@@ -37,6 +37,9 @@ Current state:
 - Stages 1, 2, 3a, and 3b are SHIPPED and tagged — v2.0.0-rebrand,
   v2.0.0-stage2, v2.0.0-stage3a, v2.0.0-stage3b. Stage 3 (the Set PRs &
   Goals page + the unit conversion engine) is complete.
+- Tooling: the Biome linter was added 2026-05-22 (the project's first
+  dev dependency). `npm run lint` is a verification step in the loop
+  now; Stage 4a and everything after is built with the linter live.
 - Stage 4 is split three ways (decided 2026-05-21): 4a — Log Session
   catches up to userLifts (the 3→10 attempt cap, the rename); 4b — the
   celebration system; 4c — recompute-on-edit + the chain prompt. 4a is
