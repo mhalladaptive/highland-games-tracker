@@ -454,9 +454,13 @@ games-in-location migration (operates on sessions).
 
 ## Carried over from v1.x backlog
 
-- **Throws and Lifts on separate Log Session pages.** Originally
-  parked as a v1.x feature for `comeback-tracker`; now likely lands
-  in v2.x after the Stage 2-5 data-model rework settles.
+- **Throws / S&C toggle on Log Session — v2.1.** Log Session stacks all
+  eight throws above the S&C section, so logging an S&C milestone means
+  scrolling past every throw. A Throws / S&C in-page toggle — mirroring
+  the Stage 5 Progress page's toggle — fixes that. Originally parked as
+  "separate Log Session pages" in the `comeback-tracker` v1.x backlog;
+  the in-page toggle is the cleaner form and keeps it consistent with
+  the Progress page. Targeted at v2.1.
 - **View as a dedicated nav tab.** Promote the read-only session
   browser to its own top-level entry. v2.x.
 - **Lightweight usage analytics.** Cloudflare Web Analytics (free,

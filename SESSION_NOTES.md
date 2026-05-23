@@ -6,6 +6,100 @@ of what got decided when.
 
 ---
 
+## 2026-05-22 → 23 — Stage 4 built and shipped (4a + 4b + 4c); Stage 5 split, 5a spec'd
+
+*Reconstructed by cowork from the git log and the review docs — this
+session was not journaled live. Oak: verify the narrative and fill the
+flagged gaps before this entry is trusted as the record.*
+
+One long session, the evening of 2026-05-22 into the early hours of the
+23rd — roughly seven hours, 18:25 to 01:29. Stage 4, the big behavioral
+stage, went from spec'd to shipped across all three sub-stages, and
+Stage 5 was planned with 5a spec'd.
+
+### Stage 4a — Log Session catches up
+
+The 4a spec's last open items were closed first (`78e8c84`, 18:25 — the
+milestone-framing intro copy finalized, the `gap.js` interim-state
+confirmed). ccode built it in six atomic commits (19:15–19:24): the
+`formatLiftMark` helper, the "Strength and Conditioning Milestones"
+rename, S&C rendering from `userLifts` with unit-aware inputs,
+removed-lift rows in the edit flow, the empty-state, and tests. gpt
+review: **ship as-is, zero findings** — the data-loss risk surface the
+spec flagged (editing a session with marks for a soft-deleted lift) was
+covered. Shipped, tagged `v2.0.0-stage4a` (~20:27).
+
+### Stage 4b — the celebration system
+
+Spec written (`4dd94e0`, 20:55), then built in four commits
+(21:02–21:10): the `detectMilestones` pure helper, milestone
+persistence + `prs`/`prMeta`/`goalMeta` auto-update at save, the
+celebration card queue, and the Past Sessions badge + "View
+Celebrations" replay. gpt review: **ship as-is, zero findings** —
+direction handling (`time` = lower-is-better), the silent first-mark
+case, and the Awesome Day threshold all checked out. Shipped, tagged
+`v2.0.0-stage4b` (21:10). This is where `goalMeta` and the unit
+`direction` field — both dormant since earlier stages — finally got
+consumed.
+
+### Stage 4c — recompute-on-edit + the chain prompt
+
+The highest-risk stage of the v2 build: the only one that rewrites
+historical derived data. Spec written (`21930fa`, 23:17), built in six
+commits (23:33–23:51): `recomputeDerivedState`, recompute on
+edit/delete, re-derivation of the edited session's own `milestones[]`,
+the chain prompt, the Set-page achieved-goal callout, and tests. gpt
+review: **ship as-is, zero findings**. Shipped, tagged
+`v2.0.0-stage4c` (~00:58 on the 23rd).
+
+**Flag for Oak — one fix commit this reconstruction can't explain.**
+`367e7bd fix(app): Set-page save re-evaluates goalMeta against the new
+goals` was committed 00:49, *between* the 4c build commits and the 4c
+review-doc commit. The review doc records zero findings, so either the
+fix wasn't review fallout, or it was and the doc reflects the post-fix
+state. What caught it — a smoke test, a self-check, a first review
+round — belongs in the record. Please fill it in.
+
+### Stage 5 — split 5a / 5b, 5a spec'd
+
+After 4c shipped, Stage 5 was planned. `v2-plan.md` scoped Stage 5 as
+one page; planning split it two ways, the same move as Stages 3 and 4:
+throws and S&C lifts have different logging cadences (every session vs.
+notable-only), so the Progress page needs a Throws/Lifts toggle and two
+distinct views. 5a — the throws Progress page, a windowed vs-PR
+comparison replacing See the Gap — was spec'd in full (`3ea7167`,
+01:29; `docs/specs/v2-stage5a-spec.md`, handoff-ready with the ccode
+and gpt prompts). 5b — the lifts view and the toggle — is not yet
+spec'd.
+
+### Flags for the record
+
+- **The L1 sub-gates did not happen.** The plan coming out of the Biome
+  session was an L1.1 cold-read of `gap.js` at the front of the 4a
+  build. Three stages shipped; no sub-gate was attempted. The
+  directing-competence reps are being deferred stage to stage — worth a
+  deliberate look before Stage 5b builds.
+- **Smoke tests** — the 3a/3b entries record cowork-driven browser
+  smoke tests as a step. Whether 4a/4b/4c were smoke-tested isn't
+  visible in the repo. Oak: confirm and record.
+- **Three consecutive stages, zero review findings.** Either the
+  spec→build pipeline is genuinely solid, or the gpt review isn't
+  probing hard enough — the skills-ledger's self-pruning question.
+  Worth watching.
+
+### Housekeeping
+
+- This SESSION_NOTES entry, the PICKUP.md refresh, and the
+  skills-ledger Stage 4 entry were written by cowork on 2026-05-23.
+  They are uncommitted doc edits — one `docs:` commit closes them.
+  `v2-plan.md` also has an uncommitted edit (the v2.1 backlog item
+  reworded to the "Throws / S&C toggle" framing), and its near-top
+  Status section is stale (still reads "Stages 2–5 … not started").
+  The 5a spec commit `3ea7167` was still local-only (unpushed) at the
+  time of writing.
+
+---
+
 ## 2026-05-21 → 22 — gate re-walk & redesign, Stage 4 planning, Biome lint setup
 
 A second session on the 21st. It began as the L1 gate re-walk the Stage

@@ -18,48 +18,59 @@ Context to load before we start:
 1. Read v2-plan.md root to bottom — the full v2 design from the
    2026-05-19 design session. Mostly locked product decisions; flag
    anything that reads as a recommendation vs. a decision before
-   assuming. Stage 4 (celebration system + Log Session) is the next
-   unbuilt stage — read that section closely.
+   assuming. Stage 5 (the Progress page) is the next unbuilt stage —
+   read that section closely. Note: the Status section near the top of
+   v2-plan.md is stale — trust the "Current state" list below.
 
 2. Read SESSION_NOTES.md, newest entry first — the journal of how we
    got here.
 
 3. Skim the spec sketches as the model for a cowork spec sketch — they
-   now live in docs/specs/: v2-stage2-spec.md, v2-stage3a-spec.md,
-   v2-stage3b-spec.md (all shipped), and v2-stage4a-spec.md (spec'd,
-   build pending).
+   live in docs/specs/. v2-stage2-spec.md, v2-stage3a-spec.md,
+   v2-stage3b-spec.md, v2-stage4a-spec.md, v2-stage4b-spec.md, and
+   v2-stage4c-spec.md are all shipped; v2-stage5a-spec.md is spec'd,
+   build pending.
 
 4. Skim the highland-games-tracker entries in the skills ledger:
    ~/Documents/Obsidian Vault/Reference/Higgins Method/skills-ledger.md
 
 Current state:
 
-- Stages 1, 2, 3a, and 3b are SHIPPED and tagged — v2.0.0-rebrand,
-  v2.0.0-stage2, v2.0.0-stage3a, v2.0.0-stage3b. Stage 3 (the Set PRs &
-  Goals page + the unit conversion engine) is complete.
-- Tooling: the Biome linter was added 2026-05-22 (the project's first
-  dev dependency). `npm run lint` is a verification step in the loop
-  now; Stage 4a and everything after is built with the linter live.
-- Stage 4 is split three ways (decided 2026-05-21): 4a — Log Session
-  catches up to userLifts (the 3→10 attempt cap, the rename); 4b — the
-  celebration system; 4c — recompute-on-edit + the chain prompt. 4a is
-  spec'd and handoff-ready (docs/specs/v2-stage4a-spec.md, with the
-  ccode and gpt prompts built in); 4b and 4c are not yet planned.
-  Stage 4 is where goalMeta and the unit direction field finally get
-  used.
-- L1 gate: redesigned 2026-05-21 (Higgins Method v0.4). No longer one
-  whole-project walkthrough — it is three interleaved ~1-hour sub-gates,
-  L1.1 / L1.2 / L1.3, each a functional cold-read of one file at the
-  front of a build. None cleared yet. The 2026-05-21 re-walk drilled
-  shared.js (the future L1.3 rung); next up is an L1.1 cold-read of a
-  lighter file — gap.js is the natural pick. See higgins-method.md v0.4
-  and the 2026-05-21 skills-ledger entry.
+- Stages 1, 2, 3a, 3b, 4a, 4b, and 4c are SHIPPED and tagged —
+  v2.0.0-rebrand, v2.0.0-stage2, v2.0.0-stage3a, v2.0.0-stage3b,
+  v2.0.0-stage4a, v2.0.0-stage4b, v2.0.0-stage4c. Stage 4 — the big
+  behavioral stage — is complete: 4a put Log Session on userLifts (the
+  3→10 attempt cap, the "Strength and Conditioning Milestones" rename);
+  4b built the celebration system (milestone detection at save, the
+  PR/Goal/Awesome Day cards, the queue, the Past Sessions badge +
+  replay); 4c added recompute-on-edit, the chain prompt, and the
+  Set-page achieved-goal callout. All three Stage 4 gpt reviews came
+  back "ship as-is" with zero findings.
+- Tooling: the Biome linter was added 2026-05-22; `npm run lint` is a
+  verification step in the loop. Every stage from 4a on is built with
+  the linter live.
+- Stage 5 is split two ways (decided 2026-05-22): 5a — the Progress
+  page for throws, replacing v1's "See the Gap"; 5b — the S&C lifts
+  view plus the Throws/Lifts toggle. 5a is spec'd and handoff-ready
+  (docs/specs/v2-stage5a-spec.md, with the ccode and gpt prompts built
+  in); building it is a ccode session. 5b is not yet spec'd.
+- L1 gate: three interleaved ~1-hour sub-gates, L1.1 / L1.2 / L1.3,
+  each a functional cold-read of one file at the front of a build.
+  None cleared yet — and none attempted across 4a/4b/4c. The planned
+  L1.1 target was gap.js, but Stage 5a retires gap.js (rebuilds it as
+  progress.js) — so the L1.1 read either happens before 5a builds, or
+  retargets to progress.js afterward. See higgins-method.md v0.5 and
+  the skills ledger.
+- Repo housekeeping to confirm at session start: whether local commits
+  are unpushed (the 5a spec commit was local-only at last note) and
+  whether the v2-plan.md / SESSION_NOTES.md / PICKUP.md doc edits are
+  committed.
 
-Where I want to start today: [STATE YOUR GOAL. Stage 4a is spec'd —
-docs/specs/v2-stage4a-spec.md. Building it is a ccode session, not
-cowork. Cowork's likely next jobs: the L1.1 sub-gate (a ~1-hour
-cold-read of gap.js); or, once ccode has built 4a, the smoke test and
-then planning 4b. State what you want.]
+Where I want to start today: [STATE YOUR GOAL. Stage 5a is spec'd —
+docs/specs/v2-stage5a-spec.md — and building it is a ccode session, not
+cowork. Cowork's likely next jobs: planning Stage 5b (the lifts view +
+the Throws/Lifts toggle — not yet spec'd); an L1.1 sub-gate cold-read;
+or, once ccode has built 5a, the smoke test. State what you want.]
 
 How I want to work:
 
