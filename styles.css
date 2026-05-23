@@ -1367,3 +1367,57 @@ body.kind-training .comp-only {
   margin-top: 0.85rem;
   align-self: flex-start;
 }
+
+/* Chain prompt (Stage 4c) — appears in the celebration queue right after a
+   Goal card so the athlete can set a new goal without leaving the overlay. */
+.chain-prompt {
+  aspect-ratio: auto;
+  padding: 1.5rem 1.25rem 1.25rem;
+  text-align: center;
+  cursor: auto;
+  gap: 1rem;
+}
+
+.chain-prompt-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.35;
+}
+
+.chain-prompt-value {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 0;
+}
+
+.chain-prompt-value .input-wrap {
+  flex: 1 1 auto;
+  max-width: 140px;
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+.chain-prompt-value .field {
+  width: 100%;
+  text-align: center;
+}
+
+.chain-prompt-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.chain-prompt-save {
+  width: 100%;
+}
+
+.chain-prompt-skip {
+  width: 100%;
+  background: transparent;
+}

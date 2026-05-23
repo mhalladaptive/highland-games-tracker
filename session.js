@@ -894,6 +894,145 @@ function buildCelebrationCard(milestone, session, data, allMilestones) {
   return null;
 }
 
+// Stage 4c chain prompt — built inline after each Goal card in the
+// celebration queue so the loop ("achieved a goal → set a new one") closes
+// with zero navigation. Carries the Stage 3a unit-aware goal input
+// (feet/inches for throws, a single value input for lifts, mm:ss for time
+// units) and a "Not now" skip.
+function buildChainPromptValueInput(eventId, data) {
+  const wrap = document.createElement('div');
+  wrap.className = 'chain-prompt-value';
+
+  const throwItem = ITEMS.find((it) => it.id === eventId && it.category === 'throw');
+  if (throwItem) {
+    wrap.dataset.kind = 'throw';
+    const feetWrap = document.createElement('div');
+    feetWrap.className = 'input-wrap';
+    const feetInput = document.createElement('input');
+    feetInput.type = 'number';
+    feetInput.inputMode = 'decimal';
+    feetInput.min = '0';
+    feetInput.step = 'any';
+    feetInput.className = 'field';
+    feetInput.dataset.field = 'chainFeet';
+    feetInput.placeholder = '0';
+    feetInput.setAttribute('aria-label', 'New goal feet');
+    feetWrap.appendChild(feetInput);
+    const feetUnit = document.createElement('span');
+    feetUnit.className = 'unit';
+    feetUnit.textContent = 'ft';
+    feetWrap.appendChild(feetUnit);
+
+    const inchesWrap = document.createElement('div');
+    inchesWrap.className = 'input-wrap';
+    const inchesInput = document.createElement('input');
+    inchesInput.type = 'number';
+    inchesInput.inputMode = 'decimal';
+    inchesInput.min = '0';
+    inchesInput.step = 'any';
+    inchesInput.className = 'field';
+    inchesInput.dataset.field = 'chainInches';
+    inchesInput.placeholder = '0';
+    inchesInput.setAttribute('aria-label', 'New goal inches');
+    inchesWrap.appendChild(inchesInput);
+    const inchesUnit = document.createElement('span');
+    inchesUnit.className = 'unit';
+    inchesUnit.textContent = 'in';
+    inchesWrap.appendChild(inchesUnit);
+
+    wrap.appendChild(feetWrap);
+    wrap.appendChild(inchesWrap);
+    return wrap;
+  }
+
+  const lifts = (data && Array.isArray(data.userLifts)) ? data.userLifts : [];
+  const lift = lifts.find((l) => l && l.id === eventId);
+  const unitObj = lift ? getUnit(lift.unit) : null;
+  const isTime = unitObj && unitObj.category === 'time';
+  wrap.dataset.kind = 'lift';
+  wrap.dataset.unit = (lift && lift.unit) || '';
+
+  const single = document.createElement('div');
+  single.className = 'input-wrap';
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.inputMode = isTime ? 'numeric' : 'decimal';
+  input.className = 'field';
+  input.dataset.field = 'chainValue';
+  input.placeholder = isTime ? 'mm:ss' : '0';
+  input.setAttribute('aria-label', 'New goal value');
+  single.appendChild(input);
+  const unitSpan = document.createElement('span');
+  unitSpan.className = 'unit';
+  unitSpan.textContent = unitObj ? unitObj.label : '';
+  single.appendChild(unitSpan);
+  wrap.appendChild(single);
+  return wrap;
+}
+
+function readChainPromptValue(wrap) {
+  if (!wrap) return null;
+  if (wrap.dataset.kind === 'throw') {
+    const f = readNumber(wrap.querySelector('[data-field="chainFeet"]'));
+    const i = readNumber(wrap.querySelector('[data-field="chainInches"]'));
+    if (f === null && i === null) return null;
+    return feetInchesToInches(f == null ? 0 : f, i == null ? 0 : i);
+  }
+  const input = wrap.querySelector('[data-field="chainValue"]');
+  if (!input) return null;
+  const raw = (input.value || '').trim();
+  if (!raw) return null;
+  const unitObj = getUnit(wrap.dataset.unit);
+  const isTime = unitObj && unitObj.category === 'time';
+  if (isTime) return parseTimeToSeconds(raw);
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 0) return null;
+  return n;
+}
+
+function buildChainPrompt(milestone, data, onSave, onSkip) {
+  const panel = document.createElement('div');
+  panel.className = 'celebration-card chain-prompt';
+  panel.addEventListener('click', (e) => { e.stopPropagation(); });
+
+  const title = document.createElement('p');
+  title.className = 'chain-prompt-title';
+  const name = eventDisplayName(milestone.event, data) || milestone.event;
+  title.textContent = `Want to set a new goal for ${name}?`;
+  panel.appendChild(title);
+
+  const valueWrap = buildChainPromptValueInput(milestone.event, data);
+  panel.appendChild(valueWrap);
+
+  const actions = document.createElement('div');
+  actions.className = 'chain-prompt-actions';
+
+  const saveBtn = document.createElement('button');
+  saveBtn.type = 'button';
+  saveBtn.className = 'save-btn chain-prompt-save';
+  saveBtn.textContent = 'Save goal';
+  saveBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const value = readChainPromptValue(valueWrap);
+    if (!Number.isFinite(value) || value < 0) return;
+    onSave(value);
+  });
+  actions.appendChild(saveBtn);
+
+  const skipBtn = document.createElement('button');
+  skipBtn.type = 'button';
+  skipBtn.className = 'ghost-btn chain-prompt-skip';
+  skipBtn.textContent = 'Not now';
+  skipBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    onSkip();
+  });
+  actions.appendChild(skipBtn);
+
+  panel.appendChild(actions);
+  return panel;
+}
+
 // Show the modal queue: one card per screen, tap (or Enter/Space/Right) to
 // advance, forward-only; closing past the last card removes the overlay.
 // A × button in the corner ends the queue early.
@@ -902,6 +1041,11 @@ function buildCelebrationCard(milestone, session, data, allMilestones) {
 // session's full milestones[]. The awesomeDay card still lists the session's
 // full milestones[] regardless, so a partial-queue (edit-created subset)
 // summary stays truthful.
+//
+// options.chainPrompts — when true, a chain prompt appears right after each
+// Goal card and before the queue advances; "Save goal" updates goals[event]
+// and recomputes goalMeta, "Not now" skips. Default false (replay does not
+// re-prompt for goals already in the past).
 function showCelebrationQueue(session, data, options) {
   const opts = options || {};
   const fullList = Array.isArray(session && session.milestones) ? session.milestones : [];
@@ -926,35 +1070,73 @@ function showCelebrationQueue(session, data, options) {
   overlay.appendChild(closeBtn);
 
   let index = 0;
-  function render() {
+  let inChainPrompt = false;
+
+  function renderCard() {
     slot.innerHTML = '';
+    inChainPrompt = false;
     const card = buildCelebrationCard(queue[index], session, data, fullList);
     if (card) slot.appendChild(card);
+  }
+  function renderChainPromptFor(milestone) {
+    slot.innerHTML = '';
+    inChainPrompt = true;
+    const panel = buildChainPrompt(milestone, data, (value) => {
+      const fresh = loadData();
+      if (!fresh.goals || typeof fresh.goals !== 'object') fresh.goals = {};
+      fresh.goals[milestone.event] = value;
+      const recomputed = recomputeDerivedState(fresh);
+      fresh.prs = recomputed.prs;
+      fresh.prMeta = recomputed.prMeta;
+      fresh.goalMeta = recomputed.goalMeta;
+      saveData(fresh);
+      if (document.getElementById('sessions-list')) {
+        renderSessionsList(fresh.sessions, fresh.userLifts);
+      }
+      advanceAfterPrompt();
+    }, () => {
+      advanceAfterPrompt();
+    });
+    slot.appendChild(panel);
   }
   function close() {
     overlay.remove();
     document.removeEventListener('keydown', onKey);
   }
-  function advance() {
+  function advanceAfterPrompt() {
+    inChainPrompt = false;
     index += 1;
     if (index >= queue.length) close();
-    else render();
+    else renderCard();
+  }
+  function advance() {
+    const current = queue[index];
+    if (opts.chainPrompts && current && current.type === 'goal' && !inChainPrompt) {
+      renderChainPromptFor(current);
+      return;
+    }
+    index += 1;
+    if (index >= queue.length) close();
+    else renderCard();
   }
   function onKey(e) {
     if (e.key === 'Escape') {
       e.preventDefault();
       close();
-    } else if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowRight') {
+    } else if (!inChainPrompt && (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowRight')) {
       e.preventDefault();
       advance();
     }
   }
 
   closeBtn.addEventListener('click', (e) => { e.stopPropagation(); close(); });
-  overlay.addEventListener('click', advance);
+  overlay.addEventListener('click', () => {
+    if (inChainPrompt) return;
+    advance();
+  });
   document.addEventListener('keydown', onKey);
 
-  render();
+  renderCard();
   document.body.appendChild(overlay);
 }
 
@@ -1050,7 +1232,7 @@ function handleSubmit(event) {
     resetForm();
     showStatus('Session updated.');
     if (updatedSession && created.length > 0) {
-      showCelebrationQueue(updatedSession, data, { subset: created });
+      showCelebrationQueue(updatedSession, data, { subset: created, chainPrompts: true });
     }
   } else {
     const newSession = {
@@ -1070,7 +1252,7 @@ function handleSubmit(event) {
     renderSessionsList(data.sessions, data.userLifts);
     resetForm();
     showStatus(`Session logged for ${formatSessionDate(formData.date)}.`);
-    showCelebrationQueue(newSession, data);
+    showCelebrationQueue(newSession, data, { chainPrompts: true });
   }
 }
 
