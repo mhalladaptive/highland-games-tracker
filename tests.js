@@ -2248,6 +2248,211 @@ test('detectMilestones: null session => []', () => {
   assertDeepEqual(detectMilestones(null, stage4bData()), []);
 });
 
+// --- Stage 4b: persistence on save ---
+
+test('applyCelebrationUpdates: stamps session.milestones with detected milestones', () => {
+  const data = stage4bData({ prs: { 'braemar-stone': 400 } });
+  const session = {
+    id: 1, date: '2026-05-22',
+    location: 'Field', games: 'Test Games', kind: 'competition',
+    marks: { 'braemar-stone': [420] }, stoneWeights: {},
+  };
+  applyCelebrationUpdates(session, data);
+  assertEqual(Array.isArray(session.milestones), true);
+  assertEqual(session.milestones.length, 1);
+  assertEqual(session.milestones[0].type, 'pr');
+});
+
+test('applyCelebrationUpdates: silent first mark sets prs without producing milestone', () => {
+  const data = stage4bData();
+  const session = {
+    id: 1, date: '2026-05-22',
+    location: 'Field', games: 'Test Games', kind: 'competition',
+    marks: { 'braemar-stone': [410] }, stoneWeights: {},
+  };
+  applyCelebrationUpdates(session, data);
+  assertEqual(data.prs['braemar-stone'], 410);
+  assertEqual(session.milestones.length, 0);
+});
+
+test('applyCelebrationUpdates: PR break updates prs and prMeta from session', () => {
+  const data = stage4bData({ prs: { 'braemar-stone': 400 } });
+  const session = {
+    id: 1234, date: '2026-05-22',
+    location: 'Field', games: 'Highland Test', kind: 'competition',
+    marks: { 'braemar-stone': [420] }, stoneWeights: {},
+  };
+  applyCelebrationUpdates(session, data);
+  assertEqual(data.prs['braemar-stone'], 420);
+  assertEqual(data.prMeta['braemar-stone'].date, '2026-05-22');
+  assertEqual(data.prMeta['braemar-stone'].location, 'Field');
+  assertEqual(data.prMeta['braemar-stone'].gamesTitle, 'Highland Test');
+  assertEqual(data.prMeta['braemar-stone'].sessionId, 1234);
+});
+
+test('applyCelebrationUpdates: prMeta omits empty location/gamesTitle', () => {
+  const data = stage4bData({ prs: { 'braemar-stone': 400 } });
+  const session = {
+    id: 9, date: '2026-05-22',
+    location: '', games: '', kind: 'training',
+    marks: { 'braemar-stone': [420] }, stoneWeights: {},
+  };
+  applyCelebrationUpdates(session, data);
+  assertEqual(data.prMeta['braemar-stone'].location, undefined);
+  assertEqual(data.prMeta['braemar-stone'].gamesTitle, undefined);
+  assertEqual(data.prMeta['braemar-stone'].date, '2026-05-22');
+});
+
+test('applyCelebrationUpdates: Goal milestone writes goalMeta with achievedInSessionId', () => {
+  const data = stage4bData({ goals: { 'braemar-stone': 410 } });
+  const session = {
+    id: 42, date: '2026-05-22',
+    location: '', games: '', kind: 'training',
+    marks: { 'braemar-stone': [415] }, stoneWeights: {},
+  };
+  applyCelebrationUpdates(session, data);
+  const meta = data.goalMeta['braemar-stone'];
+  assertEqual(meta.value, 410);
+  assertEqual(meta.achievedInSessionId, 42);
+  assertMatch(meta.achievedAt, /^\d{4}-\d{2}-\d{2}T/);
+});
+
+test('applyCelebrationUpdates: silent-PR + Goal hit fires Goal but not PR card', () => {
+  const data = stage4bData({ goals: { 'braemar-stone': 400 } });
+  const session = {
+    id: 1, date: '2026-05-22',
+    location: '', games: '', kind: 'training',
+    marks: { 'braemar-stone': [420] }, stoneWeights: {},
+  };
+  applyCelebrationUpdates(session, data);
+  assertEqual(data.prs['braemar-stone'], 420);
+  assertEqual(session.milestones.length, 1);
+  assertEqual(session.milestones[0].type, 'goal');
+});
+
+test('handleSubmit (new session): persists milestones[] and updates prs/prMeta/goalMeta', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  saveData(stage4bData({
+    prs: { 'braemar-stone': 400 },
+    goals: { 'braemar-stone': 410 },
+  }));
+
+  const form = document.createElement('form');
+  form.id = 'session-form';
+  form.innerHTML = `
+    <input id="session-date" value="2026-05-22" />
+    <input id="session-location" value="Field" />
+    <input id="session-games" value="Test Games" />
+    <textarea id="throws-notes"></textarea>
+    <textarea id="lifts-notes"></textarea>
+    <button class="kind-btn active" data-kind="competition"></button>
+    <button class="kind-btn" data-kind="training"></button>
+    <button id="save-btn">Save Session</button>
+    <div id="status"></div>
+    <div id="edit-banner" hidden></div>
+    <span id="edit-banner-date"></span>
+    <button id="cancel-edit-btn"></button>
+    <div id="throws-list">
+      <div class="item-row" data-category="throw" data-item-id="braemar-stone" data-attempts="1" data-measurement-type="distance">
+        <div class="attempts">
+          <div class="attempt" data-slot="1">
+            <input data-field="feet" data-slot="1" value="35" />
+            <input data-field="inches" data-slot="1" value="0" />
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="lifts-list"></div>
+    <ul id="sessions-list"></ul>
+    <p id="sessions-empty"></p>
+  `;
+  document.body.appendChild(form);
+
+  try {
+    handleSubmit({ preventDefault: () => {} });
+    const data = loadData();
+    assertEqual(data.sessions.length, 1);
+    const session = data.sessions[0];
+    assertTrue(Array.isArray(session.milestones), 'milestones[] persisted');
+    // 35 ft = 420 inches; PR was 400 inches, goal 410 inches -> PR + Goal + Awesome
+    assertEqual(session.milestones.length, 3);
+    assertEqual(session.milestones[0].type, 'pr');
+    assertEqual(session.milestones[1].type, 'goal');
+    assertEqual(session.milestones[2].type, 'awesomeDay');
+    assertEqual(data.prs['braemar-stone'], 420);
+    assertEqual(data.prMeta['braemar-stone'].sessionId, session.id);
+    assertEqual(data.prMeta['braemar-stone'].gamesTitle, 'Test Games');
+    assertEqual(data.goalMeta['braemar-stone'].achievedInSessionId, session.id);
+  } finally {
+    form.remove();
+  }
+});
+
+test('handleSubmit (edit existing): does NOT recompute milestones (4c gap)', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  const sessionId = 1234;
+  saveData(stage4bData({
+    prs: { 'braemar-stone': 400 },
+    sessions: [{
+      id: sessionId,
+      date: '2026-05-20',
+      location: '',
+      games: '',
+      kind: 'training',
+      marks: { 'braemar-stone': [410] },
+      stoneWeights: {},
+      milestones: [{ type: 'pr', event: 'braemar-stone', value: 410, previousValue: 400, class: '', tier: '' }],
+    }],
+  }));
+  editingSessionId = sessionId;
+
+  const form = document.createElement('form');
+  form.id = 'session-form';
+  form.innerHTML = `
+    <input id="session-date" value="2026-05-20" />
+    <input id="session-location" value="" />
+    <input id="session-games" value="" />
+    <textarea id="throws-notes"></textarea>
+    <textarea id="lifts-notes"></textarea>
+    <button class="kind-btn active" data-kind="training"></button>
+    <button class="kind-btn" data-kind="competition"></button>
+    <button id="save-btn">Update Session</button>
+    <div id="status"></div>
+    <div id="edit-banner"><span id="edit-banner-date"></span></div>
+    <button id="cancel-edit-btn"></button>
+    <div id="throws-list">
+      <div class="item-row" data-category="throw" data-item-id="braemar-stone" data-attempts="1" data-measurement-type="distance">
+        <div class="attempts">
+          <div class="attempt" data-slot="1">
+            <input data-field="feet" data-slot="1" value="40" />
+            <input data-field="inches" data-slot="1" value="0" />
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="lifts-list"></div>
+    <ul id="sessions-list"></ul>
+    <p id="sessions-empty"></p>
+  `;
+  document.body.appendChild(form);
+
+  try {
+    handleSubmit({ preventDefault: () => {} });
+    const data = loadData();
+    const session = data.sessions.find((s) => s.id === sessionId);
+    // Marks updated (4a behaviour).
+    assertDeepEqual(session.marks['braemar-stone'], [480]);
+    // Milestones preserved as-is — no 4b recompute on edit.
+    assertEqual(session.milestones.length, 1);
+    assertEqual(session.milestones[0].value, 410);
+    // prs NOT recomputed (Stage 4c).
+    assertEqual(data.prs['braemar-stone'], 400);
+  } finally {
+    form.remove();
+    editingSessionId = null;
+  }
+});
+
 // --- Harness ---
 
 function runTests() {

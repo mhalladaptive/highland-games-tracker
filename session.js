@@ -726,6 +726,39 @@ function showStatus(message, type) {
   }, 2200);
 }
 
+function buildPrMetaFromSession(session) {
+  const meta = { date: session.date, sessionId: session.id };
+  if (session.location) meta.location = session.location;
+  if (session.games) meta.gamesTitle = session.games;
+  return meta;
+}
+
+// Apply the celebration system at save time for a NEW session: run detection
+// against the pre-update data, then mutate prs / prMeta / goalMeta and stamp
+// session.milestones[]. Stage 4b does not recompute on edit (see 4c) — this
+// only runs on the new-session save path.
+function applyCelebrationUpdates(newSession, data) {
+  const prUpdates = sessionPrUpdates(newSession, data);
+  const milestones = detectMilestones(newSession, data);
+
+  for (const eventId of Object.keys(prUpdates)) {
+    data.prs[eventId] = prUpdates[eventId];
+    data.prMeta[eventId] = buildPrMetaFromSession(newSession);
+  }
+  const achievedAt = new Date().toISOString();
+  for (const m of milestones) {
+    if (m.type === 'goal') {
+      data.goalMeta[m.event] = {
+        value: m.goalValue,
+        achievedAt,
+        achievedInSessionId: newSession.id,
+      };
+    }
+  }
+  newSession.milestones = milestones;
+  return milestones;
+}
+
 function handleSubmit(event) {
   event.preventDefault();
   const formData = collectFormData();
@@ -756,6 +789,7 @@ function handleSubmit(event) {
   if (editingSessionId !== null) {
     const idx = data.sessions.findIndex((s) => s.id === editingSessionId);
     if (idx >= 0) {
+      const existing = data.sessions[idx];
       data.sessions[idx] = {
         id: editingSessionId,
         date: formData.date,
@@ -767,6 +801,11 @@ function handleSubmit(event) {
         throwsNotes,
         liftsNotes,
       };
+      // Preserve celebration data as-is — Stage 4b does not recompute
+      // milestones on edit (Stage 4c handles that).
+      if (Array.isArray(existing && existing.milestones)) {
+        data.sessions[idx].milestones = existing.milestones;
+      }
     }
     saveData(data);
     renderSessionsList(data.sessions, data.userLifts);
@@ -784,6 +823,7 @@ function handleSubmit(event) {
       throwsNotes,
       liftsNotes,
     };
+    applyCelebrationUpdates(newSession, data);
     data.sessions.push(newSession);
     saveData(data);
     renderSessionsList(data.sessions, data.userLifts);
