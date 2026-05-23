@@ -175,20 +175,25 @@ Tracker v2 project — recompute-on-edit and the chain prompt, the final
 piece of a three-way split Stage 4. Skill level: L1 — Supported.
 Project risk: Normal, but 4c is the highest-risk stage of the build.
 
-WHAT TO READ — all attached to this conversation:
-- v2-stage4c-spec.md — the Stage 4c spec. Its "Acceptance criteria" is
-  the bar; its "Resolved decisions" fix three design calls — do not
-  relitigate them; its "Risk note" says where to concentrate; its
-  "Known interim state" says what is expected rather than a bug.
-- v2-plan.md — the full v2 design (Stage 4, the Celebration system,
-  the Milestone and Session data shapes, Storage schema v2).
-- session.js, session.html — the code Stage 4c changed.
-- shared.js — for the new recomputeDerivedState helper and the
-  detection / unit machinery.
-- app.js, index.html — for the Set-page achieved-goal callout.
-- styles.css, tests.js — the styling and the test suite.
-- higgins-method.md — your Reviewer role, the L1 level, the
-  one-review-pass rule.
+WHAT TO READ — attach all 10 files. The list is alphabetical to match
+the file picker, and numbered so you know when all 10 are attached:
+
+1.  app.js — for the Set-page achieved-goal callout.
+2.  higgins-method.md — your Reviewer role, the L1 level, the
+    one-review-pass rule.
+3.  index.html — for the Set-page achieved-goal callout.
+4.  session.html — the markup Stage 4c changed.
+5.  session.js — the code Stage 4c changed.
+6.  shared.js — the new recomputeDerivedState helper and the
+    detection / unit machinery.
+7.  styles.css — styling for the chain prompt and the callout.
+8.  tests.js — the test suite.
+9.  v2-plan.md — the full v2 design (Stage 4, the Celebration system,
+    the Milestone and Session data shapes, Storage schema v2).
+10. v2-stage4c-spec.md — the Stage 4c spec. "Acceptance criteria" is
+    the bar; "Resolved decisions" fix three design calls (do not
+    relitigate them); "Risk note" says where to concentrate; "Known
+    interim state" says what is expected rather than a bug.
 
 Review the code itself — do not rely on ccode's build report. This
 must be an independent read.
