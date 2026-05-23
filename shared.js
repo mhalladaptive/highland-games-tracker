@@ -648,6 +648,160 @@ function sessionPrUpdates(session, data) {
   return updates;
 }
 
+// Build a prMeta entry from a session — date / sessionId always present,
+// location and gamesTitle only when non-empty. Shared by the 4b new-session
+// save path and the 4c recompute path.
+function buildPrMetaFromSession(session) {
+  const meta = { date: session.date, sessionId: session.id };
+  if (session.location) meta.location = session.location;
+  if (session.games) meta.gamesTitle = session.games;
+  return meta;
+}
+
+// Sort sessions in chronological order (date ascending, then save order by
+// id) — the tie-break used by prMeta and goalMeta recompute.
+function sessionsByChronology(sessions) {
+  return [...sessions].sort((a, b) => {
+    const ad = (a && a.date) || '';
+    const bd = (b && b.date) || '';
+    if (ad !== bd) return ad.localeCompare(bd);
+    const ai = (a && Number.isFinite(a.id)) ? a.id : 0;
+    const bi = (b && Number.isFinite(b.id)) ? b.id : 0;
+    return ai - bi;
+  });
+}
+
+// Stage 4c — rebuild prs / prMeta / goalMeta from all sessions. Pure: reads
+// data.sessions, data.goals, data.userLifts; returns the rebuilt slices and
+// never mutates the input.
+//
+// Rules:
+//   prs[event]    — best mark across all sessions for that event using the
+//                   unit's direction (max for higher-is-better, min for time).
+//                   If no session has a finite mark for an event, the event
+//                   is absent from prs.
+//   prMeta[event] — buildPrMetaFromSession of whichever session holds that
+//                   best mark; ties go to the earliest session (date, then
+//                   save order).
+//   goalMeta[event] — for each event with a finite goals[event], scan
+//                   sessions in chronological order; the first session whose
+//                   best meets-or-beats the goal sets achievedInSessionId and
+//                   achievedAt. If no session meets the goal, the event is
+//                   absent from goalMeta.
+//   goals         — never touched. The active goal is the athlete's, not a
+//                   derived value.
+//
+// achievedAt: when the recomputed achiever and value match the previous
+// goalMeta entry, the original timestamp is preserved so an unrelated edit
+// does not silently rewrite history; otherwise it falls back to the session's
+// date at midnight UTC (the closest we can reconstruct for a session we did
+// not capture a wall-clock for).
+function recomputeDerivedState(data) {
+  const sessions = (data && Array.isArray(data.sessions)) ? data.sessions : [];
+  const goals = (data && data.goals && typeof data.goals === 'object') ? data.goals : {};
+  const prevGoalMeta = (data && data.goalMeta && typeof data.goalMeta === 'object') ? data.goalMeta : {};
+  const sorted = sessionsByChronology(sessions);
+
+  const eventBests = {};
+  for (const session of sorted) {
+    if (!session || !session.marks || typeof session.marks !== 'object') continue;
+    for (const eventId of Object.keys(session.marks)) {
+      const direction = eventDirection(eventId, data);
+      const best = eventBest(session.marks[eventId], direction);
+      if (best === null) continue;
+      const existing = eventBests[eventId];
+      if (!existing) {
+        eventBests[eventId] = { value: best, session };
+        continue;
+      }
+      const beats = direction === 'lower' ? best < existing.value : best > existing.value;
+      if (beats) eventBests[eventId] = { value: best, session };
+      // Equal best: keep the earlier session (sorted order means existing is earlier).
+    }
+  }
+
+  const prs = {};
+  const prMeta = {};
+  for (const eventId of Object.keys(eventBests)) {
+    const { value, session } = eventBests[eventId];
+    prs[eventId] = value;
+    prMeta[eventId] = buildPrMetaFromSession(session);
+  }
+
+  const goalMeta = {};
+  for (const eventId of Object.keys(goals)) {
+    const goalValue = goals[eventId];
+    if (!Number.isFinite(goalValue)) continue;
+    const direction = eventDirection(eventId, data);
+    for (const session of sorted) {
+      if (!session || !session.marks) continue;
+      const best = eventBest(session.marks[eventId], direction);
+      if (best === null) continue;
+      const meets = direction === 'lower' ? best <= goalValue : best >= goalValue;
+      if (!meets) continue;
+      const prev = prevGoalMeta[eventId];
+      const samePrev = prev && prev.achievedInSessionId === session.id && prev.value === goalValue;
+      const achievedAt = (samePrev && typeof prev.achievedAt === 'string')
+        ? prev.achievedAt
+        : `${session.date}T00:00:00.000Z`;
+      goalMeta[eventId] = {
+        value: goalValue,
+        achievedAt,
+        achievedInSessionId: session.id,
+      };
+      break;
+    }
+  }
+
+  return { prs, prMeta, goalMeta };
+}
+
+// Stage 4c — re-derive an edited session's milestones[] using the 4b
+// detection rule, but against the baseline as of immediately BEFORE that
+// session (best across chronologically-prior sessions, goalMeta from prior
+// achievers only). The result is what the celebration system would have
+// shown if this session were being saved fresh on top of the rest of
+// history. Pure: returns the milestones array; the caller persists it and
+// diffs against the old list.
+function redetectMilestonesForEditedSession(editedSession, data) {
+  if (!editedSession) return [];
+  const sessions = (data && Array.isArray(data.sessions)) ? data.sessions : [];
+  const priorSessions = sessions.filter((s) => {
+    if (!s) return false;
+    if (s.id === editedSession.id) return false;
+    const sd = s.date || '';
+    const ed = editedSession.date || '';
+    if (sd !== ed) return sd < ed;
+    const si = Number.isFinite(s.id) ? s.id : 0;
+    const ei = Number.isFinite(editedSession.id) ? editedSession.id : 0;
+    return si < ei;
+  });
+  const baselineSlices = recomputeDerivedState(Object.assign({}, data, { sessions: priorSessions }));
+  const baselineData = Object.assign({}, data, {
+    prs: baselineSlices.prs,
+    prMeta: baselineSlices.prMeta,
+    goalMeta: baselineSlices.goalMeta,
+  });
+  return detectMilestones(editedSession, baselineData);
+}
+
+// Stage 4c — milestone diff for the edited-session recompute. Two milestones
+// are the same when their (type, event) match; awesomeDay is keyed by type
+// alone. Returns the list of milestones present in `next` but not in `prev`
+// — these are the ones whose celebration cards fire. Removed milestones are
+// silent and surfaced separately (callers who care can compute them via the
+// same equivalence, but Stage 4c does not need them).
+function milestoneKey(m) {
+  if (!m || !m.type) return '';
+  if (m.type === 'awesomeDay') return 'awesomeDay';
+  return `${m.type}:${m.event}`;
+}
+
+function diffCreatedMilestones(prev, next) {
+  const seen = new Set((Array.isArray(prev) ? prev : []).map(milestoneKey));
+  return (Array.isArray(next) ? next : []).filter((m) => !seen.has(milestoneKey(m)));
+}
+
 // Detect celebration milestones for a session. Pure — reads `data.prs`,
 // `data.goals`, `data.goalMeta`, `data.userLifts`, `data.profile`; returns the
 // milestones array. The caller persists the result on `session.milestones[]`
