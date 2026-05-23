@@ -319,7 +319,7 @@ cards, no PR auto-update.
 The spec has no open items — build to it as written. Note the Resolved
 decisions section, and the Risk note: the careful surface is the edit
 path — editing a session must not drop the marks of a since-removed
-lift.
+lift.`1``
 
 Skill level: L1 — Supported. Project risk: Normal — 4a rewrites no
 historical data; the care goes to the edit path. Reviewer: gpt.
