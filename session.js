@@ -897,9 +897,16 @@ function buildCelebrationCard(milestone, session, data, allMilestones) {
 // Show the modal queue: one card per screen, tap (or Enter/Space/Right) to
 // advance, forward-only; closing past the last card removes the overlay.
 // A × button in the corner ends the queue early.
-function showCelebrationQueue(session, data) {
-  const milestones = Array.isArray(session && session.milestones) ? session.milestones : [];
-  if (milestones.length === 0) return;
+//
+// options.subset — array of milestones to display, defaulting to the
+// session's full milestones[]. The awesomeDay card still lists the session's
+// full milestones[] regardless, so a partial-queue (edit-created subset)
+// summary stays truthful.
+function showCelebrationQueue(session, data, options) {
+  const opts = options || {};
+  const fullList = Array.isArray(session && session.milestones) ? session.milestones : [];
+  const queue = Array.isArray(opts.subset) ? opts.subset : fullList;
+  if (queue.length === 0) return;
 
   const overlay = document.createElement('div');
   overlay.className = 'celebration-overlay';
@@ -921,7 +928,7 @@ function showCelebrationQueue(session, data) {
   let index = 0;
   function render() {
     slot.innerHTML = '';
-    const card = buildCelebrationCard(milestones[index], session, data, milestones);
+    const card = buildCelebrationCard(queue[index], session, data, fullList);
     if (card) slot.appendChild(card);
   }
   function close() {
@@ -930,7 +937,7 @@ function showCelebrationQueue(session, data) {
   }
   function advance() {
     index += 1;
-    if (index >= milestones.length) close();
+    if (index >= queue.length) close();
     else render();
   }
   function onKey(e) {
@@ -1005,10 +1012,13 @@ function handleSubmit(event) {
   const liftsNotes = formData.liftsNotes || '';
 
   if (editingSessionId !== null) {
+    let created = [];
+    let updatedSession = null;
     const idx = data.sessions.findIndex((s) => s.id === editingSessionId);
     if (idx >= 0) {
       const existing = data.sessions[idx];
-      data.sessions[idx] = {
+      const oldMilestones = Array.isArray(existing && existing.milestones) ? existing.milestones : [];
+      updatedSession = {
         id: editingSessionId,
         date: formData.date,
         location: formData.location || '',
@@ -1019,11 +1029,15 @@ function handleSubmit(event) {
         throwsNotes,
         liftsNotes,
       };
-      // Carry the edited session's existing milestones[] forward unchanged —
-      // the next commit re-derives them from the updated marks.
-      if (Array.isArray(existing && existing.milestones)) {
-        data.sessions[idx].milestones = existing.milestones;
-      }
+      data.sessions[idx] = updatedSession;
+      // Stage 4c: re-derive the edited session's milestones against a baseline
+      // built from chronologically-prior sessions only. Newly created
+      // milestones (present now but not before) fire a celebration card;
+      // removed milestones are silent. Every other session's milestones[]
+      // is left frozen.
+      const newMilestones = redetectMilestonesForEditedSession(updatedSession, data);
+      updatedSession.milestones = newMilestones;
+      created = diffCreatedMilestones(oldMilestones, newMilestones);
     }
     // Stage 4c: rebuild prs / prMeta / goalMeta across all sessions so the
     // live derived data stays honest after the edit.
@@ -1035,6 +1049,9 @@ function handleSubmit(event) {
     renderSessionsList(data.sessions, data.userLifts);
     resetForm();
     showStatus('Session updated.');
+    if (updatedSession && created.length > 0) {
+      showCelebrationQueue(updatedSession, data, { subset: created });
+    }
   } else {
     const newSession = {
       id: Date.now(),
