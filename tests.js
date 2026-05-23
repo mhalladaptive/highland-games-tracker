@@ -2634,6 +2634,622 @@ test('View Celebrations: replay re-derives the same card sequence as save', () =
   }
 });
 
+// --- Stage 4c: recomputeDerivedState ---
+
+test('recomputeDerivedState: empty data => empty slices', () => {
+  const r = recomputeDerivedState(stage4bData());
+  assertDeepEqual(r.prs, {});
+  assertDeepEqual(r.prMeta, {});
+  assertDeepEqual(r.goalMeta, {});
+});
+
+test('recomputeDerivedState: prs is max across sessions for higher direction', () => {
+  const data = stage4bData({
+    sessions: [
+      { id: 1, date: '2026-05-01', location: 'A', games: '', kind: 'training', marks: { 'braemar-stone': [400, 410] } },
+      { id: 2, date: '2026-05-10', location: 'B', games: '', kind: 'training', marks: { 'braemar-stone': [415, 405] } },
+    ],
+  });
+  const r = recomputeDerivedState(data);
+  assertEqual(r.prs['braemar-stone'], 415);
+  assertEqual(r.prMeta['braemar-stone'].sessionId, 2);
+  assertEqual(r.prMeta['braemar-stone'].location, 'B');
+});
+
+test('recomputeDerivedState: prs is min across sessions for time direction', () => {
+  const data = stage4bData({
+    userLifts: [{ id: 'mile', name: 'Mile', protocol: '', unit: 'time', active: true }],
+    sessions: [
+      { id: 1, date: '2026-05-01', marks: { mile: [360] } },
+      { id: 2, date: '2026-05-10', marks: { mile: [355] } },
+      { id: 3, date: '2026-05-20', marks: { mile: [358] } },
+    ],
+  });
+  const r = recomputeDerivedState(data);
+  assertEqual(r.prs.mile, 355);
+  assertEqual(r.prMeta.mile.sessionId, 2);
+});
+
+test('recomputeDerivedState: prMeta tie-break is the earliest session', () => {
+  const data = stage4bData({
+    sessions: [
+      { id: 2, date: '2026-05-10', marks: { 'braemar-stone': [420] } },
+      { id: 1, date: '2026-05-01', marks: { 'braemar-stone': [420] } },
+      { id: 3, date: '2026-05-20', marks: { 'braemar-stone': [420] } },
+    ],
+  });
+  const r = recomputeDerivedState(data);
+  assertEqual(r.prMeta['braemar-stone'].sessionId, 1, 'earliest by date wins');
+});
+
+test('recomputeDerivedState: deleting PR-holder drops prs to next-best', () => {
+  const data = stage4bData({
+    sessions: [
+      { id: 1, date: '2026-05-01', marks: { 'braemar-stone': [400] } },
+      { id: 2, date: '2026-05-10', marks: { 'braemar-stone': [410] } },
+    ],
+  });
+  const r = recomputeDerivedState(data);
+  assertEqual(r.prs['braemar-stone'], 410);
+  // Now simulate the delete: session 2 (the PR holder) is removed.
+  data.sessions = data.sessions.filter((s) => s.id !== 2);
+  const after = recomputeDerivedState(data);
+  assertEqual(after.prs['braemar-stone'], 400, 'drops to next-best after delete');
+  assertEqual(after.prMeta['braemar-stone'].sessionId, 1);
+});
+
+test('recomputeDerivedState: deleting last session for event clears prs/prMeta', () => {
+  const data = stage4bData({
+    sessions: [
+      { id: 1, date: '2026-05-01', marks: { 'braemar-stone': [400], 'open-stone': [380] } },
+      { id: 2, date: '2026-05-10', marks: { 'open-stone': [385] } },
+    ],
+  });
+  data.sessions = data.sessions.filter((s) => s.id !== 1);
+  const r = recomputeDerivedState(data);
+  assertEqual(r.prs['braemar-stone'], undefined, 'event with no remaining marks drops from prs');
+  assertEqual(r.prMeta['braemar-stone'], undefined);
+  assertEqual(r.prs['open-stone'], 385);
+});
+
+test('recomputeDerivedState: goalMeta cleared when no remaining session meets goal', () => {
+  const data = stage4bData({
+    goals: { 'braemar-stone': 420 },
+    goalMeta: { 'braemar-stone': { value: 420, achievedAt: '2026-05-10T00:00:00.000Z', achievedInSessionId: 2 } },
+    sessions: [
+      { id: 1, date: '2026-05-01', marks: { 'braemar-stone': [410] } },
+      { id: 2, date: '2026-05-10', marks: { 'braemar-stone': [425] } },
+    ],
+  });
+  data.sessions = data.sessions.filter((s) => s.id !== 2);
+  const r = recomputeDerivedState(data);
+  assertEqual(r.goalMeta['braemar-stone'], undefined, 'goalMeta clears when no session meets goal');
+});
+
+test('recomputeDerivedState: goalMeta first-meets in chronological order', () => {
+  const data = stage4bData({
+    goals: { 'braemar-stone': 410 },
+    sessions: [
+      { id: 5, date: '2026-05-20', marks: { 'braemar-stone': [420] } },
+      { id: 3, date: '2026-05-10', marks: { 'braemar-stone': [415] } },
+      { id: 1, date: '2026-05-01', marks: { 'braemar-stone': [405] } },
+    ],
+  });
+  const r = recomputeDerivedState(data);
+  assertEqual(r.goalMeta['braemar-stone'].achievedInSessionId, 3, 'first achiever by date');
+  assertEqual(r.goalMeta['braemar-stone'].value, 410, 'records the goalValue (current goal)');
+});
+
+test('recomputeDerivedState: never touches active goals[event]', () => {
+  const data = stage4bData({
+    goals: { 'braemar-stone': 420, 'open-stone': 380 },
+    sessions: [{ id: 1, date: '2026-05-01', marks: { 'braemar-stone': [400] } }],
+  });
+  const goalsBefore = JSON.parse(JSON.stringify(data.goals));
+  const r = recomputeDerivedState(data);
+  assertDeepEqual(data.goals, goalsBefore, 'recompute did not mutate goals');
+  assertEqual(r.goals, undefined, 'recompute does not return goals');
+});
+
+test('recomputeDerivedState: achievedAt preserved when achiever+value unchanged', () => {
+  const original = '2026-04-01T12:34:56.789Z';
+  const data = stage4bData({
+    goals: { 'braemar-stone': 410 },
+    goalMeta: { 'braemar-stone': { value: 410, achievedAt: original, achievedInSessionId: 1 } },
+    sessions: [{ id: 1, date: '2026-05-01', marks: { 'braemar-stone': [415] } }],
+  });
+  const r = recomputeDerivedState(data);
+  assertEqual(r.goalMeta['braemar-stone'].achievedAt, original, 'wallclock preserved on idempotent recompute');
+});
+
+test('recomputeDerivedState: achievedAt regenerated when achiever changes', () => {
+  const original = '2026-04-01T12:34:56.789Z';
+  const data = stage4bData({
+    goals: { 'braemar-stone': 410 },
+    goalMeta: { 'braemar-stone': { value: 410, achievedAt: original, achievedInSessionId: 999 } },
+    sessions: [{ id: 1, date: '2026-05-01', marks: { 'braemar-stone': [415] } }],
+  });
+  const r = recomputeDerivedState(data);
+  assertEqual(r.goalMeta['braemar-stone'].achievedInSessionId, 1);
+  assertEqual(r.goalMeta['braemar-stone'].achievedAt, '2026-05-01T00:00:00.000Z');
+});
+
+// --- Stage 4c: redetectMilestonesForEditedSession ---
+
+test('redetectMilestonesForEditedSession: solo session has empty baseline (silent first mark)', () => {
+  const solo = { id: 1, date: '2026-05-22', marks: { 'braemar-stone': [420] } };
+  const data = stage4bData({ sessions: [solo] });
+  assertDeepEqual(redetectMilestonesForEditedSession(solo, data), []);
+});
+
+test('redetectMilestonesForEditedSession: prior session forms the baseline', () => {
+  const prior = { id: 1, date: '2026-05-01', marks: { 'braemar-stone': [400] } };
+  const edited = { id: 2, date: '2026-05-22', marks: { 'braemar-stone': [420] } };
+  const data = stage4bData({ goals: { 'braemar-stone': 410 }, sessions: [prior, edited] });
+  const ms = redetectMilestonesForEditedSession(edited, data);
+  assertEqual(ms.length, 3, 'PR + Goal + AwesomeDay');
+  assertEqual(ms[0].type, 'pr');
+  assertEqual(ms[0].previousValue, 400);
+});
+
+test('redetectMilestonesForEditedSession: prior session that already met goal blocks Goal milestone', () => {
+  const prior = { id: 1, date: '2026-05-01', marks: { 'braemar-stone': [420] } };
+  const edited = { id: 2, date: '2026-05-22', marks: { 'braemar-stone': [425] } };
+  const data = stage4bData({ goals: { 'braemar-stone': 410 }, sessions: [prior, edited] });
+  const ms = redetectMilestonesForEditedSession(edited, data);
+  // PR fires (425 beats 420), Goal does NOT fire (prior achieved 410).
+  assertEqual(ms.filter((m) => m.type === 'goal').length, 0);
+  assertEqual(ms.filter((m) => m.type === 'pr').length, 1);
+});
+
+// --- Stage 4c: diffCreatedMilestones ---
+
+test('diffCreatedMilestones: identifies added entries by (type, event)', () => {
+  const prev = [{ type: 'pr', event: 'braemar-stone' }];
+  const next = [
+    { type: 'pr', event: 'braemar-stone' },
+    { type: 'goal', event: 'braemar-stone' },
+    { type: 'awesomeDay' },
+  ];
+  const created = diffCreatedMilestones(prev, next);
+  assertEqual(created.length, 2);
+  assertEqual(created[0].type, 'goal');
+  assertEqual(created[1].type, 'awesomeDay');
+});
+
+test('diffCreatedMilestones: same (type, event) is unchanged even if value differs', () => {
+  const prev = [{ type: 'pr', event: 'braemar-stone', value: 410 }];
+  const next = [{ type: 'pr', event: 'braemar-stone', value: 420 }];
+  assertEqual(diffCreatedMilestones(prev, next).length, 0);
+});
+
+test('diffCreatedMilestones: awesomeDay keyed by type alone', () => {
+  const prev = [{ type: 'awesomeDay' }];
+  const next = [{ type: 'awesomeDay' }];
+  assertEqual(diffCreatedMilestones(prev, next).length, 0);
+});
+
+// --- Stage 4c: handleSubmit (edit) ---
+
+function buildEditFormFixture(sessionDate, marks) {
+  const form = document.createElement('form');
+  form.id = 'session-form';
+  const throwRows = Object.keys(marks).map((eventId) => {
+    const slots = marks[eventId].map((inches, idx) => {
+      const { feet, inches: rem } = inchesToFeetInches(inches);
+      return `
+        <div class="attempt" data-slot="${idx + 1}">
+          <input data-field="feet" data-slot="${idx + 1}" value="${feet}" />
+          <input data-field="inches" data-slot="${idx + 1}" value="${rem}" />
+        </div>
+      `;
+    }).join('');
+    return `
+      <div class="item-row" data-category="throw" data-item-id="${eventId}" data-attempts="${marks[eventId].length}" data-measurement-type="distance">
+        <div class="attempts">${slots}</div>
+      </div>
+    `;
+  }).join('');
+  form.innerHTML = `
+    <input id="session-date" value="${sessionDate}" />
+    <input id="session-location" value="" />
+    <input id="session-games" value="" />
+    <textarea id="throws-notes"></textarea>
+    <textarea id="lifts-notes"></textarea>
+    <button class="kind-btn active" data-kind="training"></button>
+    <button class="kind-btn" data-kind="competition"></button>
+    <button id="save-btn">Update Session</button>
+    <div id="status"></div>
+    <div id="edit-banner"><span id="edit-banner-date"></span></div>
+    <button id="cancel-edit-btn"></button>
+    <div id="throws-list">${throwRows}</div>
+    <div id="lifts-list"></div>
+    <ul id="sessions-list"></ul>
+    <p id="sessions-empty"></p>
+  `;
+  document.body.appendChild(form);
+  return form;
+}
+
+test('handleSubmit (edit): recomputes prs/prMeta to reflect updated marks', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  const sessionId = 1234;
+  saveData(stage4bData({
+    prs: { 'braemar-stone': 410 },
+    prMeta: { 'braemar-stone': { date: '2026-05-20', sessionId } },
+    sessions: [{
+      id: sessionId, date: '2026-05-20', location: '', games: '', kind: 'training',
+      marks: { 'braemar-stone': [410] }, stoneWeights: {},
+      milestones: [{ type: 'pr', event: 'braemar-stone', value: 410, previousValue: 0, class: '', tier: '' }],
+    }],
+  }));
+  editingSessionId = sessionId;
+  const form = buildEditFormFixture('2026-05-20', { 'braemar-stone': [480] });
+  try {
+    handleSubmit({ preventDefault: () => {} });
+    const data = loadData();
+    assertEqual(data.prs['braemar-stone'], 480, 'PR recomputed to new max');
+    assertEqual(data.prMeta['braemar-stone'].sessionId, sessionId);
+  } finally {
+    form.remove();
+    editingSessionId = null;
+  }
+});
+
+test('handleSubmit (edit): re-derives edited session milestones[]', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  const priorId = 1, editedId = 2;
+  saveData(stage4bData({
+    prs: { 'braemar-stone': 400 },
+    prMeta: { 'braemar-stone': { date: '2026-05-01', sessionId: priorId } },
+    goals: { 'braemar-stone': 410 },
+    sessions: [
+      { id: priorId, date: '2026-05-01', location: '', games: '', kind: 'training',
+        marks: { 'braemar-stone': [400] }, stoneWeights: {}, milestones: [] },
+      { id: editedId, date: '2026-05-22', location: '', games: '', kind: 'training',
+        marks: { 'braemar-stone': [405] }, stoneWeights: {}, milestones: [] },
+    ],
+  }));
+  editingSessionId = editedId;
+  // Edit raises the edited session's mark to 420 → PR + Goal + AwesomeDay.
+  const form = buildEditFormFixture('2026-05-22', { 'braemar-stone': [420] });
+  try {
+    handleSubmit({ preventDefault: () => {} });
+    const data = loadData();
+    const edited = data.sessions.find((s) => s.id === editedId);
+    assertEqual(edited.milestones.length, 3, 'PR + Goal + AwesomeDay re-derived');
+    assertEqual(edited.milestones[0].type, 'pr');
+    assertEqual(edited.milestones[0].previousValue, 400, 'baseline is the prior session');
+    assertEqual(edited.milestones[1].type, 'goal');
+    assertEqual(edited.milestones[2].type, 'awesomeDay');
+  } finally {
+    form.remove();
+    editingSessionId = null;
+  }
+});
+
+test('handleSubmit (edit): other sessions milestones[] left frozen', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  const otherId = 7, editedId = 8;
+  const frozen = [
+    { type: 'pr', event: 'braemar-stone', value: 405, previousValue: 0, class: '', tier: '' },
+  ];
+  saveData(stage4bData({
+    prs: { 'braemar-stone': 405 },
+    sessions: [
+      { id: otherId, date: '2026-05-01', location: '', games: '', kind: 'training',
+        marks: { 'braemar-stone': [405] }, stoneWeights: {}, milestones: frozen },
+      { id: editedId, date: '2026-05-22', location: '', games: '', kind: 'training',
+        marks: { 'braemar-stone': [400] }, stoneWeights: {}, milestones: [] },
+    ],
+  }));
+  editingSessionId = editedId;
+  const form = buildEditFormFixture('2026-05-22', { 'braemar-stone': [410] });
+  try {
+    handleSubmit({ preventDefault: () => {} });
+    const data = loadData();
+    const other = data.sessions.find((s) => s.id === otherId);
+    assertDeepEqual(other.milestones, frozen, 'other session milestones unchanged');
+  } finally {
+    form.remove();
+    editingSessionId = null;
+  }
+});
+
+test('handleSubmit (edit): created milestone fires celebration queue', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  const priorId = 1, editedId = 2;
+  saveData(stage4bData({
+    prs: { 'braemar-stone': 400 },
+    prMeta: { 'braemar-stone': { date: '2026-05-01', sessionId: priorId } },
+    sessions: [
+      { id: priorId, date: '2026-05-01', kind: 'training', location: '', games: '',
+        marks: { 'braemar-stone': [400] }, stoneWeights: {}, milestones: [] },
+      { id: editedId, date: '2026-05-22', kind: 'training', location: '', games: '',
+        marks: { 'braemar-stone': [405] }, stoneWeights: {}, milestones: [] },
+    ],
+  }));
+  editingSessionId = editedId;
+  document.querySelectorAll('.celebration-overlay').forEach((el) => { el.remove(); });
+  const form = buildEditFormFixture('2026-05-22', { 'braemar-stone': [420] });
+  try {
+    handleSubmit({ preventDefault: () => {} });
+    const overlay = document.querySelector('.celebration-overlay');
+    assertTrue(overlay, 'overlay shown after edit creates a milestone');
+    assertTrue(overlay.querySelector('.celebration-card--pr'), 'starts with PR card');
+  } finally {
+    document.querySelectorAll('.celebration-overlay').forEach((el) => { el.remove(); });
+    form.remove();
+    editingSessionId = null;
+  }
+});
+
+test('handleSubmit (edit): removed milestones are silent (no overlay)', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  const editedId = 1;
+  saveData(stage4bData({
+    prs: { 'braemar-stone': 420 },
+    sessions: [{
+      id: editedId, date: '2026-05-22', kind: 'training', location: '', games: '',
+      marks: { 'braemar-stone': [420] }, stoneWeights: {},
+      milestones: [{ type: 'pr', event: 'braemar-stone', value: 420, previousValue: 0, class: '', tier: '' }],
+    }],
+  }));
+  editingSessionId = editedId;
+  document.querySelectorAll('.celebration-overlay').forEach((el) => { el.remove(); });
+  // Edit drops the mark — milestone goes away (silent, no PR celebration).
+  const form = buildEditFormFixture('2026-05-22', { 'braemar-stone': [400] });
+  try {
+    handleSubmit({ preventDefault: () => {} });
+    assertEqual(document.querySelector('.celebration-overlay'), null, 'no overlay when only removed');
+    const data = loadData();
+    const edited = data.sessions.find((s) => s.id === editedId);
+    assertDeepEqual(edited.milestones, [], 'edited session milestones recomputed empty');
+  } finally {
+    document.querySelectorAll('.celebration-overlay').forEach((el) => { el.remove(); });
+    form.remove();
+    editingSessionId = null;
+  }
+});
+
+// --- Stage 4c: handleDelete ---
+
+function makeDeleteFixture() {
+  let fx = document.getElementById('delete-fixture');
+  if (fx) fx.remove();
+  fx = document.createElement('div');
+  fx.id = 'delete-fixture';
+  fx.innerHTML = '<p id="status"></p><ul id="sessions-list"></ul><p id="sessions-empty"></p>';
+  document.body.appendChild(fx);
+  return fx;
+}
+
+test('handleDelete: recomputes prs after deleting PR-holder', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  saveData(stage4bData({
+    prs: { 'braemar-stone': 420 },
+    sessions: [
+      { id: 1, date: '2026-05-01', kind: 'training', location: '', games: '',
+        marks: { 'braemar-stone': [400] }, stoneWeights: {}, milestones: [] },
+      { id: 2, date: '2026-05-10', kind: 'training', location: '', games: '',
+        marks: { 'braemar-stone': [420] }, stoneWeights: {}, milestones: [] },
+    ],
+  }));
+  const fixture = makeDeleteFixture();
+  const origConfirm = window.confirm;
+  window.confirm = () => true;
+  try {
+    handleDelete(2);
+    const data = loadData();
+    assertEqual(data.prs['braemar-stone'], 400, 'drops to next-best');
+    assertEqual(data.prMeta['braemar-stone'].sessionId, 1);
+  } finally {
+    window.confirm = origConfirm;
+    fixture.remove();
+  }
+});
+
+test('handleDelete: clears prs/prMeta when last session for event is removed', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  saveData(stage4bData({
+    prs: { 'braemar-stone': 400 },
+    prMeta: { 'braemar-stone': { date: '2026-05-01', sessionId: 1 } },
+    sessions: [{
+      id: 1, date: '2026-05-01', kind: 'training', location: '', games: '',
+      marks: { 'braemar-stone': [400] }, stoneWeights: {}, milestones: [],
+    }],
+  }));
+  const fixture = makeDeleteFixture();
+  const origConfirm = window.confirm;
+  window.confirm = () => true;
+  try {
+    handleDelete(1);
+    const data = loadData();
+    assertEqual(data.prs['braemar-stone'], undefined);
+    assertEqual(data.prMeta['braemar-stone'], undefined);
+  } finally {
+    window.confirm = origConfirm;
+    fixture.remove();
+  }
+});
+
+test('handleDelete: clears goalMeta when no remaining session meets goal', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  saveData(stage4bData({
+    goals: { 'braemar-stone': 410 },
+    goalMeta: { 'braemar-stone': { value: 410, achievedAt: '2026-05-10T00:00:00.000Z', achievedInSessionId: 2 } },
+    sessions: [
+      { id: 1, date: '2026-05-01', kind: 'training', location: '', games: '',
+        marks: { 'braemar-stone': [400] }, stoneWeights: {}, milestones: [] },
+      { id: 2, date: '2026-05-10', kind: 'training', location: '', games: '',
+        marks: { 'braemar-stone': [420] }, stoneWeights: {}, milestones: [] },
+    ],
+  }));
+  const fixture = makeDeleteFixture();
+  const origConfirm = window.confirm;
+  window.confirm = () => true;
+  try {
+    handleDelete(2);
+    const data = loadData();
+    assertEqual(data.goalMeta['braemar-stone'], undefined, 'goalMeta cleared');
+    assertEqual(data.goals['braemar-stone'], 410, 'active goal untouched');
+  } finally {
+    window.confirm = origConfirm;
+    fixture.remove();
+  }
+});
+
+// --- Stage 4c: chain prompt ---
+
+test('showCelebrationQueue: chainPrompts shows prompt panel after Goal card', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  saveData(stage4bData({ goals: { 'braemar-stone': 410 } }));
+  document.querySelectorAll('.celebration-overlay').forEach((el) => { el.remove(); });
+  const session = {
+    id: 1, date: '2026-05-22', games: '', location: '',
+    milestones: [{ type: 'goal', event: 'braemar-stone', value: 420, goalValue: 410 }],
+  };
+  showCelebrationQueue(session, loadData(), { chainPrompts: true });
+  try {
+    let overlay = document.querySelector('.celebration-overlay');
+    assertTrue(overlay.querySelector('.celebration-card--goal'), 'starts with Goal card');
+    overlay.click();
+    overlay = document.querySelector('.celebration-overlay');
+    assertTrue(overlay.querySelector('.chain-prompt'), 'next view is the chain prompt');
+    assertTrue(overlay.querySelector('.chain-prompt-save'), 'has Save goal button');
+    assertTrue(overlay.querySelector('.chain-prompt-skip'), 'has Not now button');
+  } finally {
+    document.querySelectorAll('.celebration-overlay').forEach((el) => { el.remove(); });
+  }
+});
+
+test('showCelebrationQueue: chain prompt Save updates goals[event] and recomputes', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  saveData(stage4bData({
+    goals: { 'braemar-stone': 410 },
+    goalMeta: { 'braemar-stone': { value: 410, achievedAt: '2026-05-22T00:00:00.000Z', achievedInSessionId: 1 } },
+    sessions: [{
+      id: 1, date: '2026-05-22', kind: 'training', location: '', games: '',
+      marks: { 'braemar-stone': [420] }, stoneWeights: {}, milestones: [],
+    }],
+  }));
+  document.querySelectorAll('.celebration-overlay').forEach((el) => { el.remove(); });
+  const session = {
+    id: 1, date: '2026-05-22', games: '', location: '',
+    milestones: [{ type: 'goal', event: 'braemar-stone', value: 420, goalValue: 410 }],
+  };
+  showCelebrationQueue(session, loadData(), { chainPrompts: true });
+  try {
+    document.querySelector('.celebration-overlay').click();
+    const prompt = document.querySelector('.chain-prompt');
+    assertTrue(prompt, 'prompt visible');
+    // Fill in 500 inches as a fresh, unmet goal (no session beats it).
+    prompt.querySelector('[data-field="chainFeet"]').value = '41';
+    prompt.querySelector('[data-field="chainInches"]').value = '8';
+    prompt.querySelector('.chain-prompt-save').click();
+    const data = loadData();
+    assertEqual(data.goals['braemar-stone'], 500, '41 ft 8 in = 500 in');
+    assertEqual(data.goalMeta['braemar-stone'], undefined, 'fresh unmet goal clears goalMeta');
+  } finally {
+    document.querySelectorAll('.celebration-overlay').forEach((el) => { el.remove(); });
+  }
+});
+
+test('showCelebrationQueue: chain prompt Not now skips without changing goals', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  saveData(stage4bData({ goals: { 'braemar-stone': 410 } }));
+  document.querySelectorAll('.celebration-overlay').forEach((el) => { el.remove(); });
+  const session = {
+    id: 1, date: '2026-05-22', games: '', location: '',
+    milestones: [{ type: 'goal', event: 'braemar-stone', value: 420, goalValue: 410 }],
+  };
+  showCelebrationQueue(session, loadData(), { chainPrompts: true });
+  try {
+    document.querySelector('.celebration-overlay').click();
+    const prompt = document.querySelector('.chain-prompt');
+    assertTrue(prompt);
+    prompt.querySelector('.chain-prompt-skip').click();
+    const data = loadData();
+    assertEqual(data.goals['braemar-stone'], 410, 'goal unchanged after Not now');
+    assertEqual(document.querySelector('.celebration-overlay'), null, 'queue closes after last skip');
+  } finally {
+    document.querySelectorAll('.celebration-overlay').forEach((el) => { el.remove(); });
+  }
+});
+
+test('showCelebrationQueue: replay (no chainPrompts) does not prompt after Goal card', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  saveData(stage4bData());
+  document.querySelectorAll('.celebration-overlay').forEach((el) => { el.remove(); });
+  const session = {
+    id: 1, date: '2026-05-22', games: '', location: '',
+    milestones: [{ type: 'goal', event: 'braemar-stone', value: 420, goalValue: 410 }],
+  };
+  showCelebrationQueue(session, loadData());
+  try {
+    document.querySelector('.celebration-overlay').click();
+    assertEqual(document.querySelector('.chain-prompt'), null, 'no prompt on replay');
+    assertEqual(document.querySelector('.celebration-overlay'), null, 'queue closes after last card');
+  } finally {
+    document.querySelectorAll('.celebration-overlay').forEach((el) => { el.remove(); });
+  }
+});
+
+// --- Stage 4c: Set-page achieved-goal callout ---
+
+test('isGoalAchievedAndUnreplaced: true when goalMeta.value === goals[event]', () => {
+  const data = stage4bData({
+    goals: { 'braemar-stone': 410 },
+    goalMeta: { 'braemar-stone': { value: 410, achievedAt: 'x', achievedInSessionId: 1 } },
+  });
+  assertTrue(isGoalAchievedAndUnreplaced(data, 'braemar-stone'));
+});
+
+test('isGoalAchievedAndUnreplaced: false when no goalMeta', () => {
+  const data = stage4bData({ goals: { 'braemar-stone': 410 } });
+  assertEqual(isGoalAchievedAndUnreplaced(data, 'braemar-stone'), false);
+});
+
+test('isGoalAchievedAndUnreplaced: false when goal value differs from goalMeta value', () => {
+  const data = stage4bData({
+    goals: { 'braemar-stone': 420 },
+    goalMeta: { 'braemar-stone': { value: 410, achievedAt: 'x', achievedInSessionId: 1 } },
+  });
+  assertEqual(isGoalAchievedAndUnreplaced(data, 'braemar-stone'), false);
+});
+
+test('buildThrowRow: renders goal-achieved callout when flag set', () => {
+  const item = ITEMS.find((it) => it.id === 'braemar-stone');
+  const row = buildThrowRow(item, 420, 410, null, true);
+  assertTrue(row.querySelector('.slot-goal .goal-achieved-callout'), 'callout inside goal slot');
+});
+
+test('buildThrowRow: no callout when flag false', () => {
+  const item = ITEMS.find((it) => it.id === 'braemar-stone');
+  const row = buildThrowRow(item, 420, 410, null, false);
+  assertEqual(row.querySelector('.goal-achieved-callout'), null);
+});
+
+test('buildLiftCard: renders goal-achieved callout for achieved lift goal', () => {
+  const data = stage4bData({
+    userLifts: [{ id: 'sq', name: 'Squat', protocol: '1RM', unit: 'lb', active: true }],
+    goals: { sq: 225 },
+    goalMeta: { sq: { value: 225, achievedAt: 'x', achievedInSessionId: 1 } },
+  });
+  const card = buildLiftCard(data.userLifts[0], data, false);
+  assertTrue(card.querySelector('.goal-achieved-callout'), 'lift card shows callout');
+});
+
+test('buildLiftCard: no callout for new (unsaved) lift card even if data would match', () => {
+  const data = stage4bData({
+    userLifts: [{ id: 'sq', name: 'Squat', protocol: '1RM', unit: 'lb', active: true }],
+    goals: { sq: 225 },
+    goalMeta: { sq: { value: 225, achievedAt: 'x', achievedInSessionId: 1 } },
+  });
+  const card = buildLiftCard({ id: 'new-1', name: '', protocol: '', unit: 'lb', active: true }, data, true);
+  assertEqual(card.querySelector('.goal-achieved-callout'), null);
+});
+
 // --- Harness ---
 
 function runTests() {
