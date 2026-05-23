@@ -2562,6 +2562,143 @@ test('showCelebrationQueue: × button ends the queue early', () => {
   assertEqual(document.querySelector('.celebration-overlay'), null);
 });
 
+// --- Stage 4b: Past Sessions badge + View Celebrations replay ---
+
+function makePastSessionsFixture() {
+  let fixture = document.getElementById('past-fixture');
+  if (fixture) fixture.remove();
+  fixture = document.createElement('div');
+  fixture.id = 'past-fixture';
+  fixture.innerHTML = '<ul id="sessions-list"></ul><p id="sessions-empty"></p>';
+  document.body.appendChild(fixture);
+  return fixture;
+}
+
+function removePastSessionsFixture() {
+  const f = document.getElementById('past-fixture');
+  if (f) f.remove();
+  document.querySelectorAll('.celebration-overlay').forEach((el) => { el.remove(); });
+}
+
+test('renderSessionsList: session with milestones shows a milestone badge', () => {
+  const fixture = makePastSessionsFixture();
+  try {
+    renderSessionsList([{
+      id: 1, date: '2026-05-22', kind: 'competition', games: '', location: '',
+      marks: { 'braemar-stone': [420] }, stoneWeights: {},
+      milestones: [
+        { type: 'pr', event: 'braemar-stone', value: 420, previousValue: 400, class: '', tier: '' },
+        { type: 'goal', event: 'braemar-stone', value: 420, goalValue: 410 },
+        { type: 'awesomeDay' },
+      ],
+    }], []);
+    const badge = fixture.querySelector('.milestone-badge');
+    assertTrue(badge, 'badge rendered');
+    // The awesomeDay entry is not counted as a card.
+    assertEqual(badge.textContent, '2 MILESTONES');
+  } finally {
+    removePastSessionsFixture();
+  }
+});
+
+test('renderSessionsList: session with one milestone shows singular badge', () => {
+  const fixture = makePastSessionsFixture();
+  try {
+    renderSessionsList([{
+      id: 1, date: '2026-05-22', kind: 'training', games: '', location: '',
+      marks: { 'braemar-stone': [420] }, stoneWeights: {},
+      milestones: [{ type: 'pr', event: 'braemar-stone', value: 420, previousValue: 400, class: '', tier: '' }],
+    }], []);
+    const badge = fixture.querySelector('.milestone-badge');
+    assertEqual(badge.textContent, '1 MILESTONE');
+  } finally {
+    removePastSessionsFixture();
+  }
+});
+
+test('renderSessionsList: pre-4b session (no milestones field) renders without badge or error', () => {
+  const fixture = makePastSessionsFixture();
+  try {
+    renderSessionsList([{
+      id: 1, date: '2026-05-15', kind: 'competition', games: 'Old Games', location: '',
+      marks: { 'braemar-stone': [400] }, stoneWeights: {},
+    }], []);
+    assertEqual(fixture.querySelector('.milestone-badge'), null, 'no badge on pre-4b session');
+    const view = fixture.querySelector('button');
+    assertTrue(view, 'session row still rendered');
+  } finally {
+    removePastSessionsFixture();
+  }
+});
+
+test('renderSessionsList: session with empty milestones array renders no badge', () => {
+  const fixture = makePastSessionsFixture();
+  try {
+    renderSessionsList([{
+      id: 1, date: '2026-05-22', kind: 'training', games: '', location: '',
+      marks: { 'braemar-stone': [400] }, stoneWeights: {},
+      milestones: [],
+    }], []);
+    assertEqual(fixture.querySelector('.milestone-badge'), null);
+  } finally {
+    removePastSessionsFixture();
+  }
+});
+
+test('buildSessionDetailsPanel: milestone-bearing session shows View Celebrations button', () => {
+  const session = {
+    id: 1, date: '2026-05-22', games: '', location: '',
+    marks: { 'braemar-stone': [420] }, stoneWeights: {},
+    milestones: [{ type: 'pr', event: 'braemar-stone', value: 420, previousValue: 400, class: '', tier: '' }],
+  };
+  const details = buildSessionDetailsPanel(session, 'details-celeb', []);
+  const replay = details.querySelector('.view-celebrations-btn');
+  assertTrue(replay, 'View Celebrations button rendered');
+  assertEqual(replay.textContent, 'View Celebrations');
+});
+
+test('buildSessionDetailsPanel: session without milestones has no View Celebrations button', () => {
+  const session = {
+    id: 1, date: '2026-05-22', games: '', location: '',
+    marks: { 'braemar-stone': [420] }, stoneWeights: {},
+  };
+  const details = buildSessionDetailsPanel(session, 'details-nope', []);
+  assertEqual(details.querySelector('.view-celebrations-btn'), null);
+});
+
+test('View Celebrations: replay re-derives the same card sequence as save', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  saveData(stage4bData());
+  const session = {
+    id: 1, date: '2026-05-22', games: 'Replay Games', location: '',
+    marks: { 'braemar-stone': [420] }, stoneWeights: {},
+    milestones: [
+      { type: 'pr', event: 'braemar-stone', value: 420, previousValue: 400, class: '', tier: '' },
+      { type: 'goal', event: 'braemar-stone', value: 420, goalValue: 410 },
+      { type: 'awesomeDay' },
+    ],
+  };
+  const details = buildSessionDetailsPanel(session, 'details-replay', []);
+  document.body.appendChild(details);
+  try {
+    document.querySelectorAll('.celebration-overlay').forEach((el) => { el.remove(); });
+    details.querySelector('.view-celebrations-btn').click();
+    let overlay = document.querySelector('.celebration-overlay');
+    assertTrue(overlay.querySelector('.celebration-card--pr'), 'replay starts with PR');
+    overlay.click();
+    overlay = document.querySelector('.celebration-overlay');
+    assertTrue(overlay.querySelector('.celebration-card--goal'), 'then Goal');
+    overlay.click();
+    overlay = document.querySelector('.celebration-overlay');
+    assertTrue(overlay.querySelector('.celebration-card--awesomeDay'), 'then Awesome Day');
+    overlay.click();
+    assertEqual(document.querySelector('.celebration-overlay'), null, 'closes after last');
+  } finally {
+    details.remove();
+    document.querySelectorAll('.celebration-overlay').forEach((el) => { el.remove(); });
+  }
+});
+
 // --- Harness ---
 
 function runTests() {

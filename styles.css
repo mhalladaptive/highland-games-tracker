@@ -1346,3 +1346,24 @@ body.kind-training .comp-only {
 .celebration-close:hover {
   background: #fff;
 }
+
+.milestone-badge {
+  display: inline-block;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+  background: rgba(10, 125, 62, 0.15);
+  color: var(--accent-press);
+}
+
+.view-celebrations-btn {
+  margin-top: 0.85rem;
+  align-self: flex-start;
+}

@@ -544,6 +544,19 @@ function buildSessionDetailsPanel(session, detailsId, userLifts) {
     details.appendChild(placeholder);
   }
 
+  const sessionMilestones = Array.isArray(session.milestones) ? session.milestones : [];
+  if (sessionMilestones.length > 0) {
+    const replayBtn = document.createElement('button');
+    replayBtn.type = 'button';
+    replayBtn.className = 'ghost-btn view-celebrations-btn';
+    replayBtn.textContent = 'View Celebrations';
+    replayBtn.addEventListener('click', () => {
+      const freshData = loadData();
+      showCelebrationQueue(session, freshData);
+    });
+    details.appendChild(replayBtn);
+  }
+
   return details;
 }
 
@@ -579,6 +592,14 @@ function renderSessionsList(sessions, userLifts) {
     badge.className = `session-kind-badge ${kind}`;
     badge.textContent = kind === 'training' ? 'TRAIN' : 'COMP';
     dateLine.appendChild(badge);
+    const sessionMilestones = Array.isArray(s.milestones) ? s.milestones : [];
+    const cardCount = sessionMilestones.filter((m) => m && m.type !== 'awesomeDay').length;
+    if (cardCount > 0) {
+      const mBadge = document.createElement('span');
+      mBadge.className = 'milestone-badge';
+      mBadge.textContent = cardCount === 1 ? '1 MILESTONE' : `${cardCount} MILESTONES`;
+      dateLine.appendChild(mBadge);
+    }
     info.appendChild(dateLine);
 
     if (kind === 'competition' && s.games) {
