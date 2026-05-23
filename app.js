@@ -404,6 +404,20 @@ function collectFormData(currentData) {
   return applyFormSnapshotsToData(currentData, throwSnapshots, liftCardSnapshots);
 }
 
+// Merge Set-page form updates into the current data and re-evaluate goalMeta
+// against the new goals. Scoped to goalMeta only — the Set page is a
+// legitimate manual writer of prs, so applying recomputeDerivedState's full
+// result here would overwrite a hand-entered PR with the session-derived
+// max. Without this, a goal raised on the Set page leaves the old goalMeta
+// behind and the next session that hits the new goal gets no Goal card
+// because 4b detection sees a present goalMeta as "already achieved."
+function applyPrGoalSubmit(currentData, updates) {
+  const next = Object.assign({}, currentData, updates);
+  const recomputed = recomputeDerivedState(next);
+  next.goalMeta = recomputed.goalMeta;
+  return next;
+}
+
 let newLiftCounter = 0;
 function handleAddLift() {
   newLiftCounter++;
@@ -602,7 +616,7 @@ function init() {
     event.preventDefault();
     const current = loadData();
     const updates = collectFormData(current);
-    const next = { ...current, ...updates };
+    const next = applyPrGoalSubmit(current, updates);
     saveData(next);
     renderForm(next);
     showStatus('PRs & Goals saved.');

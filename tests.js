@@ -3250,6 +3250,38 @@ test('buildLiftCard: no callout for new (unsaved) lift card even if data would m
   assertEqual(card.querySelector('.goal-achieved-callout'), null);
 });
 
+// --- Stage 4c fix: Set-page save re-evaluates goalMeta ---
+
+test('applyPrGoalSubmit: raising a goal clears stale goalMeta and leaves prs alone', () => {
+  // Before: athlete had achieved a 410 goal in session 1, then manually
+  // raises the goal to 420 via the Set page. The stale goalMeta would
+  // otherwise suppress the next session's Goal card. Also: the Set page
+  // is allowed to write prs directly, so the recompute must NOT overwrite
+  // a hand-entered PR.
+  const current = stage4bData({
+    prs: { 'braemar-stone': 425 },
+    prMeta: { 'braemar-stone': { date: '2026-05-22', sessionId: 1 } },
+    goals: { 'braemar-stone': 410 },
+    goalMeta: { 'braemar-stone': { value: 410, achievedAt: '2026-05-10T00:00:00.000Z', achievedInSessionId: 1 } },
+    sessions: [{
+      id: 1, date: '2026-05-10', kind: 'training', location: '', games: '',
+      marks: { 'braemar-stone': [415] }, stoneWeights: {}, milestones: [],
+    }],
+  });
+  // Updates from the form: PR raised manually to 500 (well above any
+  // session mark), goal raised to 420 (no session meets it).
+  const updates = {
+    prs: { 'braemar-stone': 500 },
+    prMeta: { 'braemar-stone': { date: '2026-05-22', sessionId: 1 } },
+    goals: { 'braemar-stone': 420 },
+    userLifts: [],
+    sessions: current.sessions,
+  };
+  const next = applyPrGoalSubmit(current, updates);
+  assertEqual(next.goalMeta['braemar-stone'], undefined, 'stale goalMeta cleared after goal raised');
+  assertEqual(next.prs['braemar-stone'], 500, 'hand-entered PR preserved (not recomputed to session max)');
+});
+
 // --- Harness ---
 
 function runTests() {
