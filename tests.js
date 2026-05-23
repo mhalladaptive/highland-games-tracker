@@ -1980,6 +1980,274 @@ test('buildSessionDetailsPanel: lift line formats weight-unit marks via unit lab
   assertEqual(marks, '102.5 kg, 110 kg');
 });
 
+// --- Stage 4b: detection helpers ---
+
+function stage4bData(extras) {
+  return Object.assign(baseV2Data(), extras || {});
+}
+
+test('eventDirection: throw event => higher', () => {
+  assertEqual(eventDirection('braemar-stone', stage4bData()), 'higher');
+});
+
+test('eventDirection: weight lift => higher', () => {
+  const data = stage4bData({
+    userLifts: [{ id: 'sq', name: 'Squat', protocol: '1RM', unit: 'kg', active: true }],
+  });
+  assertEqual(eventDirection('sq', data), 'higher');
+});
+
+test('eventDirection: time lift => lower', () => {
+  const data = stage4bData({
+    userLifts: [{ id: 'mile', name: 'Mile', protocol: '', unit: 'time', active: true }],
+  });
+  assertEqual(eventDirection('mile', data), 'lower');
+});
+
+test('eventDirection: unknown event => higher (default)', () => {
+  assertEqual(eventDirection('mystery', stage4bData()), 'higher');
+});
+
+test('eventBest: empty / non-array => null', () => {
+  assertEqual(eventBest([], 'higher'), null);
+  assertEqual(eventBest(null, 'higher'), null);
+});
+
+test('eventBest: higher returns max', () => {
+  assertEqual(eventBest([200, 225, 215], 'higher'), 225);
+});
+
+test('eventBest: lower returns min', () => {
+  assertEqual(eventBest([330, 320, 315], 'lower'), 315);
+});
+
+test('eventBest: ignores non-finite entries', () => {
+  assertEqual(eventBest([NaN, 100, null, 110], 'higher'), 110);
+});
+
+test('sessionPrUpdates: first-ever mark sets prs from session best', () => {
+  const data = stage4bData();
+  const session = { id: 1, date: '2026-05-22', marks: { 'braemar-stone': [400, 410, 405] } };
+  const updates = sessionPrUpdates(session, data);
+  assertEqual(updates['braemar-stone'], 410);
+});
+
+test('sessionPrUpdates: PR break updates with new best', () => {
+  const data = stage4bData({ prs: { 'braemar-stone': 400 } });
+  const session = { id: 1, date: '2026-05-22', marks: { 'braemar-stone': [395, 412] } };
+  const updates = sessionPrUpdates(session, data);
+  assertEqual(updates['braemar-stone'], 412);
+});
+
+test('sessionPrUpdates: no improvement => no entry', () => {
+  const data = stage4bData({ prs: { 'braemar-stone': 420 } });
+  const session = { id: 1, date: '2026-05-22', marks: { 'braemar-stone': [400, 410] } };
+  const updates = sessionPrUpdates(session, data);
+  assertEqual(updates['braemar-stone'], undefined);
+});
+
+test('sessionPrUpdates: time direction — faster session beats slower PR', () => {
+  const data = stage4bData({
+    userLifts: [{ id: 'mile', name: 'Mile', protocol: '', unit: 'time', active: true }],
+    prs: { mile: 360 },
+  });
+  const session = { id: 1, date: '2026-05-22', marks: { mile: [355, 350] } };
+  const updates = sessionPrUpdates(session, data);
+  assertEqual(updates.mile, 350);
+});
+
+test('sessionPrUpdates: time direction — slower session does not update', () => {
+  const data = stage4bData({
+    userLifts: [{ id: 'mile', name: 'Mile', protocol: '', unit: 'time', active: true }],
+    prs: { mile: 300 },
+  });
+  const session = { id: 1, date: '2026-05-22', marks: { mile: [320, 310] } };
+  const updates = sessionPrUpdates(session, data);
+  assertEqual(updates.mile, undefined);
+});
+
+test('detectMilestones: silent first-mark produces no milestone', () => {
+  const data = stage4bData();
+  const session = { id: 1, date: '2026-05-22', marks: { 'braemar-stone': [400, 410, 405] } };
+  assertDeepEqual(detectMilestones(session, data), []);
+});
+
+test('detectMilestones: PR break fires PR milestone with previousValue', () => {
+  const data = stage4bData({ prs: { 'braemar-stone': 400 } });
+  const session = { id: 1, date: '2026-05-22', marks: { 'braemar-stone': [395, 412] } };
+  const ms = detectMilestones(session, data);
+  assertEqual(ms.length, 1);
+  assertEqual(ms[0].type, 'pr');
+  assertEqual(ms[0].event, 'braemar-stone');
+  assertEqual(ms[0].value, 412);
+  assertEqual(ms[0].previousValue, 400);
+});
+
+test('detectMilestones: PR milestone carries class and tier snapshot from profile', () => {
+  const data = stage4bData({
+    prs: { 'braemar-stone': 400 },
+    profile: { class: 'amateur-b', tier: '' },
+  });
+  const session = { id: 1, date: '2026-05-22', marks: { 'braemar-stone': [420] } };
+  const ms = detectMilestones(session, data);
+  assertEqual(ms[0].class, 'amateur-b');
+  assertEqual(ms[0].tier, '');
+});
+
+test('detectMilestones: empty profile yields empty-string class/tier on PR', () => {
+  const data = stage4bData({ prs: { 'braemar-stone': 400 } });
+  const session = { id: 1, date: '2026-05-22', marks: { 'braemar-stone': [420] } };
+  const ms = detectMilestones(session, data);
+  assertEqual(ms[0].class, '');
+  assertEqual(ms[0].tier, '');
+});
+
+test('detectMilestones: Goal milestone fires when best meets-or-beats unachieved goal', () => {
+  const data = stage4bData({ goals: { 'braemar-stone': 420 } });
+  const session = { id: 1, date: '2026-05-22', marks: { 'braemar-stone': [420] } };
+  const ms = detectMilestones(session, data);
+  assertEqual(ms.length, 1);
+  assertEqual(ms[0].type, 'goal');
+  assertEqual(ms[0].value, 420);
+  assertEqual(ms[0].goalValue, 420);
+});
+
+test('detectMilestones: Goal can fire on a first-ever mark (no PR required)', () => {
+  const data = stage4bData({ goals: { 'braemar-stone': 410 } });
+  const session = { id: 1, date: '2026-05-22', marks: { 'braemar-stone': [415] } };
+  const ms = detectMilestones(session, data);
+  assertEqual(ms.length, 1);
+  assertEqual(ms[0].type, 'goal');
+});
+
+test('detectMilestones: Goal does not fire if already achieved', () => {
+  const data = stage4bData({
+    goals: { 'braemar-stone': 410 },
+    goalMeta: { 'braemar-stone': { value: 410, achievedAt: '2026-05-01T00:00:00.000Z', achievedInSessionId: 99 } },
+  });
+  const session = { id: 1, date: '2026-05-22', marks: { 'braemar-stone': [420] } };
+  const ms = detectMilestones(session, data);
+  assertEqual(ms.length, 0);
+});
+
+test('detectMilestones: Goal does not fire when best falls short', () => {
+  const data = stage4bData({ goals: { 'braemar-stone': 420 } });
+  const session = { id: 1, date: '2026-05-22', marks: { 'braemar-stone': [400, 415] } };
+  const ms = detectMilestones(session, data);
+  assertEqual(ms.length, 0);
+});
+
+test('detectMilestones: same event PR + Goal renders as two separate milestones', () => {
+  const data = stage4bData({
+    prs: { 'braemar-stone': 400 },
+    goals: { 'braemar-stone': 410 },
+  });
+  const session = { id: 1, date: '2026-05-22', marks: { 'braemar-stone': [415] } };
+  const ms = detectMilestones(session, data);
+  assertEqual(ms.length, 3, 'pr + goal + awesomeDay');
+  assertEqual(ms[0].type, 'pr');
+  assertEqual(ms[1].type, 'goal');
+  assertEqual(ms[2].type, 'awesomeDay');
+});
+
+test('detectMilestones: Awesome Day fires at 2+ milestones', () => {
+  const data = stage4bData({
+    prs: { 'braemar-stone': 400, 'open-stone': 380 },
+  });
+  const session = {
+    id: 1, date: '2026-05-22',
+    marks: { 'braemar-stone': [420], 'open-stone': [395] },
+  };
+  const ms = detectMilestones(session, data);
+  assertEqual(ms.length, 3);
+  assertEqual(ms[0].type, 'pr');
+  assertEqual(ms[1].type, 'pr');
+  assertEqual(ms[2].type, 'awesomeDay');
+});
+
+test('detectMilestones: Awesome Day does NOT fire on a single milestone', () => {
+  const data = stage4bData({ prs: { 'braemar-stone': 400 } });
+  const session = { id: 1, date: '2026-05-22', marks: { 'braemar-stone': [420] } };
+  const ms = detectMilestones(session, data);
+  assertEqual(ms.length, 1);
+  assertEqual(ms.find((m) => m.type === 'awesomeDay'), undefined);
+});
+
+test('detectMilestones: time-unit PR fires on a faster mark, not a higher number', () => {
+  const data = stage4bData({
+    userLifts: [{ id: 'mile', name: 'Mile', protocol: '', unit: 'time', active: true }],
+    prs: { mile: 360 },
+  });
+  const session = { id: 1, date: '2026-05-22', marks: { mile: [355] } };
+  const ms = detectMilestones(session, data);
+  assertEqual(ms.length, 1);
+  assertEqual(ms[0].type, 'pr');
+  assertEqual(ms[0].value, 355);
+  assertEqual(ms[0].previousValue, 360);
+});
+
+test('detectMilestones: time-unit slower mark does NOT fire PR', () => {
+  const data = stage4bData({
+    userLifts: [{ id: 'mile', name: 'Mile', protocol: '', unit: 'time', active: true }],
+    prs: { mile: 360 },
+  });
+  const session = { id: 1, date: '2026-05-22', marks: { mile: [370] } };
+  const ms = detectMilestones(session, data);
+  assertEqual(ms.length, 0);
+});
+
+test('detectMilestones: time-unit Goal fires on a faster mark', () => {
+  const data = stage4bData({
+    userLifts: [{ id: 'mile', name: 'Mile', protocol: '', unit: 'time', active: true }],
+    goals: { mile: 300 },
+  });
+  const session = { id: 1, date: '2026-05-22', marks: { mile: [299] } };
+  const ms = detectMilestones(session, data);
+  assertEqual(ms.length, 1);
+  assertEqual(ms[0].type, 'goal');
+});
+
+test('detectMilestones: PR cards come before Goal cards in returned order', () => {
+  const data = stage4bData({
+    prs: { 'open-stone': 380 },
+    goals: { 'braemar-stone': 410 },
+  });
+  const session = {
+    id: 1, date: '2026-05-22',
+    marks: { 'braemar-stone': [415], 'open-stone': [395] },
+  };
+  const ms = detectMilestones(session, data);
+  // pr (open-stone) + goal (braemar-stone) + awesomeDay
+  assertEqual(ms.length, 3);
+  assertEqual(ms[0].type, 'pr');
+  assertEqual(ms[0].event, 'open-stone');
+  assertEqual(ms[1].type, 'goal');
+  assertEqual(ms[1].event, 'braemar-stone');
+  assertEqual(ms[2].type, 'awesomeDay');
+});
+
+test('detectMilestones: throw events listed before lift events when both PR', () => {
+  const data = stage4bData({
+    userLifts: [{ id: 'sq', name: 'Squat', protocol: '1RM', unit: 'lb', active: true }],
+    prs: { 'braemar-stone': 400, sq: 225 },
+  });
+  const session = {
+    id: 1, date: '2026-05-22',
+    marks: { sq: [245], 'braemar-stone': [420] },
+  };
+  const ms = detectMilestones(session, data);
+  assertEqual(ms[0].event, 'braemar-stone');
+  assertEqual(ms[1].event, 'sq');
+});
+
+test('detectMilestones: session with no marks => []', () => {
+  assertDeepEqual(detectMilestones({ id: 1, date: '2026-05-22', marks: {} }, stage4bData()), []);
+});
+
+test('detectMilestones: null session => []', () => {
+  assertDeepEqual(detectMilestones(null, stage4bData()), []);
+});
+
 // --- Harness ---
 
 function runTests() {

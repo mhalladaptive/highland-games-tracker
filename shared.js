@@ -568,3 +568,165 @@ function formatLiftMark(value, unitId) {
   if (unit.category === 'time') return formatSecondsAsTime(value);
   return `${formatNumber(value)} ${unit.label}`;
 }
+
+// Direction-of-better for an event id. Throws (in ITEMS) are always 'higher'.
+// User-defined lifts take direction from their unit ('higher' for everything
+// except 'time', which is 'lower'). Unknown events default to 'higher'.
+function eventDirection(eventId, data) {
+  if (!eventId) return 'higher';
+  const throwItem = ITEMS.find((it) => it.id === eventId && it.category === 'throw');
+  if (throwItem) return 'higher';
+  const lifts = (data && Array.isArray(data.userLifts)) ? data.userLifts : [];
+  const lift = lifts.find((l) => l && l.id === eventId);
+  if (lift) {
+    const unit = getUnit(lift.unit);
+    if (unit && unit.direction === 'lower') return 'lower';
+  }
+  return 'higher';
+}
+
+// Best mark in a list of attempts under the given direction. Returns null if
+// the list has no finite attempts. Pure — no data lookups.
+function eventBest(attempts, direction) {
+  if (!Array.isArray(attempts)) return null;
+  let best = null;
+  const lower = direction === 'lower';
+  for (const m of attempts) {
+    if (!Number.isFinite(m)) continue;
+    if (best === null) { best = m; continue; }
+    if (lower ? m < best : m > best) best = m;
+  }
+  return best;
+}
+
+// Render-friendly display name for an event id (throw item name, or user lift
+// name — including inactive lifts so old session marks still resolve).
+// Returns '' if the id is unknown.
+function eventDisplayName(eventId, data) {
+  if (!eventId) return '';
+  const throwItem = ITEMS.find((it) => it.id === eventId && it.category === 'throw');
+  if (throwItem) return throwItem.name;
+  const lifts = (data && Array.isArray(data.userLifts)) ? data.userLifts : [];
+  const lift = lifts.find((l) => l && l.id === eventId);
+  if (lift) return lift.name || '';
+  return '';
+}
+
+// Format an event's mark value using the event's unit. Throws (measurementType
+// 'distance' / 'height') render as feet-inches; lifts render per their unit.
+// Pure — used by celebration cards.
+function formatEventValue(eventId, value, data) {
+  if (!Number.isFinite(value)) return '';
+  const throwItem = ITEMS.find((it) => it.id === eventId && it.category === 'throw');
+  if (throwItem) return formatMeasurement(value, throwItem.measurementType);
+  const lifts = (data && Array.isArray(data.userLifts)) ? data.userLifts : [];
+  const lift = lifts.find((l) => l && l.id === eventId);
+  if (lift) return formatLiftMark(value, lift.unit);
+  return formatNumber(value);
+}
+
+// Events whose `prs[event]` should update for this session — either silent
+// first marks (no existing PR) or PR breaks (best beats current per
+// direction). Pure: reads `data.prs` and the session's marks; writes nothing.
+// The caller applies both the prs and prMeta updates.
+function sessionPrUpdates(session, data) {
+  const updates = {};
+  if (!session || !session.marks || typeof session.marks !== 'object') return updates;
+  const prs = (data && data.prs && typeof data.prs === 'object') ? data.prs : {};
+  for (const eventId of Object.keys(session.marks)) {
+    const direction = eventDirection(eventId, data);
+    const best = eventBest(session.marks[eventId], direction);
+    if (best === null) continue;
+    const current = prs[eventId];
+    if (!Number.isFinite(current)) {
+      updates[eventId] = best;
+      continue;
+    }
+    const beats = direction === 'lower' ? best < current : best > current;
+    if (beats) updates[eventId] = best;
+  }
+  return updates;
+}
+
+// Detect celebration milestones for a session. Pure — reads `data.prs`,
+// `data.goals`, `data.goalMeta`, `data.userLifts`, `data.profile`; returns the
+// milestones array. The caller persists the result on `session.milestones[]`
+// and applies the prs / prMeta / goalMeta updates separately.
+//
+// Order: PR milestones first (in throw-then-lift event order), then Goal
+// milestones (same order), then an `awesomeDay` capstone when total PR + Goal
+// milestones >= 2.
+//
+// Rules:
+//   PR     — fires only when an existing prs[event] is beaten per direction.
+//            A first-ever mark sets prs silently (handled by the caller via
+//            sessionPrUpdates) and produces no milestone.
+//   Goal   — fires when goals[event] is set, best meets-or-beats per
+//            direction, and goalMeta[event] is absent. Independent of PR.
+//   Class/tier on PR milestones — snapshotted from data.profile; empty
+//            strings when the profile has not set them.
+function detectMilestones(session, data) {
+  if (!session || !session.marks || typeof session.marks !== 'object') return [];
+  const prs = (data && data.prs && typeof data.prs === 'object') ? data.prs : {};
+  const goals = (data && data.goals && typeof data.goals === 'object') ? data.goals : {};
+  const goalMeta = (data && data.goalMeta && typeof data.goalMeta === 'object') ? data.goalMeta : {};
+  const profile = (data && data.profile && typeof data.profile === 'object') ? data.profile : {};
+  const userLifts = (data && Array.isArray(data.userLifts)) ? data.userLifts : [];
+
+  const orderedEvents = [];
+  for (const item of ITEMS) {
+    if (item.category !== 'throw') continue;
+    if (session.marks[item.id]) orderedEvents.push(item.id);
+  }
+  for (const lift of userLifts) {
+    if (!lift || !lift.id) continue;
+    if (session.marks[lift.id] && orderedEvents.indexOf(lift.id) === -1) {
+      orderedEvents.push(lift.id);
+    }
+  }
+  for (const eventId of Object.keys(session.marks)) {
+    if (orderedEvents.indexOf(eventId) === -1) orderedEvents.push(eventId);
+  }
+
+  const prMilestones = [];
+  const goalMilestones = [];
+
+  for (const eventId of orderedEvents) {
+    const direction = eventDirection(eventId, data);
+    const best = eventBest(session.marks[eventId], direction);
+    if (best === null) continue;
+
+    const currentPr = prs[eventId];
+    if (Number.isFinite(currentPr)) {
+      const beats = direction === 'lower' ? best < currentPr : best > currentPr;
+      if (beats) {
+        prMilestones.push({
+          type: 'pr',
+          event: eventId,
+          value: best,
+          previousValue: currentPr,
+          class: profile.class || '',
+          tier: profile.tier || '',
+        });
+      }
+    }
+
+    const goalValue = goals[eventId];
+    if (Number.isFinite(goalValue)) {
+      const meets = direction === 'lower' ? best <= goalValue : best >= goalValue;
+      const alreadyAchieved = goalMeta[eventId] != null;
+      if (meets && !alreadyAchieved) {
+        goalMilestones.push({
+          type: 'goal',
+          event: eventId,
+          value: best,
+          goalValue,
+        });
+      }
+    }
+  }
+
+  const milestones = prMilestones.concat(goalMilestones);
+  if (milestones.length >= 2) milestones.push({ type: 'awesomeDay' });
+  return milestones;
+}
