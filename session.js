@@ -722,6 +722,14 @@ function handleDelete(sessionId) {
   if (!ok) return;
 
   data.sessions = data.sessions.filter((s) => s.id !== sessionId);
+  // Stage 4c: rebuild prs / prMeta / goalMeta from the remaining sessions so
+  // deleting the PR-holder drops prs to the next-best (and clears the event
+  // entirely when no session has marks for it anymore), and goalMeta clears
+  // when no remaining session meets the goal.
+  const recomputed = recomputeDerivedState(data);
+  data.prs = recomputed.prs;
+  data.prMeta = recomputed.prMeta;
+  data.goalMeta = recomputed.goalMeta;
   saveData(data);
 
   if (editingSessionId === sessionId) {
@@ -943,13 +951,6 @@ function showCelebrationQueue(session, data) {
   document.body.appendChild(overlay);
 }
 
-function buildPrMetaFromSession(session) {
-  const meta = { date: session.date, sessionId: session.id };
-  if (session.location) meta.location = session.location;
-  if (session.games) meta.gamesTitle = session.games;
-  return meta;
-}
-
 // Apply the celebration system at save time for a NEW session: run detection
 // against the pre-update data, then mutate prs / prMeta / goalMeta and stamp
 // session.milestones[]. Stage 4b does not recompute on edit (see 4c) — this
@@ -1018,12 +1019,18 @@ function handleSubmit(event) {
         throwsNotes,
         liftsNotes,
       };
-      // Preserve celebration data as-is — Stage 4b does not recompute
-      // milestones on edit (Stage 4c handles that).
+      // Carry the edited session's existing milestones[] forward unchanged —
+      // the next commit re-derives them from the updated marks.
       if (Array.isArray(existing && existing.milestones)) {
         data.sessions[idx].milestones = existing.milestones;
       }
     }
+    // Stage 4c: rebuild prs / prMeta / goalMeta across all sessions so the
+    // live derived data stays honest after the edit.
+    const recomputed = recomputeDerivedState(data);
+    data.prs = recomputed.prs;
+    data.prMeta = recomputed.prMeta;
+    data.goalMeta = recomputed.goalMeta;
     saveData(data);
     renderSessionsList(data.sessions, data.userLifts);
     resetForm();
