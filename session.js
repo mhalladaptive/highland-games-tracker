@@ -726,6 +726,202 @@ function showStatus(message, type) {
   }, 2200);
 }
 
+// Celebration card builders. Each takes the milestone, the saved session,
+// and the current data (for event-name / unit lookups including inactive
+// lifts), and returns a DOM card. Pure-ish: reads ITEMS/userLifts via the
+// shared helpers; no localStorage.
+
+function buildCelebrationMeta(session) {
+  const wrap = document.createElement('div');
+  wrap.className = 'celebration-card-meta';
+  const dateLine = document.createElement('span');
+  dateLine.className = 'celebration-card-meta-line';
+  dateLine.textContent = formatSessionDate(session.date);
+  wrap.appendChild(dateLine);
+  if (session.games) {
+    const games = document.createElement('span');
+    games.className = 'celebration-card-meta-line';
+    games.textContent = session.games;
+    wrap.appendChild(games);
+  }
+  if (session.location) {
+    const loc = document.createElement('span');
+    loc.className = 'celebration-card-meta-line';
+    loc.textContent = session.location;
+    wrap.appendChild(loc);
+  }
+  return wrap;
+}
+
+function buildCelebrationWordmark() {
+  const wm = document.createElement('div');
+  wm.className = 'celebration-card-wordmark';
+  wm.textContent = 'Highland Games Tracker';
+  return wm;
+}
+
+function buildPrCard(milestone, session, data) {
+  const card = document.createElement('div');
+  card.className = 'celebration-card celebration-card--pr';
+
+  const headline = document.createElement('p');
+  headline.className = 'celebration-card-headline';
+  headline.textContent = 'New Personal Record';
+  card.appendChild(headline);
+
+  const eventName = document.createElement('p');
+  eventName.className = 'celebration-card-event';
+  eventName.textContent = eventDisplayName(milestone.event, data) || milestone.event;
+  card.appendChild(eventName);
+
+  const mark = document.createElement('p');
+  mark.className = 'celebration-card-mark';
+  mark.textContent = formatEventValue(milestone.event, milestone.value, data);
+  card.appendChild(mark);
+
+  if (Number.isFinite(milestone.previousValue)) {
+    const prev = document.createElement('p');
+    prev.className = 'celebration-card-prev';
+    prev.textContent = `was ${formatEventValue(milestone.event, milestone.previousValue, data)}`;
+    card.appendChild(prev);
+  }
+
+  card.appendChild(buildCelebrationMeta(session));
+  card.appendChild(buildCelebrationWordmark());
+  return card;
+}
+
+function buildGoalCard(milestone, session, data) {
+  const card = document.createElement('div');
+  card.className = 'celebration-card celebration-card--goal';
+
+  const headline = document.createElement('p');
+  headline.className = 'celebration-card-headline';
+  headline.textContent = 'Goal Achieved';
+  card.appendChild(headline);
+
+  const eventName = document.createElement('p');
+  eventName.className = 'celebration-card-event';
+  eventName.textContent = eventDisplayName(milestone.event, data) || milestone.event;
+  card.appendChild(eventName);
+
+  const mark = document.createElement('p');
+  mark.className = 'celebration-card-mark';
+  mark.textContent = formatEventValue(milestone.event, milestone.value, data);
+  card.appendChild(mark);
+
+  if (Number.isFinite(milestone.goalValue)) {
+    const goal = document.createElement('p');
+    goal.className = 'celebration-card-prev';
+    const goalText = formatEventValue(milestone.event, milestone.goalValue, data);
+    const hitText = formatEventValue(milestone.event, milestone.value, data);
+    goal.textContent = `you set ${goalText}, you hit ${hitText}`;
+    card.appendChild(goal);
+  }
+
+  card.appendChild(buildCelebrationMeta(session));
+  card.appendChild(buildCelebrationWordmark());
+  return card;
+}
+
+function buildAwesomeDayCard(session, milestones, data) {
+  const card = document.createElement('div');
+  card.className = 'celebration-card celebration-card--awesomeDay';
+
+  const top = document.createElement('p');
+  top.className = 'celebration-card-event';
+  top.textContent = session.games
+    ? `${formatSessionDate(session.date)} · ${session.games}`
+    : formatSessionDate(session.date);
+  card.appendChild(top);
+
+  const headline = document.createElement('p');
+  headline.className = 'celebration-card-headline';
+  headline.textContent = 'Awesome Day';
+  card.appendChild(headline);
+
+  const list = document.createElement('ul');
+  list.className = 'milestone-list';
+  for (const m of milestones) {
+    if (m.type === 'awesomeDay') continue;
+    const li = document.createElement('li');
+    const name = eventDisplayName(m.event, data) || m.event;
+    const value = formatEventValue(m.event, m.value, data);
+    const label = m.type === 'pr' ? 'PR' : 'Goal';
+    li.textContent = `${label} · ${name}: ${value}`;
+    list.appendChild(li);
+  }
+  card.appendChild(list);
+
+  card.appendChild(buildCelebrationWordmark());
+  return card;
+}
+
+function buildCelebrationCard(milestone, session, data, allMilestones) {
+  if (!milestone || !milestone.type) return null;
+  if (milestone.type === 'pr') return buildPrCard(milestone, session, data);
+  if (milestone.type === 'goal') return buildGoalCard(milestone, session, data);
+  if (milestone.type === 'awesomeDay') return buildAwesomeDayCard(session, allMilestones, data);
+  return null;
+}
+
+// Show the modal queue: one card per screen, tap (or Enter/Space/Right) to
+// advance, forward-only; closing past the last card removes the overlay.
+// A × button in the corner ends the queue early.
+function showCelebrationQueue(session, data) {
+  const milestones = Array.isArray(session && session.milestones) ? session.milestones : [];
+  if (milestones.length === 0) return;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'celebration-overlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-label', 'Session celebrations');
+
+  const slot = document.createElement('div');
+  slot.className = 'celebration-card-slot';
+  overlay.appendChild(slot);
+
+  const closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.className = 'celebration-close';
+  closeBtn.setAttribute('aria-label', 'Close celebrations');
+  closeBtn.textContent = '×';
+  overlay.appendChild(closeBtn);
+
+  let index = 0;
+  function render() {
+    slot.innerHTML = '';
+    const card = buildCelebrationCard(milestones[index], session, data, milestones);
+    if (card) slot.appendChild(card);
+  }
+  function close() {
+    overlay.remove();
+    document.removeEventListener('keydown', onKey);
+  }
+  function advance() {
+    index += 1;
+    if (index >= milestones.length) close();
+    else render();
+  }
+  function onKey(e) {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      close();
+    } else if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      advance();
+    }
+  }
+
+  closeBtn.addEventListener('click', (e) => { e.stopPropagation(); close(); });
+  overlay.addEventListener('click', advance);
+  document.addEventListener('keydown', onKey);
+
+  render();
+  document.body.appendChild(overlay);
+}
+
 function buildPrMetaFromSession(session) {
   const meta = { date: session.date, sessionId: session.id };
   if (session.location) meta.location = session.location;
@@ -829,6 +1025,7 @@ function handleSubmit(event) {
     renderSessionsList(data.sessions, data.userLifts);
     resetForm();
     showStatus(`Session logged for ${formatSessionDate(formData.date)}.`);
+    showCelebrationQueue(newSession, data);
   }
 }
 

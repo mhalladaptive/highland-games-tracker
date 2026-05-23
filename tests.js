@@ -2453,6 +2453,115 @@ test('handleSubmit (edit existing): does NOT recompute milestones (4c gap)', () 
   }
 });
 
+// --- Stage 4b: celebration card UI ---
+
+test('buildCelebrationCard: PR card renders headline, event, mark, and previous value', () => {
+  const data = stage4bData();
+  const session = { id: 1, date: '2026-05-22', location: 'Field', games: 'Test Games' };
+  const milestone = {
+    type: 'pr', event: 'braemar-stone', value: 420, previousValue: 400, class: '', tier: '',
+  };
+  const card = buildCelebrationCard(milestone, session, data, [milestone]);
+  assertTrue(card.classList.contains('celebration-card--pr'), 'pr class');
+  assertMatch(card.querySelector('.celebration-card-headline').textContent, /Personal Record/);
+  assertMatch(card.querySelector('.celebration-card-event').textContent, /Braemar Stone/);
+  assertMatch(card.querySelector('.celebration-card-mark').textContent, /35'/);
+  assertMatch(card.querySelector('.celebration-card-prev').textContent, /was 33'/);
+  assertTrue(card.querySelector('.celebration-card-wordmark'), 'wordmark on PR card');
+});
+
+test('buildCelebrationCard: Goal card renders headline + "you set / you hit"', () => {
+  const data = stage4bData();
+  const session = { id: 1, date: '2026-05-22', location: '', games: '' };
+  const milestone = { type: 'goal', event: 'braemar-stone', value: 432, goalValue: 420 };
+  const card = buildCelebrationCard(milestone, session, data, [milestone]);
+  assertTrue(card.classList.contains('celebration-card--goal'));
+  assertMatch(card.querySelector('.celebration-card-headline').textContent, /Goal Achieved/);
+  assertMatch(card.querySelector('.celebration-card-prev').textContent, /you set 35', you hit 36'/);
+});
+
+test('buildCelebrationCard: Awesome Day lists session milestones and shows date/games', () => {
+  const data = stage4bData();
+  const session = { id: 1, date: '2026-05-22', games: 'Highland Test' };
+  const ms = [
+    { type: 'pr', event: 'braemar-stone', value: 420, previousValue: 400, class: '', tier: '' },
+    { type: 'goal', event: 'braemar-stone', value: 420, goalValue: 410 },
+    { type: 'awesomeDay' },
+  ];
+  const card = buildCelebrationCard(ms[2], session, data, ms);
+  assertTrue(card.classList.contains('celebration-card--awesomeDay'));
+  assertMatch(card.querySelector('.celebration-card-headline').textContent, /Awesome Day/);
+  assertMatch(card.querySelector('.celebration-card-event').textContent, /Highland Test/);
+  const items = card.querySelectorAll('.milestone-list li');
+  assertEqual(items.length, 2, 'awesomeDay lists the two underlying milestones');
+  assertMatch(items[0].textContent, /^PR/);
+  assertMatch(items[1].textContent, /^Goal/);
+});
+
+test('buildCelebrationCard: PR card formats time-unit lift mark as mm:ss', () => {
+  const data = stage4bData({
+    userLifts: [{ id: 'mile', name: 'Mile', protocol: '', unit: 'time', active: true }],
+  });
+  const session = { id: 1, date: '2026-05-22' };
+  const milestone = { type: 'pr', event: 'mile', value: 355, previousValue: 360, class: '', tier: '' };
+  const card = buildCelebrationCard(milestone, session, data, [milestone]);
+  assertEqual(card.querySelector('.celebration-card-mark').textContent, '5:55');
+  assertMatch(card.querySelector('.celebration-card-prev').textContent, /was 6:00/);
+});
+
+test('showCelebrationQueue: builds overlay with first card, advances on click, closes after last', () => {
+  const data = stage4bData();
+  const session = {
+    id: 1, date: '2026-05-22', games: '', location: '',
+    milestones: [
+      { type: 'pr', event: 'braemar-stone', value: 420, previousValue: 400, class: '', tier: '' },
+      { type: 'goal', event: 'braemar-stone', value: 420, goalValue: 410 },
+      { type: 'awesomeDay' },
+    ],
+  };
+  // Clean up any pre-existing overlay (paranoia for repeat runs).
+  document.querySelectorAll('.celebration-overlay').forEach((el) => { el.remove(); });
+  showCelebrationQueue(session, data);
+
+  let overlay = document.querySelector('.celebration-overlay');
+  assertTrue(overlay, 'overlay created');
+  assertTrue(overlay.querySelector('.celebration-card--pr'), 'first card is PR');
+  // Same-event PR+Goal still renders as two distinct cards.
+  overlay.click();
+  overlay = document.querySelector('.celebration-overlay');
+  assertTrue(overlay.querySelector('.celebration-card--goal'), 'second card is Goal');
+  overlay.click();
+  overlay = document.querySelector('.celebration-overlay');
+  assertTrue(overlay.querySelector('.celebration-card--awesomeDay'), 'third card is Awesome Day');
+  overlay.click();
+  assertEqual(document.querySelector('.celebration-overlay'), null, 'queue closes after last card');
+});
+
+test('showCelebrationQueue: empty milestones leaves no overlay', () => {
+  document.querySelectorAll('.celebration-overlay').forEach((el) => { el.remove(); });
+  showCelebrationQueue({ id: 1, date: '2026-05-22', milestones: [] }, stage4bData());
+  assertEqual(document.querySelector('.celebration-overlay'), null);
+});
+
+test('showCelebrationQueue: × button ends the queue early', () => {
+  document.querySelectorAll('.celebration-overlay').forEach((el) => { el.remove(); });
+  const data = stage4bData();
+  const session = {
+    id: 1, date: '2026-05-22',
+    milestones: [
+      { type: 'pr', event: 'braemar-stone', value: 420, previousValue: 400, class: '', tier: '' },
+      { type: 'pr', event: 'open-stone', value: 395, previousValue: 380, class: '', tier: '' },
+      { type: 'awesomeDay' },
+    ],
+  };
+  showCelebrationQueue(session, data);
+  const overlay = document.querySelector('.celebration-overlay');
+  assertTrue(overlay);
+  const closeBtn = overlay.querySelector('.celebration-close');
+  closeBtn.click();
+  assertEqual(document.querySelector('.celebration-overlay'), null);
+});
+
 // --- Harness ---
 
 function runTests() {
