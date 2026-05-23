@@ -67,7 +67,27 @@ function buildThrowValueInputs(slot, item, value) {
   return wrap;
 }
 
-function buildThrowRow(item, prValue, goalValue, prMetaEntry) {
+// Stage 4c — an event's current goal is "achieved and unreplaced" when its
+// goalMeta entry's value equals the active goals[event]. The Set page shows
+// a soft inline marker at that event's Goal field so the athlete sees the
+// nudge exactly where they would set a new value.
+function isGoalAchievedAndUnreplaced(data, eventId) {
+  if (!data) return false;
+  const meta = data.goalMeta && data.goalMeta[eventId];
+  if (!meta || !Number.isFinite(meta.value)) return false;
+  const goal = data.goals && data.goals[eventId];
+  if (!Number.isFinite(goal)) return false;
+  return meta.value === goal;
+}
+
+function buildGoalAchievedCallout() {
+  const span = document.createElement('span');
+  span.className = 'goal-achieved-callout';
+  span.textContent = 'Goal achieved · time for a new one?';
+  return span;
+}
+
+function buildThrowRow(item, prValue, goalValue, prMetaEntry, goalAchieved) {
   const row = document.createElement('div');
   row.className = 'item-row throw-row';
   row.dataset.itemId = item.id;
@@ -97,6 +117,9 @@ function buildThrowRow(item, prValue, goalValue, prMetaEntry) {
     slotWrap.appendChild(slotLabel);
     const value = slot === 'pr' ? prValue : goalValue;
     slotWrap.appendChild(buildThrowValueInputs(slot, item, value));
+    if (slot === 'goal' && goalAchieved) {
+      slotWrap.appendChild(buildGoalAchievedCallout());
+    }
     prGoal.appendChild(slotWrap);
   }
   row.appendChild(prGoal);
@@ -269,6 +292,9 @@ function buildLiftCard(lift, data, isNew) {
   goalLabel.textContent = 'Goal';
   goalField.appendChild(goalLabel);
   goalField.appendChild(buildLiftValueInput('liftGoal', goalValue, isTime, 'Lift Goal'));
+  if (!isNew && isGoalAchievedAndUnreplaced(data, lift.id)) {
+    goalField.appendChild(buildGoalAchievedCallout());
+  }
   card.appendChild(goalField);
 
   const liveConvert = !isNew && hasMarks && canConvertCategory;
@@ -306,7 +332,8 @@ function renderForm(data) {
     const goal = data.goals ? data.goals[item.id] : null;
     const goalValue = Number.isFinite(goal) ? goal : null;
     const prMetaEntry = data.prMeta ? data.prMeta[item.id] : null;
-    throwsList.appendChild(buildThrowRow(item, prValue, goalValue, prMetaEntry));
+    const goalAchieved = isGoalAchievedAndUnreplaced(data, item.id);
+    throwsList.appendChild(buildThrowRow(item, prValue, goalValue, prMetaEntry, goalAchieved));
   }
 
   const lifts = (data.userLifts || []).filter((l) => l.active);
