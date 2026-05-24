@@ -10,7 +10,7 @@
       "shared.js",
       "app.js",
       "session.js",
-      "gap.js",
+      "progress.js",
       "tests.js"
     ]
   },

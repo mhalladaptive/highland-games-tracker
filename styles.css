@@ -704,16 +704,6 @@ body.kind-training .comp-only {
   flex-direction: column;
 }
 
-.gap-hint {
-  margin: 0;
-  padding: 0.55rem 1rem 0.7rem;
-  font-size: 0.78rem;
-  color: var(--muted);
-  font-style: italic;
-  text-align: center;
-  border-bottom: 1px solid var(--border);
-}
-
 .gap-row {
   padding: 1rem;
   border-bottom: 1px solid var(--border);
@@ -750,34 +740,6 @@ body.kind-training .comp-only {
   font-size: 0.85rem;
   color: var(--muted);
 }
-
-.gap-headline-stat {
-  font-size: 1.7rem;
-  font-weight: 600;
-  color: var(--text);
-  text-align: right;
-  line-height: 1.15;
-  flex: 0 0 auto;
-  white-space: nowrap;
-}
-
-.gap-headline-stat .stat-label {
-  display: block;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-  margin-right: 0;
-  margin-bottom: 0.05rem;
-}
-
-.gap-headline-stat.match,
-.gap-headline-stat.past {
-  font-size: 1.1rem;
-  color: var(--accent);
-  font-weight: 500;
-}
-
 
 .gap-percent {
   font-size: 2.25rem;
@@ -830,12 +792,6 @@ body.kind-training .comp-only {
   margin-right: 0.2rem;
 }
 
-.gap-stat.match,
-.gap-stat.past {
-  color: var(--accent);
-  font-weight: 500;
-}
-
 .gap-empty {
   color: var(--muted);
   font-style: italic;
@@ -843,8 +799,7 @@ body.kind-training .comp-only {
   margin: 0;
 }
 
-.gap-row--empty .gap-item-name,
-.gap-row--no-sessions .gap-item-name {
+.gap-row--empty .gap-item-name {
   color: var(--muted);
   font-weight: 400;
 }
@@ -962,64 +917,6 @@ body.kind-training .comp-only {
   border: 1px solid var(--border);
   padding: 0.35rem;
   box-shadow: var(--shadow);
-}
-
-.gap-percent {
-  background: none;
-  border: none;
-  padding: 0;
-  font-family: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition: opacity 0.15s ease;
-}
-
-.gap-percent:hover {
-  opacity: 0.85;
-}
-
-.gap-percent:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 4px;
-  border-radius: 4px;
-}
-
-.gap-details {
-  display: none;
-  margin-top: 0.5rem;
-  padding: 0.75rem 0.85rem;
-  background: #f7f7f9;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  font-size: 0.85rem;
-  line-height: 1.55;
-}
-
-.gap-row.expanded .gap-details {
-  display: block;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .gap-row:hover .gap-details {
-    display: block;
-  }
-}
-
-.gap-detail-line + .gap-detail-line {
-  margin-top: 0.35rem;
-}
-
-.gap-detail-line strong {
-  color: var(--text);
-  font-weight: 600;
-}
-
-.detail-mark {
-  color: var(--text);
-}
-
-.detail-provenance {
-  color: var(--muted);
 }
 
 @media (min-width: 600px) {
