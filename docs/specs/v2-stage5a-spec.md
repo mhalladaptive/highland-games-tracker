@@ -1,6 +1,7 @@
 # Highland Games Tracker — Stage 5a Spec Sketch (v1)
 
 **Date:** 2026-05-22
+**Amended:** 2026-05-24 — percentage caps at 99% below PR (Resolved decision 6), recorded post-build, ahead of the gpt review
 **Skill level:** L1 — Supported
 **Project risk:** Normal — low (a read-only display page; writes no data)
 **Repo:** `~/dev/highland-games-tracker` — on `main`, tagged `v2.0.0-stage4c`
@@ -35,7 +36,7 @@ Stage 5 replaces v1's "See the Gap" with a Progress page: a "where am I now, aga
    - **Year to date** — sessions dated on or after January 1 of the current calendar year.
    Default selection: **Past 3 sessions**. The filter replaces v1 See the Gap's competition/training/all filter.
 
-3. **A vs-PR row per throw** (`progress.js`). For each of the eight throw events (the `ITEMS` throws), a row showing: the event name; the **best mark within the selected window** — the max across all attempts of all in-window sessions for that event; the **PR** (`prs[event]`); and the **percentage of PR** — `round(bestInWindow / prs[event] × 100)` — with a progress bar. The best mark's **date** is shown inline alongside it.
+3. **A vs-PR row per throw** (`progress.js`). For each of the eight throw events (the `ITEMS` throws), a row showing: the event name; the **best mark within the selected window** — the max across all attempts of all in-window sessions for that event; the **PR** (`prs[event]`); and the **percentage of PR** — `round(bestInWindow / prs[event] × 100)`, **capped at 99% whenever `bestInWindow < prs[event]`** so a mark short of the PR never displays as 100% (Resolved decision 6) — with a progress bar. The best mark's **date** is shown inline alongside it.
 
 4. **Empty state** (`progress.js`). A throw event with no marks in the selected window shows **"no marks logged"** in place of the percentage and bar. If no sessions exist at all, every row reads "no marks logged."
 
@@ -43,7 +44,7 @@ Stage 5 replaces v1's "See the Gap" with a Progress page: a "where am I now, aga
 
 6. **Pure window / percentage helpers** (`shared.js`). The window selection (which sessions fall in Last / Past 3 / Year-to-date), the best-in-window computation, and the percentage are pure, DOM-free helpers in `shared.js` — unit-testable like `formatLiftMark`, `detectMilestones`, and `recomputeDerivedState`. `progress.js` stays a thin rendering layer over them.
 
-7. **Tests** (`tests.js`). Cover: the three window selections — Last / Past 3 / Year-to-date, including the YTD calendar-year boundary and the fewer-than-3-sessions case; best-in-window as the max across in-window sessions; the percentage; an event with no marks in the window yielding the empty state.
+7. **Tests** (`tests.js`). Cover: the three window selections — Last / Past 3 / Year-to-date, including the YTD calendar-year boundary and the fewer-than-3-sessions case; best-in-window as the max across in-window sessions; the percentage, including the cap — a best just below the PR displays 99, not 100, and only a best equal to the PR displays 100; an event with no marks in the window yielding the empty state.
 
 ## Acceptance criteria
 
@@ -52,7 +53,7 @@ Stage 5a is done when all of these are true:
 - [ ] A `progress.html` / `progress.js` Progress page exists, and `gap.html` / `gap.js` are gone.
 - [ ] The page shows one row per throw event — event name, the best mark in the selected window with its date, the PR, and the percentage of PR with a bar.
 - [ ] The window filter offers Last session / Past 3 sessions / Year to date, defaults to Past 3 sessions, and changing it recomputes every row.
-- [ ] Best-in-window is the maximum mark across all in-window sessions for that event; the percentage is `bestInWindow / prs[event]`, rounded.
+- [ ] Best-in-window is the maximum mark across all in-window sessions for that event; the percentage is `bestInWindow / prs[event]`, rounded, and capped at 99% when the best-in-window is below the PR — a displayed 100% means the best-in-window equals the PR.
 - [ ] An event with no marks in the window reads "no marks logged"; a no-sessions state reads "no marks logged" on every row.
 - [ ] The nav reads "Progress" and links to `progress.html` from every page.
 - [ ] The window / best / percentage logic lives in pure `shared.js` helpers with test coverage (scope point 7).
@@ -84,13 +85,15 @@ Settled in the 2026-05-22 planning session; spec-level calls are noted as such.
 
 5. **Minimal rows, fixed order.** Each row shows the event, the best-in-window mark with its date, the PR, and the percentage with a bar — no expandable when/where detail panel (v1 had one; deferred). The eight throws render in fixed `ITEMS` order, not sorted by percentage. Both keep 5a small; either is a builder/Oak-tweakable call.
 
+6. **The percentage caps at 99% below PR.** *(Added 2026-05-24, post-build.)* The displayed percentage is `round(bestInWindow / prs[event] × 100)`, capped at 99% whenever `bestInWindow < prs[event]`. Plain `round()` displays 100% for any mark from 99.5% of PR upward, contradicting this spec's intent that a displayed 100% means the window contains the PR-setting session. ccode flagged the contradiction at build; the cap resolves it, special-casing only the boundary so every other row keeps `round()` unchanged. The alternative — `Math.floor` throughout — would also fix the boundary but shift every row's percentage down by up to a point; the cap was chosen as the narrower change. A small follow-up `percentOfPr` commit brings the code to this rule.
+
 ## Tech notes (decided)
 
 - Vanilla HTML/CSS/JS, no build step, browser localStorage — unchanged. `version` stays `2` (5a reads data, writes none).
 - **The window, best-in-window, and percentage logic should be pure helpers in `shared.js`** — no DOM, unit-testable, the same pattern as `formatLiftMark` / `detectMilestones` / `recomputeDerivedState`. `progress.js` is a thin rendering layer.
 - **Window selection:** order sessions by `date` (then by save order / `id` for same-date ties). "Last session" = the most recent one; "Past 3 sessions" = the three most recent; "Year to date" = sessions whose `date` is on or after January 1 of the current year.
 - **Throws are all higher-is-better** (distance / height) — best-in-window is the `max`. 5a has no `time`-direction case; that arrives with lifts in 5b.
-- **The percentage is always ≤ 100%.** `prs[event]` is the all-time max across every session (Stage 4 keeps it so); the window is a subset of all sessions, so the best-in-window can equal but never exceed the PR. 100% means the selected window contains the PR-setting session.
+- **The percentage is always ≤ 100%.** `prs[event]` is the all-time max across every session (Stage 4 keeps it so); the window is a subset of all sessions, so the best-in-window can equal but never exceed the PR. To keep a displayed **100% meaningful — it means the selected window contains the PR-setting session** — the percentage is **capped at 99% whenever `bestInWindow < prs[event]`**: plain `round()` would otherwise display 100% for any mark from 99.5% of PR upward. The cap lives in the `percentOfPr` helper, which has both values to compare; 100% therefore displays only when `bestInWindow` equals the PR exactly.
 - `progress.js` may reuse or adapt v1 See the Gap's row/bar styling in `styles.css` — builder's call whether to carry the `gap-*` classes forward under new names.
 - The `prs` the page reads is the live, Stage-4-maintained PR.
 
@@ -205,8 +208,10 @@ CONCENTRATE HERE
   "Year to date" calendar-year boundary (on or after Jan 1 of this
   year); the fewer-than-3-sessions case.
 - Best-in-window as the max across the in-window sessions for each
-  event; the percentage (bestInWindow / prs[event], rounded); the
-  percentage should never exceed 100%.
+  event; the percentage (bestInWindow / prs[event], rounded, then
+  capped at 99% when bestInWindow < prs[event] — Resolved decision
+  6); the percentage should never exceed 100%, and a displayed 100%
+  should mean bestInWindow equals the PR.
 - The empty state — an event with no marks in the window, and the
   no-sessions case.
 - The nav relink on every page; gap.html / gap.js fully removed.
