@@ -884,3 +884,62 @@ function detectMilestones(session, data) {
   if (milestones.length >= 2) milestones.push({ type: 'awesomeDay' });
   return milestones;
 }
+
+// Stage 5a — the three Progress-page session windows. Pure: takes the
+// sessions array, a window id, and a reference year; returns the subset of
+// sessions in that window. Sessions are ordered chronologically (date, then
+// save order by id), the same tie-break prMeta uses.
+//   'last'  — the single most recent session.
+//   'past3' — the three most recent (fewer if fewer exist).
+//   'ytd'   — every session dated on or after January 1 of `year` (defaults
+//             to the current calendar year). ISO date strings compare
+//             lexicographically, so the >= cutoff is exact.
+// Unknown window ids fall back to 'past3'.
+function sessionsInWindow(sessions, windowId, year) {
+  const chrono = sessionsByChronology(Array.isArray(sessions) ? sessions : []);
+  if (windowId === 'last') return chrono.slice(-1);
+  if (windowId === 'ytd') {
+    const y = Number.isFinite(year) ? year : new Date().getFullYear();
+    const cutoff = `${y}-01-01`;
+    return chrono.filter((s) => s && typeof s.date === 'string' && s.date >= cutoff);
+  }
+  return chrono.slice(-3);
+}
+
+// Stage 5a — best mark for an event across a set of (already windowed)
+// sessions, with the date of the session that holds it. Throws are all
+// higher-is-better, so this is the max across every attempt of every session.
+// Returns { value, date } or null when no session has a finite mark for the
+// event. Pure — no data lookups. Pass sessions chronologically (as
+// sessionsInWindow returns them) and ties resolve to the earliest holder,
+// matching the prMeta tie-break.
+function bestMarkInSessions(sessions, eventId) {
+  const list = Array.isArray(sessions) ? sessions : [];
+  let best = null;
+  let bestDate = null;
+  for (const session of list) {
+    if (!session || !session.marks) continue;
+    const marks = session.marks[eventId];
+    if (!Array.isArray(marks)) continue;
+    for (const mark of marks) {
+      if (!Number.isFinite(mark)) continue;
+      if (best === null || mark > best) {
+        best = mark;
+        bestDate = session.date || null;
+      }
+    }
+  }
+  if (best === null) return null;
+  return { value: best, date: bestDate };
+}
+
+// Stage 5a — the Progress page's percentage-of-PR: the best-in-window mark
+// over the PR, as a rounded integer. Pure. Reuses percentOfBaseline for the
+// raw ratio and returns null when there is no comparison to make (no PR set,
+// or no in-window mark). Because the PR is the all-time max and the window is
+// a subset of sessions, a real best-in-window is <= PR, so this is <= 100.
+function percentOfPr(best, pr) {
+  const pct = percentOfBaseline(best, pr);
+  if (pct === null) return null;
+  return Math.round(pct);
+}
