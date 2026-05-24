@@ -3282,6 +3282,135 @@ test('applyPrGoalSubmit: raising a goal clears stale goalMeta and leaves prs alo
   assertEqual(next.prs['braemar-stone'], 500, 'hand-entered PR preserved (not recomputed to session max)');
 });
 
+// --- Stage 5a: sessionsInWindow ---
+
+test('sessionsInWindow: last => the single most recent session', () => {
+  const sessions = [
+    { id: 1, date: '2026-05-01', marks: {} },
+    { id: 2, date: '2026-05-10', marks: {} },
+    { id: 3, date: '2026-05-05', marks: {} },
+  ];
+  const r = sessionsInWindow(sessions, 'last', 2026);
+  assertEqual(r.length, 1);
+  assertEqual(r[0].id, 2, 'most recent by date');
+});
+
+test('sessionsInWindow: last => same-date tie breaks to the later save id', () => {
+  const sessions = [
+    { id: 1, date: '2026-05-10', marks: {} },
+    { id: 2, date: '2026-05-10', marks: {} },
+  ];
+  assertEqual(sessionsInWindow(sessions, 'last', 2026)[0].id, 2, 'higher id is the later save');
+});
+
+test('sessionsInWindow: past3 => the three most recent, chronological', () => {
+  const sessions = [
+    { id: 1, date: '2026-05-01', marks: {} },
+    { id: 2, date: '2026-05-05', marks: {} },
+    { id: 3, date: '2026-05-10', marks: {} },
+    { id: 4, date: '2026-05-15', marks: {} },
+  ];
+  const r = sessionsInWindow(sessions, 'past3', 2026);
+  assertDeepEqual(r.map((s) => s.id), [2, 3, 4], 'drops the oldest, keeps newest three in order');
+});
+
+test('sessionsInWindow: past3 => fewer than three returns all of them', () => {
+  const sessions = [
+    { id: 1, date: '2026-05-01', marks: {} },
+    { id: 2, date: '2026-05-05', marks: {} },
+  ];
+  assertEqual(sessionsInWindow(sessions, 'past3', 2026).length, 2);
+});
+
+test('sessionsInWindow: ytd => only sessions on or after Jan 1 of the year', () => {
+  const sessions = [
+    { id: 1, date: '2025-12-31', marks: {} },
+    { id: 2, date: '2026-01-01', marks: {} },
+    { id: 3, date: '2026-06-15', marks: {} },
+  ];
+  const r = sessionsInWindow(sessions, 'ytd', 2026);
+  assertDeepEqual(r.map((s) => s.id), [2, 3], 'Jan 1 included, prior-year Dec 31 excluded');
+});
+
+test('sessionsInWindow: ytd => empty when every session predates the year', () => {
+  const sessions = [{ id: 1, date: '2025-12-31', marks: {} }];
+  assertEqual(sessionsInWindow(sessions, 'ytd', 2026).length, 0);
+});
+
+test('sessionsInWindow: unknown window id falls back to past3', () => {
+  const sessions = [
+    { id: 1, date: '2026-05-01', marks: {} },
+    { id: 2, date: '2026-05-05', marks: {} },
+    { id: 3, date: '2026-05-10', marks: {} },
+    { id: 4, date: '2026-05-15', marks: {} },
+  ];
+  assertEqual(sessionsInWindow(sessions, 'bogus', 2026).length, 3);
+});
+
+test('sessionsInWindow: empty / non-array sessions => empty window', () => {
+  assertDeepEqual(sessionsInWindow([], 'past3', 2026), []);
+  assertDeepEqual(sessionsInWindow(null, 'last', 2026), []);
+});
+
+// --- Stage 5a: bestMarkInSessions ---
+
+test('bestMarkInSessions: max across all attempts of all in-window sessions', () => {
+  const sessions = [
+    { id: 1, date: '2026-05-01', marks: { 'braemar-stone': [400, 410] } },
+    { id: 2, date: '2026-05-10', marks: { 'braemar-stone': [405, 415] } },
+  ];
+  const r = bestMarkInSessions(sessions, 'braemar-stone');
+  assertEqual(r.value, 415);
+  assertEqual(r.date, '2026-05-10', 'date of the session holding the best');
+});
+
+test('bestMarkInSessions: no marks for the event => null (empty-state trigger)', () => {
+  const sessions = [{ id: 1, date: '2026-05-01', marks: { 'open-stone': [300] } }];
+  assertEqual(bestMarkInSessions(sessions, 'braemar-stone'), null);
+});
+
+test('bestMarkInSessions: empty window => null', () => {
+  assertEqual(bestMarkInSessions([], 'braemar-stone'), null);
+});
+
+test('bestMarkInSessions: ignores non-finite attempts', () => {
+  const sessions = [{ id: 1, date: '2026-05-01', marks: { 'braemar-stone': [NaN, 380] } }];
+  assertEqual(bestMarkInSessions(sessions, 'braemar-stone').value, 380);
+});
+
+test('bestMarkInSessions: tie keeps the earliest session date (matches prMeta)', () => {
+  const sessions = [
+    { id: 1, date: '2026-05-01', marks: { 'braemar-stone': [420] } },
+    { id: 2, date: '2026-05-10', marks: { 'braemar-stone': [420] } },
+  ];
+  assertEqual(bestMarkInSessions(sessions, 'braemar-stone').date, '2026-05-01');
+});
+
+// --- Stage 5a: percentOfPr ---
+
+test('percentOfPr: best over PR, rounded down', () => {
+  assertEqual(percentOfPr(415, 440), 94); // 94.31% -> 94
+});
+
+test('percentOfPr: best over PR, rounded up', () => {
+  assertEqual(percentOfPr(439, 440), 100); // 99.77% -> 100
+});
+
+test('percentOfPr: equal to PR => 100', () => {
+  assertEqual(percentOfPr(440, 440), 100);
+});
+
+test('percentOfPr: no PR (null / zero) => null', () => {
+  assertEqual(percentOfPr(400, null), null);
+  assertEqual(percentOfPr(400, 0), null);
+});
+
+test('percentOfPr: an in-window subset of the PR never exceeds 100', () => {
+  // The PR is the all-time max; any windowed best is <= PR.
+  assertTrue(percentOfPr(440, 440) <= 100);
+  assertTrue(percentOfPr(420, 440) <= 100);
+});
+
 // --- Harness ---
 
 function runTests() {
