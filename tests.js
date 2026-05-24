@@ -3392,12 +3392,13 @@ test('percentOfPr: best over PR, rounded down', () => {
   assertEqual(percentOfPr(415, 440), 94); // 94.31% -> 94
 });
 
-test('percentOfPr: best over PR, rounded up', () => {
-  assertEqual(percentOfPr(439, 440), 100); // 99.77% -> 100
+test('percentOfPr: just below PR caps at 99, never rounds up to 100', () => {
+  assertEqual(percentOfPr(439, 440), 99); // 99.77% -> 99, capped because best < PR
+  assertEqual(percentOfPr(438, 440), 99); // 99.5% -> would round to 100, capped to 99
 });
 
 test('percentOfPr: equal to PR => 100', () => {
-  assertEqual(percentOfPr(440, 440), 100);
+  assertEqual(percentOfPr(440, 440), 100); // only an exact PR match displays 100
 });
 
 test('percentOfPr: no PR (null / zero) => null', () => {

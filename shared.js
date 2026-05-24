@@ -938,8 +938,13 @@ function bestMarkInSessions(sessions, eventId) {
 // raw ratio and returns null when there is no comparison to make (no PR set,
 // or no in-window mark). Because the PR is the all-time max and the window is
 // a subset of sessions, a real best-in-window is <= PR, so this is <= 100.
+//
+// Capped at 99 whenever best < pr (Resolved decision 6): plain round() would
+// show 100 for anything from 99.5% upward, but a displayed 100 must mean the
+// window holds the PR-setting session — so 100 shows only when best equals pr.
 function percentOfPr(best, pr) {
   const pct = percentOfBaseline(best, pr);
   if (pct === null) return null;
-  return Math.round(pct);
+  const rounded = Math.round(pct);
+  return best < pr ? Math.min(99, rounded) : rounded;
 }
