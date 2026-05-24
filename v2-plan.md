@@ -7,12 +7,17 @@ this doc gets retired or rolled into a CONTRIBUTING / DESIGN file.
 
 ## Status
 
-- **Stage 1 (Fork + Rebrand strip):** ✅ shipped. Tagged at `v2.0.0-rebrand`
-  on `origin/main`. Repo branded as Highland Games Tracker, storage
-  namespace separated from v1, personal assets removed, README added.
-- **Stages 2–5:** designed in detail (this document). Implementation not
-  started.
-- **v2.0 launch:** targeted after Stages 2–5 land. Sequence is forgiving —
+- **Stages 1 through 4 are shipped.** Fork + rebrand (Stage 1) through
+  the celebration system (Stage 4c) are built, reviewed, and shipped,
+  tagged `v2.0.0-rebrand` and `v2.0.0-stage2` … `v2.0.0-stage4c` on
+  `origin/main`.
+- **Stage 5 is split into 5a and 5b** (decided 2026-05-22): 5a — the
+  throws Progress page, replacing "See the Gap"; 5b — the S&C lifts
+  view plus the Throws/Lifts toggle. Both are spec'd and handoff-ready
+  (`docs/specs/v2-stage5a-spec.md`, `v2-stage5b-spec.md`); build
+  pending — 5b builds after 5a ships.
+- **Stage 6 (v2.0 launch polish):** not started.
+- **v2.0 launch:** targeted after Stage 5 lands. Sequence is forgiving —
   each stage is independently shippable to a staging URL.
 
 ## Audience and intent
@@ -156,6 +161,12 @@ for any event in this state.
   flow as save). Edits that *remove* a milestone are silent.
 
 ### Stage 5: Progress page
+
+**Note (2026-05-22): Stage 5 was split into 5a and 5b.** 5a is the
+throws Progress page; 5b adds the S&C lifts view and the Throws/Lifts
+toggle. The per-stage specs — `docs/specs/v2-stage5a-spec.md` and
+`v2-stage5b-spec.md` — are authoritative. The single-page design below
+is the original scope the split was drawn from.
 
 Replaces v1's "See the Gap."
 

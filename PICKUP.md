@@ -28,8 +28,8 @@ Context to load before we start:
 3. Skim the spec sketches as the model for a cowork spec sketch — they
    live in docs/specs/. v2-stage2-spec.md, v2-stage3a-spec.md,
    v2-stage3b-spec.md, v2-stage4a-spec.md, v2-stage4b-spec.md, and
-   v2-stage4c-spec.md are all shipped; v2-stage5a-spec.md is spec'd,
-   build pending.
+   v2-stage4c-spec.md are all shipped; v2-stage5a-spec.md and
+   v2-stage5b-spec.md are spec'd, build pending.
 
 4. Skim the highland-games-tracker entries in the skills ledger:
    ~/Documents/Obsidian Vault/Reference/Higgins Method/skills-ledger.md
@@ -51,26 +51,27 @@ Current state:
   the linter live.
 - Stage 5 is split two ways (decided 2026-05-22): 5a — the Progress
   page for throws, replacing v1's "See the Gap"; 5b — the S&C lifts
-  view plus the Throws/Lifts toggle. 5a is spec'd and handoff-ready
-  (docs/specs/v2-stage5a-spec.md, with the ccode and gpt prompts built
-  in); building it is a ccode session. 5b is not yet spec'd.
-- L1 gate: three interleaved ~1-hour sub-gates, L1.1 / L1.2 / L1.3,
-  each a functional cold-read of one file at the front of a build.
-  None cleared yet — and none attempted across 4a/4b/4c. The planned
-  L1.1 target was gap.js, but Stage 5a retires gap.js (rebuilds it as
-  progress.js) — so the L1.1 read either happens before 5a builds, or
-  retargets to progress.js afterward. See higgins-method.md v0.5 and
-  the skills ledger.
+  view plus the Throws/Lifts toggle. Both are spec'd and handoff-ready
+  (docs/specs/v2-stage5a-spec.md and v2-stage5b-spec.md, each with the
+  ccode and gpt prompts built in); building them is ccode work — 5b
+  builds after 5a ships. Stage 6 (launch polish) then remains.
+- L1 gate: PAUSED for the remainder of the v2 build. On 2026-05-23 Oak
+  put the L1 learning gates on hold until after the project ships —
+  don't plan, surface, or push L1 sub-gate work for the rest of v2.
+  (Background, for when they resume: the gate is three ~1-hour
+  sub-gates, L1.1 / L1.2 / L1.3, none cleared — see higgins-method.md
+  v0.5 and the skills ledger.)
 - Repo housekeeping to confirm at session start: whether local commits
   are unpushed (the 5a spec commit was local-only at last note) and
   whether the v2-plan.md / SESSION_NOTES.md / PICKUP.md doc edits are
   committed.
 
-Where I want to start today: [STATE YOUR GOAL. Stage 5a is spec'd —
-docs/specs/v2-stage5a-spec.md — and building it is a ccode session, not
-cowork. Cowork's likely next jobs: planning Stage 5b (the lifts view +
-the Throws/Lifts toggle — not yet spec'd); an L1.1 sub-gate cold-read;
-or, once ccode has built 5a, the smoke test. State what you want.]
+Where I want to start today: [STATE YOUR GOAL. Stages 5a and 5b are
+both spec'd — docs/specs/v2-stage5a-spec.md and v2-stage5b-spec.md —
+and building them is ccode work (5b after 5a ships). Cowork's likely
+next jobs: smoke-testing 5a or 5b once ccode has built them; planning
+Stage 6 (launch polish); or a session-wrap journal pass. State what you
+want.]
 
 How I want to work:
 

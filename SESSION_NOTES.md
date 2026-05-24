@@ -6,6 +6,48 @@ of what got decided when.
 
 ---
 
+## 2026-05-23 — Stage 5b planned and spec'd; L1 gate paused
+
+A short planning session after the Stage 4 ship: Stage 5b designed and
+spec'd, plus one method decision — the L1 learning gate paused for the
+rest of the v2 build.
+
+### Stage 5b — the lifts view, spec'd
+
+Stage 5 had been split 5a / 5b at the tail of the Stage 4 session; this
+session planned the 5b half — the S&C lifts view on the Progress page,
+and the Throws / Lifts toggle that reaches it. Six decisions were
+resolved (full text in `docs/specs/v2-stage5b-spec.md`): the percentage
+is direction-aware, so a `time` lift flips the ratio to `pr / bestMark`
+and every row still reads as a ≤ 100% "fraction of the way to your PR";
+Best 3 mode shows the top three *session-bests*, not the three best
+attempts pooled, so one strong day can't fill all three slots; the
+Throws / Lifts toggle is top-level and the secondary control swaps with
+it (the window filter on the throws side, a Snapshot / Best 3 selector
+on the lifts side); the lifts view shows active lifts only; the default
+lift mode is Snapshot; and Best 3's 365-day window is rolling and
+fixed. The spec was written handoff-ready — ccode and gpt prompts built
+in — and committed (`41d1e0b`). 5b can't build until 5a ships, so the
+ccode handoff waits on the `v2.0.0-stage5a` tag.
+
+### The L1 gate — paused for the rest of v2
+
+Learning Gates paused for the remainder of this project and to be
+revisited after this project is concluded. The gates were too high and
+too broad. The Stage 4 ledger entry had recommended the opposite —
+clearing an L1.1 sub-gate before 5b builds; this session went the other
+way and parked L1 entirely.
+
+### Housekeeping
+
+- `PICKUP.md` was refreshed this session — 5b now spec'd, L1 paused —
+  but the edit was left uncommitted.
+- This entry and the `v2-plan.md` Status / Stage 5 catch-up are this
+  session's doc sweep, completed late, in the 2026-05-24 cleanup pass.
+  One `docs:` commit closes all three doc edits.
+
+---
+
 ## 2026-05-22 → 23 — Stage 4 built and shipped (4a + 4b + 4c); Stage 5 split, 5a spec'd
 
 *Reconstructed by cowork from the git log and the review docs — this
