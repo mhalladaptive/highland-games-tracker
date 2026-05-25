@@ -3398,7 +3398,13 @@ test('percentOfPr: just below PR caps at 99, never rounds up to 100', () => {
 });
 
 test('percentOfPr: equal to PR => 100', () => {
-  assertEqual(percentOfPr(440, 440), 100); // only an exact PR match displays 100
+  assertEqual(percentOfPr(440, 440), 100); // a best at the PR displays 100
+});
+
+test('percentOfPr: above PR clamps to 100, never over', () => {
+  // Reachable via migrated v1 data: a session mark can exceed a stale
+  // baseline (Resolved decision 7). The raw ratio is 125%; clamp to 100.
+  assertEqual(percentOfPr(500, 400), 100);
 });
 
 test('percentOfPr: no PR (null / zero) => null', () => {
