@@ -3645,6 +3645,116 @@ test('Progress toggle: switching to Lifts swaps the view and the secondary contr
   }
 });
 
+// --- Stage 6a: cut-scene selection ---
+
+test('selectThrowCutScene: Braemar Stone → distance motif, stone skin, built', () => {
+  assertDeepEqual(selectThrowCutScene('braemar-stone'), { motif: 'distance', skin: 'stone', built: true });
+});
+
+test('selectThrowCutScene: Open Stone → distance motif, stone skin, built', () => {
+  assertDeepEqual(selectThrowCutScene('open-stone'), { motif: 'distance', skin: 'stone', built: true });
+});
+
+test('selectThrowCutScene: hammers → distance motif, hammer skin, not built', () => {
+  assertDeepEqual(selectThrowCutScene('heavy-hammer'), { motif: 'distance', skin: 'hammer', built: false });
+  assertDeepEqual(selectThrowCutScene('light-hammer'), { motif: 'distance', skin: 'hammer', built: false });
+});
+
+test('selectThrowCutScene: weights for distance → distance motif, weight skin, not built', () => {
+  assertDeepEqual(selectThrowCutScene('heavy-weight-distance'), { motif: 'distance', skin: 'weight', built: false });
+  assertDeepEqual(selectThrowCutScene('light-weight-distance'), { motif: 'distance', skin: 'weight', built: false });
+});
+
+test('selectThrowCutScene: Weight for Height → height motif, not built (fill-in)', () => {
+  assertDeepEqual(selectThrowCutScene('weight-over-bar'), { motif: 'height', skin: 'weight', built: false });
+});
+
+test('selectThrowCutScene: Sheaf Toss → height motif, sheaf skin, not built (fill-in)', () => {
+  assertDeepEqual(selectThrowCutScene('sheaf-toss'), { motif: 'height', skin: 'sheaf', built: false });
+});
+
+test('selectThrowCutScene: a lift event → null (not a throw, no cut-scene)', () => {
+  assertEqual(selectThrowCutScene('deadlift'), null);
+});
+
+test('selectThrowCutScene: an unknown event → null', () => {
+  assertEqual(selectThrowCutScene('not-an-event'), null);
+});
+
+// --- Stage 6a: sound preference ---
+
+test('sound preference: off by default, toggles, and persists to its own flag', () => {
+  const prev = localStorage.getItem(SOUND_PREF_KEY);
+  try {
+    localStorage.removeItem(SOUND_PREF_KEY);
+    assertEqual(isSoundOn(), false, 'absent flag reads as off');
+
+    setSoundOn(true);
+    assertEqual(isSoundOn(), true, 'turned on');
+    assertEqual(localStorage.getItem(SOUND_PREF_KEY), 'on', 'persisted to standalone flag');
+
+    setSoundOn(false);
+    assertEqual(isSoundOn(), false, 'turned back off');
+    assertEqual(localStorage.getItem(SOUND_PREF_KEY), 'off', 'off persisted');
+  } finally {
+    if (prev === null) localStorage.removeItem(SOUND_PREF_KEY);
+    else localStorage.setItem(SOUND_PREF_KEY, prev);
+  }
+});
+
+test('sound preference: uses a key separate from the v2 data blob (no schema change)', () => {
+  assertTrue(SOUND_PREF_KEY !== STORAGE_KEY, 'sound flag is not the data key');
+});
+
+// --- Stage 6a: rich path gated to the throws PR card ---
+
+test('rich path: a throws PR card takes the field/cut-scene path', () => {
+  const card = buildCelebrationCard(
+    { type: 'pr', event: 'braemar-stone', value: 300, previousValue: 280 },
+    { id: 1, date: '2026-05-24' },
+    {}
+  );
+  assertTrue(card.classList.contains('celebration-card--throw'), 'throws PR is rich');
+  assertTrue(card.classList.contains('celebration-card--pr'), 'still a PR card');
+});
+
+test('rich path: a lift PR card does NOT take the throws path', () => {
+  const data = { userLifts: [{ id: 'lift1', name: 'Front Squat', unit: 'lb', active: true }] };
+  const card = buildCelebrationCard(
+    { type: 'pr', event: 'lift1', value: 405, previousValue: 385 },
+    { id: 1, date: '2026-05-24' },
+    data
+  );
+  assertTrue(!card.classList.contains('celebration-card--throw'), 'lift PR is not rich');
+  assertTrue(card.classList.contains('celebration-card--pr'), 'plain PR card');
+});
+
+test('rich path: a Goal card for a throw event does NOT take the throws path', () => {
+  const card = buildCelebrationCard(
+    { type: 'goal', event: 'braemar-stone', value: 300, goalValue: 290 },
+    { id: 1, date: '2026-05-24' },
+    {}
+  );
+  assertTrue(!card.classList.contains('celebration-card--throw'), 'goal is not rich even for a throw');
+  assertTrue(card.classList.contains('celebration-card--goal'), 'goal card');
+});
+
+test('rich path: the Awesome Day card does NOT take the throws path', () => {
+  const milestones = [
+    { type: 'pr', event: 'braemar-stone', value: 300 },
+    { type: 'goal', event: 'braemar-stone', value: 300, goalValue: 290 },
+    { type: 'awesomeDay' },
+  ];
+  const card = buildCelebrationCard(
+    { type: 'awesomeDay' },
+    { id: 1, date: '2026-05-24' },
+    {},
+    milestones
+  );
+  assertTrue(!card.classList.contains('celebration-card--throw'), 'awesome day is not rich');
+  assertTrue(card.classList.contains('celebration-card--awesomeDay'), 'awesome day card');
+});
+
 // --- Harness ---
 
 function runTests() {
