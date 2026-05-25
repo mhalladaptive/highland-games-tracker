@@ -3523,6 +3523,21 @@ test('topSessionBestsInWindow: time direction ranks fastest first', () => {
   assertDeepEqual(r.map((e) => e.value), [350, 360, 370], 'min first for time');
 });
 
+test('topSessionBestsInWindow: a future-dated session is excluded', () => {
+  // A Log Session date typo or odd import must not displace real recent marks.
+  const sessions = [
+    { id: 1, date: '2026-05-10', marks: { sq: [100] } },
+    { id: 2, date: '2027-01-01', marks: { sq: [999] } }, // after today -> dropped
+  ];
+  const r = topSessionBestsInWindow(sessions, 'sq', 'higher', 365, '2026-05-24');
+  assertDeepEqual(r.map((e) => e.value), [100], 'future session excluded despite the bigger mark');
+});
+
+test('topSessionBestsInWindow: a session dated exactly today still qualifies', () => {
+  const sessions = [{ id: 1, date: '2026-05-24', marks: { sq: [100] } }];
+  assertEqual(topSessionBestsInWindow(sessions, 'sq', 'higher', 365, '2026-05-24').length, 1);
+});
+
 test('topSessionBestsInWindow: no qualifying sessions => empty (empty-state trigger)', () => {
   assertDeepEqual(topSessionBestsInWindow([], 'sq', 'higher', 365, '2026-05-24'), []);
 });

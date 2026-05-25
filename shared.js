@@ -996,8 +996,10 @@ function mostRecentLiftMark(sessions, liftId, direction) {
 // direction-aware best attempt; the top 3 of those session-bests are returned,
 // best-first — three different days, never three attempts pooled from one
 // (Resolved decision 2). A session qualifies when its date is on or after the
-// cutoff (today − days), inclusive of the boundary day. Pure — `todayIso`
-// defaults to the real today. Returns an array of { value, date }, length 0–3.
+// cutoff (today − days) and not after today — both boundary days inclusive, so
+// a future-dated session (a date typo, odd import) cannot displace real recent
+// marks. Pure — `todayIso` defaults to the real today. Returns an array of
+// { value, date }, length 0–3.
 function topSessionBestsInWindow(sessions, liftId, direction, days, todayIso) {
   const list = Array.isArray(sessions) ? sessions : [];
   const today = (typeof todayIso === 'string' && todayIso) ? todayIso : todayISO();
@@ -1005,7 +1007,7 @@ function topSessionBestsInWindow(sessions, liftId, direction, days, todayIso) {
   const sessionBests = [];
   for (const session of list) {
     if (!session || !session.marks) continue;
-    if (typeof session.date !== 'string' || session.date < cutoff) continue;
+    if (typeof session.date !== 'string' || session.date < cutoff || session.date > today) continue;
     const best = eventBest(session.marks[liftId], direction);
     if (best === null) continue;
     sessionBests.push({ value: best, date: session.date });
