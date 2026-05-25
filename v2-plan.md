@@ -451,6 +451,44 @@ imported v1 backups in addition to the schema migration. Order:
 schema migration first (renames `baselines` → `prs`, etc.), then
 games-in-location migration (operates on sessions).
 
+## Stones section — pending design
+
+Identified 2026-05-24, mid Stage 6, as a feature missing from this plan.
+Detailed design is deferred until the Stage 6 card polish is finished —
+this note holds the feature so it is not lost, and flags that the plan
+above will need to absorb it.
+
+A new section for **named manhood stones** — the historic Scottish
+lifting/throwing stones that carry their own names and lore: the Dinnie
+Stones, the Ardblair Stone, the Inver Stone, and others. *(Spellings to
+confirm — captured here as the canonical names; "Denny / Ard Blair /
+Inverse" in conversation read as Dinnie / Ardblair / Inver.)* This is
+its own category — distinct from the fixed Throws list and from
+user-defined Strength & Conditioning Milestones.
+
+Known so far:
+
+- **Placement (v2.0).** The Stones section sits between Throws and
+  Strength & Conditioning Milestones on the pages that carry those
+  sections.
+- **v2.1.** The Throws / Stones / S&C sections split into their own
+  pages then, for more per-section customization.
+- **Default-section setting.** An option — profile or settings — for
+  which section the app opens to: Throws, Stones, or S&C Milestones.
+
+Open, for the post-cards planning session:
+
+- The data model for named stones — a fixed canonical list, athlete-
+  added stones, or both (a famous stone like the Dinnie vs. a local
+  stone an athlete wants to log).
+- How a stone is measured — lifted, carried for distance, to a height?
+  Named-stone feats differ; the section may need its own measurement
+  model rather than reusing the Throws or S&C shapes.
+- How the section threads the Set PRs & Goals page, Log Session, and
+  the Progress page.
+- Whether the celebration system fires for stones (a stone PR card).
+- Where and how the default-section setting is stored.
+
 ## Open items
 
 - **Visual card design** — colors, typography, exact layout.
