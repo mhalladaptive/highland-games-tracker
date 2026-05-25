@@ -245,10 +245,16 @@ function renderLifts(data) {
   }
 }
 
+let currentSide = 'throws';
 let currentWindow = 'past3';
 let currentMode = 'snapshot';
 
-function renderProgress(data) {
+const SIDE_INTRO = {
+  throws: 'Your best mark in each throw, against your personal record.',
+  lifts: 'Your strength & conditioning lifts, against your personal records.',
+};
+
+function renderThrows(data) {
   const list = document.getElementById('throws-list');
   list.innerHTML = '';
   const year = new Date().getFullYear();
@@ -262,20 +268,58 @@ function renderProgress(data) {
   }
 }
 
-function setWindow(windowId) {
-  currentWindow = windowId === 'last' ? 'last' : windowId === 'ytd' ? 'ytd' : 'past3';
-  document.querySelectorAll('.filter-btn').forEach((btn) => {
-    const isActive = btn.dataset.window === currentWindow;
+// Dispatch to the active side. The throws and lifts views own separate
+// containers; only one is visible at a time.
+function renderProgress(data) {
+  if (currentSide === 'lifts') renderLifts(data);
+  else renderThrows(data);
+}
+
+// Mark the button whose data-<key> matches `value` active across a segmented
+// control, and clear the rest. Each control's buttons carry exactly one of
+// data-side / data-window / data-mode, so the selector scopes cleanly.
+function syncControl(selector, key, value) {
+  document.querySelectorAll(selector).forEach((btn) => {
+    const isActive = btn.dataset[key] === value;
     btn.classList.toggle('active', isActive);
     btn.setAttribute('aria-checked', String(isActive));
   });
+}
+
+function setSide(side) {
+  currentSide = side === 'lifts' ? 'lifts' : 'throws';
+  syncControl('[data-side]', 'side', currentSide);
+  const onLifts = currentSide === 'lifts';
+  document.getElementById('throws-view').hidden = onLifts;
+  document.getElementById('lifts-view').hidden = !onLifts;
+  document.getElementById('window-filter').hidden = onLifts;
+  document.getElementById('lift-mode').hidden = !onLifts;
+  document.getElementById('intro').textContent = SIDE_INTRO[currentSide];
   renderProgress(loadData());
+}
+
+function setWindow(windowId) {
+  currentWindow = windowId === 'last' ? 'last' : windowId === 'ytd' ? 'ytd' : 'past3';
+  syncControl('[data-window]', 'window', currentWindow);
+  renderThrows(loadData());
+}
+
+function setMode(mode) {
+  currentMode = mode === 'best3' ? 'best3' : 'snapshot';
+  syncControl('[data-mode]', 'mode', currentMode);
+  renderLifts(loadData());
 }
 
 function init() {
   renderProgress(loadData());
-  document.querySelectorAll('.filter-btn').forEach((btn) => {
+  document.querySelectorAll('[data-side]').forEach((btn) => {
+    btn.addEventListener('click', () => setSide(btn.dataset.side));
+  });
+  document.querySelectorAll('[data-window]').forEach((btn) => {
     btn.addEventListener('click', () => setWindow(btn.dataset.window));
+  });
+  document.querySelectorAll('[data-mode]').forEach((btn) => {
+    btn.addEventListener('click', () => setMode(btn.dataset.mode));
   });
 }
 

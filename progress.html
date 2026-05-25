@@ -19,17 +19,32 @@
   </header>
 
   <main class="container">
-    <p class="intro">Your best mark in each throw, against your personal record.</p>
+    <p class="intro" id="intro">Your best mark in each throw, against your personal record.</p>
 
-    <div class="filter-bar" role="radiogroup" aria-label="Choose the session window">
+    <div class="filter-bar side-toggle" role="radiogroup" aria-label="Throws or lifts">
+      <button type="button" class="filter-btn active" data-side="throws" role="radio" aria-checked="true">Throws</button>
+      <button type="button" class="filter-btn" data-side="lifts" role="radio" aria-checked="false">Lifts</button>
+    </div>
+
+    <div class="filter-bar" id="window-filter" role="radiogroup" aria-label="Choose the session window">
       <button type="button" class="filter-btn" data-window="last" role="radio" aria-checked="false">Last session</button>
       <button type="button" class="filter-btn active" data-window="past3" role="radio" aria-checked="true">Past 3 sessions</button>
       <button type="button" class="filter-btn" data-window="ytd" role="radio" aria-checked="false">Year to date</button>
     </div>
 
-    <section class="group">
+    <div class="filter-bar" id="lift-mode" role="radiogroup" aria-label="Choose the lift view" hidden>
+      <button type="button" class="filter-btn active" data-mode="snapshot" role="radio" aria-checked="true">Snapshot</button>
+      <button type="button" class="filter-btn" data-mode="best3" role="radio" aria-checked="false">Best 3</button>
+    </div>
+
+    <section class="group" id="throws-view">
       <h2>Throws</h2>
       <div class="gap-items" id="throws-list"></div>
+    </section>
+
+    <section class="group" id="lifts-view" hidden>
+      <h2>Strength &amp; Conditioning</h2>
+      <div class="gap-items" id="lifts-list"></div>
     </section>
   </main>
 

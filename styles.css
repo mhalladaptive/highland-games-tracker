@@ -950,6 +950,12 @@ body.kind-training .comp-only {
   box-shadow: var(--shadow);
 }
 
+/* .filter-bar sets display:flex, which would override the [hidden] default —
+   restore it so a hidden secondary control (Stage 5b) actually hides. */
+.filter-bar[hidden] {
+  display: none;
+}
+
 @media (min-width: 600px) {
   .item-meta-fields {
     flex-direction: row;
