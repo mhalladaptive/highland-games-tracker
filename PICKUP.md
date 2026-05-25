@@ -16,62 +16,53 @@ Cowork does NOT write or edit the app's code.
 Context to load before we start:
 
 1. Read v2-plan.md root to bottom — the full v2 design from the
-   2026-05-19 design session. Mostly locked product decisions; flag
-   anything that reads as a recommendation vs. a decision before
-   assuming. Stage 5 (the Progress page) is the next unbuilt stage —
-   read that section closely. Note: the Status section near the top of
-   v2-plan.md is stale — trust the "Current state" list below.
+   2026-05-19 design session, mostly locked product decisions. Stages
+   1 through 5 are shipped; Stage 6 (launch polish) is the only stage
+   left — read that section, and the Status block at the top, closely.
 
 2. Read SESSION_NOTES.md, newest entry first — the journal of how we
    got here.
 
 3. Skim the spec sketches as the model for a cowork spec sketch — they
-   live in docs/specs/. v2-stage2-spec.md, v2-stage3a-spec.md,
-   v2-stage3b-spec.md, v2-stage4a-spec.md, v2-stage4b-spec.md, and
-   v2-stage4c-spec.md are all shipped; v2-stage5a-spec.md and
-   v2-stage5b-spec.md are spec'd, build pending.
+   live in docs/specs/. All are shipped — v2-stage2-spec.md through
+   v2-stage4c-spec.md, plus v2-stage5a-spec.md and v2-stage5b-spec.md.
+   (Stage 5a's spec carries Resolved decisions 6 and 7, added after the
+   build from the cap and clamp fixes.)
 
 4. Skim the highland-games-tracker entries in the skills ledger:
    ~/Documents/Obsidian Vault/Reference/Higgins Method/skills-ledger.md
 
 Current state:
 
-- Stages 1, 2, 3a, 3b, 4a, 4b, and 4c are SHIPPED and tagged —
-  v2.0.0-rebrand, v2.0.0-stage2, v2.0.0-stage3a, v2.0.0-stage3b,
-  v2.0.0-stage4a, v2.0.0-stage4b, v2.0.0-stage4c. Stage 4 — the big
-  behavioral stage — is complete: 4a put Log Session on userLifts (the
-  3→10 attempt cap, the "Strength and Conditioning Milestones" rename);
-  4b built the celebration system (milestone detection at save, the
-  PR/Goal/Awesome Day cards, the queue, the Past Sessions badge +
-  replay); 4c added recompute-on-edit, the chain prompt, and the
-  Set-page achieved-goal callout. All three Stage 4 gpt reviews came
-  back "ship as-is" with zero findings.
-- Tooling: the Biome linter was added 2026-05-22; `npm run lint` is a
-  verification step in the loop. Every stage from 4a on is built with
-  the linter live.
-- Stage 5 is split two ways (decided 2026-05-22): 5a — the Progress
-  page for throws, replacing v1's "See the Gap"; 5b — the S&C lifts
-  view plus the Throws/Lifts toggle. Both are spec'd and handoff-ready
-  (docs/specs/v2-stage5a-spec.md and v2-stage5b-spec.md, each with the
-  ccode and gpt prompts built in); building them is ccode work — 5b
-  builds after 5a ships. Stage 6 (launch polish) then remains.
-- L1 gate: PAUSED for the remainder of the v2 build. On 2026-05-23 Oak
-  put the L1 learning gates on hold until after the project ships —
-  don't plan, surface, or push L1 sub-gate work for the rest of v2.
-  (Background, for when they resume: the gate is three ~1-hour
-  sub-gates, L1.1 / L1.2 / L1.3, none cleared — see higgins-method.md
-  v0.5 and the skills ledger.)
-- Repo housekeeping to confirm at session start: whether local commits
-  are unpushed (the 5a spec commit was local-only at last note) and
-  whether the v2-plan.md / SESSION_NOTES.md / PICKUP.md doc edits are
-  committed.
+- The v2 feature build is COMPLETE. Stages 1 through 5 are shipped and
+  tagged — v2.0.0-rebrand, v2.0.0-stage2, v2.0.0-stage3a / 3b,
+  v2.0.0-stage4a / 4b / 4c, v2.0.0-stage5a, v2.0.0-stage5b. Stage 5 —
+  the Progress page — shipped in two halves: 5a (the throws windowed
+  vs-PR view, replacing v1's "See the Gap") and 5b (the S&C lifts view
+  plus the Throws/Lifts toggle, with Snapshot and Best 3 modes).
+- Stage 6 — v2.0 launch polish — is the ONLY remaining v2 work, and it
+  is not yet planned in detail. v2-plan.md scopes it as: the
+  celebration-card visual pass (deferred since the Stage 4 design), a
+  cross-device smoke test (5a/5b were desktop-verified, mobile checked
+  via CSS only), the v2.0.0 tag, the GitHub release, and Cloudflare
+  Web Analytics. Cowork's likely next job: planning Stage 6.
+- Tooling: the Biome linter is in the loop — `npm run lint` is a
+  verification step. The test suite runs in-browser via tests.html
+  (348 tests as of Stage 5b).
+- L1 gate: PAUSED for the rest of the v2 build, per Oak's 2026-05-23
+  decision — to resume after the project ships. Don't plan, surface,
+  or push L1 sub-gate work until then. (Background: the gate is three
+  ~1-hour sub-gates, L1.1 / L1.2 / L1.3, none cleared — see
+  higgins-method.md and the skills ledger.)
+- Repo state at the 2026-05-24 wrap: clean, on main, fully synced with
+  origin — everything through Stage 5b shipped and tagged.
 
-Where I want to start today: [STATE YOUR GOAL. Stages 5a and 5b are
-both spec'd — docs/specs/v2-stage5a-spec.md and v2-stage5b-spec.md —
-and building them is ccode work (5b after 5a ships). Cowork's likely
-next jobs: smoke-testing 5a or 5b once ccode has built them; planning
-Stage 6 (launch polish); or a session-wrap journal pass. State what you
-want.]
+Where I want to start today: [STATE YOUR GOAL. Stage 5 is shipped —
+the v2 feature build is complete. The only stage left is Stage 6,
+launch polish, and it still needs planning: the celebration-card
+visual pass, a cross-device smoke test, the v2.0.0 tag, the GitHub
+release, and analytics. Cowork's likely next job is planning Stage 6
+with you. State what you want.]
 
 How I want to work:
 

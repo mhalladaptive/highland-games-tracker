@@ -7,18 +7,17 @@ this doc gets retired or rolled into a CONTRIBUTING / DESIGN file.
 
 ## Status
 
-- **Stages 1 through 4 are shipped.** Fork + rebrand (Stage 1) through
-  the celebration system (Stage 4c) are built, reviewed, and shipped,
-  tagged `v2.0.0-rebrand` and `v2.0.0-stage2` … `v2.0.0-stage4c` on
-  `origin/main`.
-- **Stage 5 is split into 5a and 5b** (decided 2026-05-22): 5a — the
-  throws Progress page, replacing "See the Gap"; 5b — the S&C lifts
-  view plus the Throws/Lifts toggle. Both are spec'd and handoff-ready
-  (`docs/specs/v2-stage5a-spec.md`, `v2-stage5b-spec.md`); build
-  pending — 5b builds after 5a ships.
-- **Stage 6 (v2.0 launch polish):** not started.
-- **v2.0 launch:** targeted after Stage 5 lands. Sequence is forgiving —
-  each stage is independently shippable to a staging URL.
+- **Stages 1 through 5 are shipped.** Fork + rebrand (Stage 1) through
+  the Progress page (Stage 5b) are built, reviewed, and shipped, tagged
+  `v2.0.0-rebrand` and `v2.0.0-stage2` … `v2.0.0-stage5b` on
+  `origin/main`. Stage 5 — the Progress page — landed in two halves:
+  5a (the throws windowed vs-PR view, replacing "See the Gap") and 5b
+  (the S&C lifts view plus the Throws/Lifts toggle). The v2 feature
+  build is complete.
+- **Stage 6 (v2.0 launch polish):** not started — the last v2 work.
+  Celebration-card visual polish, a cross-device smoke test, the
+  `v2.0.0` tag, the GitHub release, Cloudflare Web Analytics.
+- **v2.0 launch:** targeted after Stage 6.
 
 ## Audience and intent
 

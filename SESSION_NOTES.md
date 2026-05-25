@@ -6,6 +6,119 @@ of what got decided when.
 
 ---
 
+## 2026-05-24 — Stage 5 built and shipped (5a + 5b); the Progress page complete
+
+*Written by cowork at the session wrap. Cowork ran the smoke tests,
+the review hand-offs, and the spec amendments first-hand this session,
+so this is close to a live record — but verify before trusting it.*
+
+One long session — the last feature stage of the v2 build. It opened
+by committing the 2026-05-23 doc sweep that had been left uncommitted
+(`2f0d5f3` — the SESSION_NOTES entry, the v2-plan Status catch-up, the
+PICKUP refresh), then ran Stage 5a and Stage 5b each through the full
+loop: ccode build → cowork browser smoke test → gpt review → fix →
+ship. Stage 5 is complete; both halves of the Progress page are live.
+
+### Stage 5a — the throws Progress page
+
+ccode built it in four atomic commits (`a30622d`…`ab6baf1`): the pure
+window / best-in-window / percentage helpers in `shared.js`, their
+tests, the new `progress.html` / `progress.js` (retiring `gap.html` /
+`gap.js`), and the nav relink across every page. The cowork browser
+smoke test came back clean — the three window filters, the per-throw
+percentages, the empty states, and the nav all verified on injected
+data; the full suite 324/324.
+
+Two corrections followed, both on the percentage helper:
+
+- **The cap (Resolved decision 6).** ccode's own build report flagged
+  a tension: `round(best / pr × 100)` shows 100% from 99.5% upward,
+  contradicting the spec's "100% means the PR-setting session." Oak's
+  call — cap the displayed percentage at 99% whenever the mark is
+  below the PR. cowork amended the 5a spec (`b9d5afb`); ccode applied
+  it (`92554c4`).
+- **The clamp (Resolved decision 7).** The gpt review then found a
+  Critical: `percentOfPr` capped the below-PR case but never clamped
+  `best > pr`, so the helper could return over 100% — e.g.
+  `percentOfPr(500, 400)` returned 125. The spec had assumed
+  `best ≤ pr` always; true for natively-grown v2 data, but not for
+  migrated v1 data — `migrateSchemaV1toV2` renames `baselines → prs`
+  with no reconciliation against session marks, and v1 baselines were
+  manual references a logged throw could exceed. Reachable for any
+  v1-import user. Oak's call — clamp: `best ≥ pr → 100`, below it
+  `round` capped at 99. cowork amended the spec (decision 7, committed
+  `2cd5e71`); ccode applied the clamp (`8316eba`); the gpt re-review
+  returned "Critical resolved, ship." Deliberately not fixed:
+  reconciling a stale migrated `prs` — a single-user path Oak does not
+  expect to take (see decision 7).
+
+Shipped, tagged `v2.0.0-stage5a`.
+
+### Stage 5b — the S&C lifts view
+
+ccode built it in five atomic commits (`5714829`…`591a4b7`): the
+direction-aware percentage and lift-selection helpers, the Snapshot
+view, the Best 3 view, the Throws / Lifts toggle with its per-side
+secondary control, and tests. The cowork smoke test was thorough — the
+toggle (opens on Throws, swaps the view, the secondary control, and
+the intro text together), Snapshot (most-recent mark, direction-aware
+— the `time` lift's ratio flips correctly), Best 3 (top three
+session-bests, the rolling 365-day window, the fewer-than-three case,
+the direction sort), active-lift filtering, and both empty states all
+verified on injected data; the full suite 346/346.
+
+The gpt review found one Major, no Critical: `topSessionBestsInWindow`
+bounded the 365-day window only at the bottom — it skipped sessions
+older than the cutoff but never excluded sessions dated after today,
+so a future-dated session (a Log Session date typo, or odd imported
+data) could slip into Best 3 and displace real recent marks. Unlike
+the 5a fixes this needed no spec amendment — the spec already said
+"within 365 days of today," correctly bounded; the code had simply
+fallen short of it. ccode added the upper date bound and two
+regression tests (`61fc5d2`). A Major triggers no re-review under the
+method; cowork confirmed the fix with a full browser run — 348/348.
+Shipped, tagged `v2.0.0-stage5b`.
+
+### Where bugs got caught — the self-pruning signal
+
+The Stage 4 entry left an open question: three straight stages with
+zero review findings — solid pipeline, or a review not probing hard
+enough? Stage 5 answers it. The gpt review caught a **Critical** (5a's
+over-100% / migration path) and a **Major** (5b's future-date
+window) — both real correctness defects, both reachable. ccode's own
+build report caught a third (the rounding edge behind the cap). The
+cowork browser smoke test caught **nothing** in either stage — though
+it verified a wide surface of behavior empirically and confirmed both
+fixes. The unit suites passed throughout: the buggy code passed
+because the tests covered the normal-data paths, not the corrupt /
+migrated / future-dated ones a static read of every branch catches.
+Honest read: the static gpt review earned its place emphatically this
+stage; the dynamic smoke test verified but did not catch — worth
+weighing at the next self-pruning pass.
+
+### Where it stands
+
+Stage 5 is complete — the Progress page covers throws and S&C lifts.
+The v2 feature build is done. The only work left is **Stage 6 —
+launch polish**: the celebration-card visual pass (deferred since the
+Stage 4 design), a cross-device smoke test (5a and 5b were
+desktop-verified, mobile checked via CSS only), the `v2.0.0` tag, the
+GitHub release, and the Cloudflare Web Analytics.
+
+### Housekeeping
+
+- The 5a and 5b gpt reviews are saved in `docs/reviews/`.
+  `higgins-method.md` was de-duplicated to a single repo-root copy
+  (`d67f95b`) for easier review uploading.
+- The L1 sub-gates remain paused for the rest of v2, per the
+  2026-05-23 decision — untouched this session.
+- This session-wrap doc sweep — this entry, the `v2-plan.md` Status
+  update, the `PICKUP.md` refresh, and the saved 5b review — is one
+  `docs:` commit. The skills-ledger Stage 5 entry lives in the Higgins
+  Method vault folder, separate from this repo.
+
+---
+
 ## 2026-05-23 — Stage 5b planned and spec'd; L1 gate paused
 
 A short planning session after the Stage 4 ship: Stage 5b designed and
