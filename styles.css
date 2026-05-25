@@ -804,6 +804,37 @@ body.kind-training .comp-only {
   font-weight: 400;
 }
 
+/* Stage 5b — Best 3 lift rows: up to three stacked entries under the name. */
+.best3-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.best3-entry-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+
+.best3-entry-meta {
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.best3-percent {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.best3-percent.at-or-past {
+  color: var(--accent);
+}
+
 .item-meta-fields {
   display: flex;
   flex-direction: column;

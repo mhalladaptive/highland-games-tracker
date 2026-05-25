@@ -153,8 +153,78 @@ function buildSnapshotRow(lift, pr, direction, sessions) {
   return row;
 }
 
-// Render the active lifts into #lifts-list. Snapshot is the only mode for now;
-// Best 3 is added alongside it. Soft-deleted lifts (active: false) never show.
+// Best 3 mode — one row per active lift showing up to three stacked entries:
+// the top 3 session-bests of the rolling last 365 days, each with its date,
+// mark, percentage-of-PR, and a bar. Fewer than 3 qualifying sessions shows
+// the 1–2 that exist; none reads 'no marks logged'.
+function buildBest3Row(lift, pr, direction, sessions) {
+  const row = document.createElement('div');
+  row.className = 'gap-row best3-row';
+  row.dataset.itemId = lift.id;
+
+  const header = document.createElement('div');
+  header.className = 'gap-row-header';
+  const labelGroup = document.createElement('div');
+  labelGroup.className = 'gap-item-label';
+  const name = document.createElement('span');
+  name.className = 'gap-item-name';
+  name.textContent = lift.name;
+  labelGroup.appendChild(name);
+  header.appendChild(labelGroup);
+  row.appendChild(header);
+
+  const entries = topSessionBestsInWindow(sessions, lift.id, direction, 365);
+  if (entries.length === 0) {
+    row.classList.add('gap-row--empty');
+    const empty = document.createElement('p');
+    empty.className = 'gap-empty';
+    empty.textContent = 'no marks logged';
+    row.appendChild(empty);
+    return row;
+  }
+
+  const block = document.createElement('div');
+  block.className = 'best3-entries';
+  for (const entry of entries) {
+    const pct = percentOfPr(entry.value, pr, direction);
+    const atPr = pct !== null && pct >= 100;
+
+    const entryEl = document.createElement('div');
+    entryEl.className = 'best3-entry';
+
+    const head = document.createElement('div');
+    head.className = 'best3-entry-head';
+    const meta = document.createElement('span');
+    meta.className = 'best3-entry-meta';
+    const dateText = entry.date ? `${formatSessionDate(entry.date)} · ` : '';
+    meta.textContent = `${dateText}${formatLiftMark(entry.value, lift.unit)}`;
+    head.appendChild(meta);
+    if (pct !== null) {
+      const percent = document.createElement('span');
+      percent.className = `best3-percent${atPr ? ' at-or-past' : ''}`;
+      percent.textContent = `${pct}%`;
+      head.appendChild(percent);
+    }
+    entryEl.appendChild(head);
+
+    if (pct !== null) {
+      const bar = document.createElement('div');
+      bar.className = 'gap-bar';
+      const fill = document.createElement('div');
+      fill.className = `gap-bar-fill${atPr ? ' at-or-past' : ''}`;
+      fill.style.width = `${Math.min(100, pct)}%`;
+      bar.appendChild(fill);
+      entryEl.appendChild(bar);
+    }
+
+    block.appendChild(entryEl);
+  }
+  row.appendChild(block);
+  return row;
+}
+
+// Render the active lifts into #lifts-list, in the selected mode. Soft-deleted
+// lifts (active: false) never show.
 function renderLifts(data) {
   const list = document.getElementById('lifts-list');
   list.innerHTML = '';
@@ -168,11 +238,15 @@ function renderLifts(data) {
     const prRaw = prs[lift.id];
     const pr = Number.isFinite(prRaw) ? prRaw : null;
     const direction = eventDirection(lift.id, data);
-    list.appendChild(buildSnapshotRow(lift, pr, direction, data.sessions));
+    const row = currentMode === 'best3'
+      ? buildBest3Row(lift, pr, direction, data.sessions)
+      : buildSnapshotRow(lift, pr, direction, data.sessions);
+    list.appendChild(row);
   }
 }
 
 let currentWindow = 'past3';
+let currentMode = 'snapshot';
 
 function renderProgress(data) {
   const list = document.getElementById('throws-list');
