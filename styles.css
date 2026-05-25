@@ -1274,23 +1274,48 @@ body.kind-training .comp-only {
   );
 }
 
+/* Louder, more celebratory than the plain PR card: a bright gold banner, a big
+   bold white event name, and the mark as a giant hero number with a warm gold
+   glow. Every line keeps a dark shadow so it stays legible over the scene. */
 .celebration-card--throw .celebration-card-headline {
   color: #ffd34d;
+  font-size: 0.92rem;
+  letter-spacing: 0.2em;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.75), 0 0 14px rgba(255, 180, 40, 0.45);
+}
+
+.celebration-card--throw .celebration-card-event {
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 800;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
 }
 
-.celebration-card--throw .celebration-card-event,
-.celebration-card--throw .celebration-card-mark,
-.celebration-card--throw .celebration-card-prev,
-.celebration-card--throw .celebration-card-meta {
+.celebration-card--throw .celebration-card-mark {
   color: #fff;
+  font-size: 3.4rem;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.75), 0 0 22px rgba(255, 200, 70, 0.55);
+}
+
+.celebration-card--throw .celebration-card-prev {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 1rem;
+  font-style: italic;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+}
+
+.celebration-card--throw .celebration-card-meta {
+  color: rgba(255, 255, 255, 0.95);
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
 }
 
 .celebration-card--throw .celebration-card-wordmark {
-  color: #fff;
-  border-top-color: rgba(255, 255, 255, 0.45);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  color: #ffd34d;
+  border-top-color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.22em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
 }
 
 /* Stage 6a — the cut-scene stage. The implement arcs across it, the tape runs
