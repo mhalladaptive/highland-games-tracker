@@ -75,6 +75,103 @@ function buildProgressRow(item, pr, windowSessions) {
   return row;
 }
 
+// The section-level empty state when the athlete has defined no active lifts.
+// Mirrors the Log Session S&C empty state (Stage 4a) — same wording and link.
+function buildNoLiftsEmpty() {
+  const empty = document.createElement('p');
+  empty.className = 'empty-state lifts-empty';
+  empty.appendChild(document.createTextNode('No S&C lifts yet — add them on the '));
+  const link = document.createElement('a');
+  link.href = 'index.html';
+  link.textContent = 'Set PRs & Goals page';
+  empty.appendChild(link);
+  empty.appendChild(document.createTextNode('.'));
+  return empty;
+}
+
+// Snapshot mode — one row per active lift: the most-recent mark vs PR. Mirrors
+// buildProgressRow but formats marks with formatLiftMark and is direction-aware
+// (a time lift's best is the fastest). No window — "most recent" is the latest
+// dated mark, however old, which is why its date is shown inline.
+function buildSnapshotRow(lift, pr, direction, sessions) {
+  const row = document.createElement('div');
+  row.className = 'gap-row';
+  row.dataset.itemId = lift.id;
+
+  const header = document.createElement('div');
+  header.className = 'gap-row-header';
+  const labelGroup = document.createElement('div');
+  labelGroup.className = 'gap-item-label';
+  const name = document.createElement('span');
+  name.className = 'gap-item-name';
+  name.textContent = lift.name;
+  labelGroup.appendChild(name);
+  header.appendChild(labelGroup);
+
+  const best = mostRecentLiftMark(sessions, lift.id, direction);
+  const pct = best ? percentOfPr(best.value, pr, direction) : null;
+
+  if (best === null || pct === null) {
+    row.classList.add('gap-row--empty');
+    row.appendChild(header);
+    const empty = document.createElement('p');
+    empty.className = 'gap-empty';
+    empty.textContent = 'no marks logged';
+    row.appendChild(empty);
+    return row;
+  }
+
+  const atPr = pct >= 100;
+  const percent = document.createElement('span');
+  percent.className = `gap-percent${atPr ? ' at-or-past' : ''}`;
+  percent.textContent = `${pct}%`;
+  header.appendChild(percent);
+  row.appendChild(header);
+
+  const bar = document.createElement('div');
+  bar.className = 'gap-bar';
+  const fill = document.createElement('div');
+  fill.className = `gap-bar-fill${atPr ? ' at-or-past' : ''}`;
+  fill.style.width = `${Math.min(100, pct)}%`;
+  bar.appendChild(fill);
+  row.appendChild(bar);
+
+  const stats = document.createElement('div');
+  stats.className = 'gap-stats';
+  stats.appendChild(buildProgressStat('best', formatLiftMark(best.value, lift.unit)));
+  if (best.date) {
+    stats.appendChild(document.createTextNode(' · '));
+    const dateSpan = document.createElement('span');
+    dateSpan.className = 'gap-stat';
+    dateSpan.textContent = formatSessionDate(best.date);
+    stats.appendChild(dateSpan);
+  }
+  stats.appendChild(document.createTextNode(' · '));
+  stats.appendChild(buildProgressStat('PR', formatLiftMark(pr, lift.unit)));
+  row.appendChild(stats);
+
+  return row;
+}
+
+// Render the active lifts into #lifts-list. Snapshot is the only mode for now;
+// Best 3 is added alongside it. Soft-deleted lifts (active: false) never show.
+function renderLifts(data) {
+  const list = document.getElementById('lifts-list');
+  list.innerHTML = '';
+  const activeLifts = (Array.isArray(data.userLifts) ? data.userLifts : []).filter((l) => l && l.active);
+  if (activeLifts.length === 0) {
+    list.appendChild(buildNoLiftsEmpty());
+    return;
+  }
+  const prs = data.prs || {};
+  for (const lift of activeLifts) {
+    const prRaw = prs[lift.id];
+    const pr = Number.isFinite(prRaw) ? prRaw : null;
+    const direction = eventDirection(lift.id, data);
+    list.appendChild(buildSnapshotRow(lift, pr, direction, data.sessions));
+  }
+}
+
 let currentWindow = 'past3';
 
 function renderProgress(data) {
