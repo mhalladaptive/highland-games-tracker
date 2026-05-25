@@ -886,6 +886,47 @@ function buildAwesomeDayCard(session, milestones, data) {
   return card;
 }
 
+// Stage 6a — celebration sound. The preference is a standalone localStorage
+// flag (not part of the v2 data blob or profile, so no schema change): absent
+// or anything other than 'on' means off, which is the default. The clips are
+// placeholders at fixed paths today; the real "Big throw!" shout and weight-
+// clang drop in at the same paths once recorded.
+const SOUND_PREF_KEY = 'highland-games-tracker-sound';
+const CELEBRATION_AUDIO = {
+  shout: 'audio/big-throw.wav',
+  land: 'audio/weight-clang.wav',
+};
+
+function isSoundOn() {
+  try {
+    return localStorage.getItem(SOUND_PREF_KEY) === 'on';
+  } catch {
+    return false;
+  }
+}
+
+function setSoundOn(on) {
+  try {
+    localStorage.setItem(SOUND_PREF_KEY, on ? 'on' : 'off');
+  } catch {
+    // storage disabled (private mode) — sound simply stays off
+  }
+}
+
+// Play a celebration clip if sound is on. Resilient by design: a missing or
+// undecodable file, or a blocked autoplay, is swallowed so audio can never
+// break the cut-scene.
+function playCelebrationSound(src) {
+  if (!isSoundOn()) return;
+  try {
+    const audio = new Audio(src);
+    const p = audio.play();
+    if (p && typeof p.catch === 'function') p.catch(() => {});
+  } catch {
+    // never let audio throw into the celebration
+  }
+}
+
 // Stage 6a — hand-rolled SVG for an implement skin. 6a ships the stone (covers
 // Braemar + Open Stone); the hammer / weight / sheaf skins are fill-in builds
 // and return null, which leaves the card on the no-implement fallback.
@@ -916,17 +957,33 @@ function buildThrowImplement(skin) {
 // (snaps to the revealed state) instead of advancing the queue; once the
 // cut-scene is done — by tap or by elapsed time — a tap bubbles to the overlay
 // and advances as normal. This keeps showCelebrationQueue's contract untouched.
-function attachThrowCutScene(card, stage, playsImplement, audio) {
+function attachThrowCutScene(card, stage, playsImplement) {
   const reduced = typeof window.matchMedia === 'function'
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const totalMs = reduced ? 0 : (playsImplement ? 1850 : 1100);
   let pending = true;
+  let clangFired = false;
+
+  // The shout fires as the throw begins. Playback is gesture-initiated (Save
+  // Session or the View Celebrations click) and a no-op when sound is off.
+  playCelebrationSound(CELEBRATION_AUDIO.shout);
+
+  function clang() {
+    if (clangFired) return;
+    clangFired = true;
+    if (clangTimer) clearTimeout(clangTimer);
+    if (card.isConnected) playCelebrationSound(CELEBRATION_AUDIO.land);
+  }
+  // The clang lands with the implement. Skipped throws land immediately (see
+  // reveal); a clip is never played into a card that has already gone away.
+  const clangTimer = (playsImplement && !reduced) ? setTimeout(clang, 850) : null;
 
   function reveal() {
     if (!pending) return;
     pending = false;
     clearTimeout(timer);
     stage.classList.add('is-revealed');
+    if (playsImplement) clang();
   }
   const timer = setTimeout(reveal, totalMs);
 
@@ -936,8 +993,6 @@ function attachThrowCutScene(card, stage, playsImplement, audio) {
       reveal();
     }
   });
-
-  if (audio) audio();
 }
 
 // Stage 6a — the throws PR card takes the rich path: a Highland Games field
@@ -1006,7 +1061,7 @@ function buildThrowsPrCard(milestone, session, data) {
   card.appendChild(buildCelebrationMeta(session));
   card.appendChild(buildCelebrationWordmark());
 
-  attachThrowCutScene(card, stage, playsImplement, null);
+  attachThrowCutScene(card, stage, playsImplement);
   return card;
 }
 
@@ -1195,6 +1250,27 @@ function showCelebrationQueue(session, data, options) {
   closeBtn.setAttribute('aria-label', 'Close celebrations');
   closeBtn.textContent = '×';
   overlay.appendChild(closeBtn);
+
+  // Sound on/off toggle. Sound is off by default; the preference persists in a
+  // standalone localStorage flag (see isSoundOn / setSoundOn). The toggle is a
+  // user gesture, so turning sound on keeps later playback within autoplay
+  // policy.
+  const soundBtn = document.createElement('button');
+  soundBtn.type = 'button';
+  soundBtn.className = 'celebration-sound';
+  function syncSoundBtn() {
+    const on = isSoundOn();
+    soundBtn.textContent = on ? '🔊' : '🔇';
+    soundBtn.setAttribute('aria-label', on ? 'Sound on — tap to mute' : 'Sound off — tap to unmute');
+    soundBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+  syncSoundBtn();
+  soundBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setSoundOn(!isSoundOn());
+    syncSoundBtn();
+  });
+  overlay.appendChild(soundBtn);
 
   let index = 0;
   let inChainPrompt = false;
