@@ -1232,6 +1232,53 @@ body.kind-training .comp-only {
   border-top: 1px solid var(--border);
 }
 
+/* Stage 6a — throws PR card: Highland Games field background. The field is an
+   absolutely-positioned layer behind the card content; a top-and-bottom scrim
+   keeps the headline and the meta/wordmark legible over the photo while the
+   middle stays open for the implement cut-scene. */
+.celebration-card--throw {
+  color: #fff;
+}
+
+.celebration-card--throw > :not(.throw-field) {
+  position: relative;
+  z-index: 1;
+}
+
+.throw-field {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(16, 36, 64, 0.55) 0%,
+      rgba(16, 36, 64, 0.08) 28%,
+      rgba(10, 36, 20, 0.12) 58%,
+      rgba(8, 28, 14, 0.82) 100%
+    ),
+    url('images/grass-field.jpg') center / cover no-repeat;
+}
+
+.celebration-card--throw .celebration-card-headline {
+  color: #ffd34d;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+}
+
+.celebration-card--throw .celebration-card-event,
+.celebration-card--throw .celebration-card-mark,
+.celebration-card--throw .celebration-card-prev,
+.celebration-card--throw .celebration-card-meta {
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+}
+
+.celebration-card--throw .celebration-card-wordmark {
+  color: #fff;
+  border-top-color: rgba(255, 255, 255, 0.45);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
 .celebration-card--awesomeDay .celebration-card-mark {
   display: none;
 }

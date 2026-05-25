@@ -886,9 +886,53 @@ function buildAwesomeDayCard(session, milestones, data) {
   return card;
 }
 
+// Stage 6a — the throws PR card takes the rich path: a Highland Games field
+// background (and, layered on in the cut-scene mechanism, an implement
+// cut-scene + tape-measure reveal). The rich path is gated to PR milestones
+// whose event is a throw; every other card type renders exactly as before.
+function buildThrowsPrCard(milestone, session, data) {
+  const card = document.createElement('div');
+  card.className = 'celebration-card celebration-card--pr celebration-card--throw';
+
+  const field = document.createElement('div');
+  field.className = 'throw-field';
+  field.setAttribute('aria-hidden', 'true');
+  card.appendChild(field);
+
+  const headline = document.createElement('p');
+  headline.className = 'celebration-card-headline';
+  headline.textContent = 'New Personal Record';
+  card.appendChild(headline);
+
+  const eventName = document.createElement('p');
+  eventName.className = 'celebration-card-event';
+  eventName.textContent = eventDisplayName(milestone.event, data) || milestone.event;
+  card.appendChild(eventName);
+
+  const mark = document.createElement('p');
+  mark.className = 'celebration-card-mark';
+  mark.textContent = formatEventValue(milestone.event, milestone.value, data);
+  card.appendChild(mark);
+
+  if (Number.isFinite(milestone.previousValue)) {
+    const prev = document.createElement('p');
+    prev.className = 'celebration-card-prev';
+    prev.textContent = `was ${formatEventValue(milestone.event, milestone.previousValue, data)}`;
+    card.appendChild(prev);
+  }
+
+  card.appendChild(buildCelebrationMeta(session));
+  card.appendChild(buildCelebrationWordmark());
+  return card;
+}
+
 function buildCelebrationCard(milestone, session, data, allMilestones) {
   if (!milestone || !milestone.type) return null;
-  if (milestone.type === 'pr') return buildPrCard(milestone, session, data);
+  if (milestone.type === 'pr') {
+    const item = ITEMS.find((it) => it.id === milestone.event);
+    if (item && item.category === 'throw') return buildThrowsPrCard(milestone, session, data);
+    return buildPrCard(milestone, session, data);
+  }
   if (milestone.type === 'goal') return buildGoalCard(milestone, session, data);
   if (milestone.type === 'awesomeDay') return buildAwesomeDayCard(session, allMilestones, data);
   return null;
