@@ -323,4 +323,6 @@ function init() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+  if (document.getElementById('throws-list')) init();
+});

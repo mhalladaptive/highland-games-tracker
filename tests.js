@@ -3418,6 +3418,218 @@ test('percentOfPr: an in-window subset of the PR never exceeds 100', () => {
   assertTrue(percentOfPr(420, 440) <= 100);
 });
 
+// --- Stage 5b: direction-aware percentOfPr ---
+
+test('percentOfPr: time direction flips the ratio (pr/best)', () => {
+  // 5:00 PR (300s); a 5:30 (330s) effort is slower -> 300/330 = 90.9% -> 91.
+  assertEqual(percentOfPr(330, 300, 'lower'), 91);
+});
+
+test('percentOfPr: time equal to PR => 100', () => {
+  assertEqual(percentOfPr(300, 300, 'lower'), 100);
+});
+
+test('percentOfPr: time just slower than PR caps at 99', () => {
+  assertEqual(percentOfPr(301, 300, 'lower'), 99); // 99.7% -> capped below PR
+});
+
+test('percentOfPr: time faster than PR clamps to 100', () => {
+  // Reachable via migrated data — a mark faster than a stale PR.
+  assertEqual(percentOfPr(290, 300, 'lower'), 100);
+});
+
+test('percentOfPr: both directions land <= 100', () => {
+  assertTrue(percentOfPr(420, 440, 'higher') <= 100);
+  assertTrue(percentOfPr(330, 300, 'lower') <= 100);
+});
+
+test('percentOfPr: higher direction unaffected by the time flip', () => {
+  assertEqual(percentOfPr(415, 440, 'higher'), 94);
+  assertEqual(percentOfPr(415, 440), 94); // default direction is higher
+});
+
+// --- Stage 5b: mostRecentLiftMark (Snapshot) ---
+
+test('mostRecentLiftMark: latest dated session with a mark, best attempt', () => {
+  const sessions = [
+    { id: 1, date: '2026-03-01', marks: { sq: [100, 110] } },
+    { id: 2, date: '2026-05-01', marks: { sq: [105, 120] } },
+    { id: 3, date: '2026-05-10', marks: { bench: [80] } }, // no sq -> skipped
+  ];
+  const r = mostRecentLiftMark(sessions, 'sq', 'higher');
+  assertEqual(r.value, 120);
+  assertEqual(r.date, '2026-05-01', 'date of the latest session that has the lift');
+});
+
+test('mostRecentLiftMark: time lift picks the fastest (min) of the latest session', () => {
+  const sessions = [
+    { id: 1, date: '2026-05-01', marks: { mile: [360, 355] } },
+    { id: 2, date: '2026-05-10', marks: { mile: [365, 370] } },
+  ];
+  const r = mostRecentLiftMark(sessions, 'mile', 'lower');
+  assertEqual(r.value, 365, 'latest session min — not the faster earlier session');
+  assertEqual(r.date, '2026-05-10');
+});
+
+test('mostRecentLiftMark: no marks for the lift => null', () => {
+  assertEqual(mostRecentLiftMark([{ id: 1, date: '2026-05-01', marks: { bench: [80] } }], 'sq', 'higher'), null);
+});
+
+// --- Stage 5b: topSessionBestsInWindow (Best 3) ---
+
+test('topSessionBestsInWindow: top 3 session-bests, best-first, one slot per session', () => {
+  const sessions = [
+    { id: 1, date: '2026-05-01', marks: { sq: [200, 210, 205] } }, // session-best 210 -> ONE slot
+    { id: 2, date: '2026-05-05', marks: { sq: [180] } },
+    { id: 3, date: '2026-05-10', marks: { sq: [195] } },
+  ];
+  const r = topSessionBestsInWindow(sessions, 'sq', 'higher', 365, '2026-05-24');
+  assertDeepEqual(r.map((e) => e.value), [210, 195, 180], 'three different days, not three attempts of one');
+});
+
+test('topSessionBestsInWindow: only the last 365 days qualify (rolling)', () => {
+  const sessions = [
+    { id: 1, date: '2026-05-10', marks: { sq: [100] } },
+    { id: 2, date: '2024-01-01', marks: { sq: [999] } }, // far outside the window
+  ];
+  const r = topSessionBestsInWindow(sessions, 'sq', 'higher', 365, '2026-05-24');
+  assertDeepEqual(r.map((e) => e.value), [100], 'old big session excluded despite the bigger mark');
+});
+
+test('topSessionBestsInWindow: the 365-day boundary is inclusive, 366 is out', () => {
+  const sessions = [
+    { id: 1, date: isoDaysBefore('2026-05-24', 365), marks: { sq: [50] } },
+    { id: 2, date: isoDaysBefore('2026-05-24', 366), marks: { sq: [999] } },
+  ];
+  const r = topSessionBestsInWindow(sessions, 'sq', 'higher', 365, '2026-05-24');
+  assertDeepEqual(r.map((e) => e.value), [50], '365 days ago in, 366 out');
+});
+
+test('topSessionBestsInWindow: fewer than 3 sessions returns what exists', () => {
+  const sessions = [
+    { id: 1, date: '2026-05-01', marks: { sq: [100] } },
+    { id: 2, date: '2026-05-10', marks: { sq: [110] } },
+  ];
+  assertEqual(topSessionBestsInWindow(sessions, 'sq', 'higher', 365, '2026-05-24').length, 2);
+});
+
+test('topSessionBestsInWindow: time direction ranks fastest first', () => {
+  const sessions = [
+    { id: 1, date: '2026-05-01', marks: { mile: [360] } },
+    { id: 2, date: '2026-05-10', marks: { mile: [350] } },
+    { id: 3, date: '2026-05-15', marks: { mile: [370] } },
+  ];
+  const r = topSessionBestsInWindow(sessions, 'mile', 'lower', 365, '2026-05-24');
+  assertDeepEqual(r.map((e) => e.value), [350, 360, 370], 'min first for time');
+});
+
+test('topSessionBestsInWindow: no qualifying sessions => empty (empty-state trigger)', () => {
+  assertDeepEqual(topSessionBestsInWindow([], 'sq', 'higher', 365, '2026-05-24'), []);
+});
+
+// --- Stage 5b: lifts view rendering ---
+
+function liftsTestData(extra) {
+  return stage4bData(Object.assign({
+    userLifts: [
+      { id: 'sq', name: 'Squat', protocol: '1RM', unit: 'kg', active: true },
+      { id: 'old', name: 'Retired', protocol: '1RM', unit: 'kg', active: false },
+    ],
+    prs: { sq: 150 },
+    sessions: [{ id: 1, date: '2026-05-10', marks: { sq: [140] } }],
+  }, extra || {}));
+}
+
+test('renderLifts: only active lifts render', () => {
+  const list = document.createElement('div');
+  list.id = 'lifts-list';
+  document.body.appendChild(list);
+  try {
+    currentMode = 'snapshot';
+    renderLifts(liftsTestData());
+    assertEqual(list.querySelectorAll('.gap-row').length, 1, 'one row — inactive lift excluded');
+    assertMatch(list.textContent, /Squat/);
+    assertTrue(!/Retired/.test(list.textContent), 'soft-deleted lift absent');
+  } finally {
+    list.remove();
+  }
+});
+
+test('renderLifts: no active lifts shows the linked Set-page empty state', () => {
+  const list = document.createElement('div');
+  list.id = 'lifts-list';
+  document.body.appendChild(list);
+  try {
+    renderLifts(stage4bData({ userLifts: [] }));
+    assertMatch(list.textContent, /No S&C lifts yet/);
+    const link = list.querySelector('a');
+    assertTrue(link && /index\.html$/.test(link.getAttribute('href')), 'links to the Set page');
+  } finally {
+    list.remove();
+  }
+});
+
+test('buildSnapshotRow: a lift with no marks reads "no marks logged"', () => {
+  const row = buildSnapshotRow({ id: 'sq', name: 'Squat', unit: 'kg' }, 150, 'higher', []);
+  assertMatch(row.textContent, /no marks logged/);
+});
+
+test('buildSnapshotRow: shows the most-recent mark, its date, PR, and percentage', () => {
+  const sessions = [{ id: 1, date: '2026-05-10', marks: { sq: [140] } }];
+  const row = buildSnapshotRow({ id: 'sq', name: 'Squat', unit: 'kg' }, 150, 'higher', sessions);
+  assertMatch(row.textContent, /93%/);   // 140/150 = 93.3 -> 93
+  assertMatch(row.textContent, /140 kg/);
+  assertMatch(row.textContent, /150 kg/); // PR
+});
+
+test('buildBest3Row: empty window reads "no marks logged"; otherwise up to three entries', () => {
+  const empty = buildBest3Row({ id: 'sq', name: 'Squat', unit: 'kg' }, 150, 'higher', []);
+  assertMatch(empty.textContent, /no marks logged/);
+
+  const t = todayISO();
+  const sessions = [
+    { id: 1, date: isoDaysBefore(t, 20), marks: { sq: [120] } },
+    { id: 2, date: isoDaysBefore(t, 15), marks: { sq: [130] } },
+    { id: 3, date: isoDaysBefore(t, 10), marks: { sq: [140] } },
+    { id: 4, date: isoDaysBefore(t, 5), marks: { sq: [110] } },
+  ];
+  const row = buildBest3Row({ id: 'sq', name: 'Squat', unit: 'kg' }, 150, 'higher', sessions);
+  assertEqual(row.querySelectorAll('.best3-entry').length, 3, 'capped at the top 3 session-bests');
+});
+
+test('Progress toggle: switching to Lifts swaps the view and the secondary control', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  saveData(liftsTestData());
+  const root = document.createElement('div');
+  root.innerHTML = [
+    '<p class="intro" id="intro">throws intro</p>',
+    '<div class="filter-bar"><button data-side="throws" class="filter-btn active"></button>',
+    '<button data-side="lifts" class="filter-btn"></button></div>',
+    '<div class="filter-bar" id="window-filter"></div>',
+    '<div class="filter-bar" id="lift-mode" hidden></div>',
+    '<section class="group" id="throws-view"><div id="throws-list"></div></section>',
+    '<section class="group" id="lifts-view" hidden><div id="lifts-list"></div></section>',
+  ].join('');
+  document.body.appendChild(root);
+  try {
+    currentMode = 'snapshot';
+    setSide('lifts');
+    assertEqual(document.getElementById('throws-view').hidden, true, 'throws view hidden');
+    assertEqual(document.getElementById('lifts-view').hidden, false, 'lifts view shown');
+    assertEqual(document.getElementById('window-filter').hidden, true, 'window filter hidden on lifts');
+    assertEqual(document.getElementById('lift-mode').hidden, false, 'mode selector shown on lifts');
+    assertTrue(root.querySelector('[data-side="lifts"]').classList.contains('active'), 'Lifts button active');
+
+    setSide('throws');
+    assertEqual(document.getElementById('throws-view').hidden, false, 'throws view back');
+    assertEqual(document.getElementById('lift-mode').hidden, true, 'mode selector hidden on throws');
+  } finally {
+    root.remove();
+    currentSide = 'throws';
+    currentMode = 'snapshot';
+  }
+});
+
 // --- Harness ---
 
 function runTests() {
