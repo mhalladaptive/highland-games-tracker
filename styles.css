@@ -1279,6 +1279,98 @@ body.kind-training .comp-only {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
 }
 
+/* Stage 6a — the cut-scene stage. The implement arcs across it, the tape runs
+   out along the ground, and the mark reveals at the end of the tape. The base
+   (no-animation) state of every beat IS its final resting state, and the
+   keyframes run from off-stage back to it with animation-fill-mode: backwards —
+   so adding .is-revealed (animation: none) snaps the whole scene to its end,
+   which is how tap-to-skip and reduced-motion both land on the finished card. */
+.throw-stage {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.throw-mark-reveal {
+  flex: none;
+  position: relative;
+  z-index: 2;
+  animation: throw-mark-pop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2) 1.25s backwards;
+}
+
+.celebration-card--no-implement .throw-mark-reveal {
+  animation-delay: 0.55s;
+}
+
+.throw-implement {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 26%;
+  aspect-ratio: 1;
+  z-index: 1;
+  transform: translate(10%, 30%);
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.45));
+  animation: throw-stone-arc 0.95s cubic-bezier(0.3, 0, 0.5, 1) backwards;
+}
+
+.throw-tape {
+  position: absolute;
+  left: 10%;
+  right: 8%;
+  bottom: 16%;
+  height: 12px;
+  border-radius: 2px;
+  z-index: 1;
+  background:
+    repeating-linear-gradient(to right, rgba(0, 0, 0, 0.4) 0 1px, transparent 1px 11px),
+    linear-gradient(to bottom, #f6f6f8 0%, #d7d7da 55%, #b0b0b5 100%);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  transform: scaleX(1);
+  transform-origin: left center;
+  animation: throw-tape-runout 0.55s ease-out 0.85s backwards;
+}
+
+.celebration-card--no-implement .throw-tape {
+  animation-delay: 0.15s;
+}
+
+.throw-stage.is-revealed .throw-implement,
+.throw-stage.is-revealed .throw-tape,
+.throw-stage.is-revealed .throw-mark-reveal {
+  animation: none;
+}
+
+@keyframes throw-stone-arc {
+  0% { transform: translate(-260%, 60%) scale(0.45); opacity: 0; }
+  12% { opacity: 1; }
+  55% { transform: translate(-90%, -150%) scale(0.8); }
+  100% { transform: translate(10%, 30%) scale(1); opacity: 1; }
+}
+
+@keyframes throw-tape-runout {
+  0% { transform: scaleX(0); }
+  100% { transform: scaleX(1); }
+}
+
+@keyframes throw-mark-pop {
+  0% { opacity: 0; transform: scale(0.7); }
+  60% { opacity: 1; }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .throw-implement,
+  .throw-tape,
+  .throw-mark-reveal {
+    animation: none;
+  }
+}
+
 .celebration-card--awesomeDay .celebration-card-mark {
   display: none;
 }

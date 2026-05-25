@@ -1020,3 +1020,45 @@ function topSessionBestsInWindow(sessions, liftId, direction, days, todayIso) {
   });
   return sessionBests.slice(0, 3);
 }
+
+// Stage 6a — celebration cut-scene selection. The throws PR card opens with a
+// short implement cut-scene in one of two motifs:
+//   - distance (Braemar/Open Stone, hammers, weights for distance): the
+//     implement arcs out, lands, and a tape measure reveals the mark.
+//   - height (Weight for Height, Sheaf Toss): the implement clears a bar and
+//     the bar itself is the ruler at the cleared height.
+// The motif is read from the event's measurementType (the data model already
+// carries it); the implement skin and whether that skin's rendering is built
+// yet come from the skin registry below. `built: false` — an un-skinned event,
+// or any height event before the height build — falls back to the field card +
+// tape-measure reveal with no implement cut-scene (Stage 6a scope point 6),
+// never a wrong or broken animation.
+//
+// 6a ships only the distance motif and the stone skin. Hammer / weight /
+// sheaf skins and the height motif's rendering flip to built:true as their
+// fill-in builds land — no change needed here beyond the flag.
+//
+// Pure: reads ITEMS only, no DOM, no storage. session.js renders over the
+// returned { motif, skin, built } descriptor.
+const CUTSCENE_SKINS = {
+  'braemar-stone':         { skin: 'stone',  built: true },
+  'open-stone':            { skin: 'stone',  built: true },
+  'heavy-hammer':          { skin: 'hammer', built: false },
+  'light-hammer':          { skin: 'hammer', built: false },
+  'heavy-weight-distance': { skin: 'weight', built: false },
+  'light-weight-distance': { skin: 'weight', built: false },
+  'weight-over-bar':       { skin: 'weight', built: false },
+  'sheaf-toss':            { skin: 'sheaf',  built: false },
+};
+
+function selectThrowCutScene(eventId) {
+  const item = ITEMS.find((it) => it.id === eventId);
+  if (!item || item.category !== 'throw') return null;
+  const motif = item.measurementType === 'height' ? 'height' : 'distance';
+  const def = CUTSCENE_SKINS[eventId];
+  return {
+    motif,
+    skin: def ? def.skin : null,
+    built: !!(def && def.built),
+  };
+}

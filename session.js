@@ -886,13 +886,77 @@ function buildAwesomeDayCard(session, milestones, data) {
   return card;
 }
 
+// Stage 6a — hand-rolled SVG for an implement skin. 6a ships the stone (covers
+// Braemar + Open Stone); the hammer / weight / sheaf skins are fill-in builds
+// and return null, which leaves the card on the no-implement fallback.
+function buildThrowImplement(skin) {
+  if (skin !== 'stone') return null;
+  const wrap = document.createElement('div');
+  wrap.className = 'throw-implement throw-implement--stone';
+  wrap.setAttribute('aria-hidden', 'true');
+  wrap.innerHTML =
+    '<svg viewBox="0 0 64 64" width="100%" height="100%" focusable="false">' +
+    '<defs><radialGradient id="stoneShade" cx="38%" cy="32%" r="72%">' +
+    '<stop offset="0%" stop-color="#9aa0a6"/>' +
+    '<stop offset="55%" stop-color="#6b7075"/>' +
+    '<stop offset="100%" stop-color="#3f4347"/>' +
+    '</radialGradient></defs>' +
+    '<path d="M30 6 C42 4 56 12 58 26 C60 40 52 58 34 59 C16 60 5 48 5 32 C5 18 16 8 30 6 Z" ' +
+    'fill="url(#stoneShade)" stroke="#2c2f33" stroke-width="1.5"/>' +
+    '<ellipse cx="26" cy="22" rx="9" ry="6" fill="#b9bec3" opacity="0.45"/>' +
+    '<circle cx="44" cy="38" r="2.4" fill="#2c2f33" opacity="0.4"/>' +
+    '<circle cx="22" cy="44" r="1.8" fill="#2c2f33" opacity="0.35"/>' +
+    '</svg>';
+  return wrap;
+}
+
+// Stage 6a — drive the throws PR cut-scene and make it tap-to-skip. The beats
+// are CSS animations that play once on insert (the implement arc, the tape
+// run-out, the mark reveal). The first tap on the card finalizes the cut-scene
+// (snaps to the revealed state) instead of advancing the queue; once the
+// cut-scene is done — by tap or by elapsed time — a tap bubbles to the overlay
+// and advances as normal. This keeps showCelebrationQueue's contract untouched.
+function attachThrowCutScene(card, stage, playsImplement, audio) {
+  const reduced = typeof window.matchMedia === 'function'
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const totalMs = reduced ? 0 : (playsImplement ? 1850 : 1100);
+  let pending = true;
+
+  function reveal() {
+    if (!pending) return;
+    pending = false;
+    clearTimeout(timer);
+    stage.classList.add('is-revealed');
+  }
+  const timer = setTimeout(reveal, totalMs);
+
+  card.addEventListener('click', (e) => {
+    if (pending) {
+      e.stopPropagation();
+      reveal();
+    }
+  });
+
+  if (audio) audio();
+}
+
 // Stage 6a — the throws PR card takes the rich path: a Highland Games field
-// background (and, layered on in the cut-scene mechanism, an implement
-// cut-scene + tape-measure reveal). The rich path is gated to PR milestones
-// whose event is a throw; every other card type renders exactly as before.
+// background, an implement cut-scene, and a tape-measure reveal of the mark.
+// The rich path is gated to PR milestones whose event is a throw (selectThrow-
+// CutScene returns non-null); every other card type renders exactly as before.
+//
+// The cut-scene mechanism is parametrized by (motif, skin): the motif chooses
+// the beats, the skin chooses the implement art. 6a renders the distance motif
+// with the stone skin. An un-built skin or the (not-yet-built) height motif
+// falls back to the field card + tape-measure reveal with no implement.
 function buildThrowsPrCard(milestone, session, data) {
+  const cut = selectThrowCutScene(milestone.event);
+  const playsImplement = !!(cut && cut.built && cut.motif === 'distance');
+
   const card = document.createElement('div');
   card.className = 'celebration-card celebration-card--pr celebration-card--throw';
+  if (cut) card.classList.add(`celebration-card--motif-${cut.motif}`);
+  if (!playsImplement) card.classList.add('celebration-card--no-implement');
 
   const field = document.createElement('div');
   field.className = 'throw-field';
@@ -909,10 +973,28 @@ function buildThrowsPrCard(milestone, session, data) {
   eventName.textContent = eventDisplayName(milestone.event, data) || milestone.event;
   card.appendChild(eventName);
 
+  // The stage: the implement arcs across it, the tape runs out along the
+  // ground, and the mark reveals at the end of the tape.
+  const stage = document.createElement('div');
+  stage.className = 'throw-stage';
+
+  let implement = null;
+  if (playsImplement) {
+    implement = buildThrowImplement(cut.skin);
+    if (implement) stage.appendChild(implement);
+  }
+
+  const tape = document.createElement('div');
+  tape.className = 'throw-tape';
+  tape.setAttribute('aria-hidden', 'true');
+  stage.appendChild(tape);
+
   const mark = document.createElement('p');
-  mark.className = 'celebration-card-mark';
+  mark.className = 'celebration-card-mark throw-mark-reveal';
   mark.textContent = formatEventValue(milestone.event, milestone.value, data);
-  card.appendChild(mark);
+  stage.appendChild(mark);
+
+  card.appendChild(stage);
 
   if (Number.isFinite(milestone.previousValue)) {
     const prev = document.createElement('p');
@@ -923,14 +1005,15 @@ function buildThrowsPrCard(milestone, session, data) {
 
   card.appendChild(buildCelebrationMeta(session));
   card.appendChild(buildCelebrationWordmark());
+
+  attachThrowCutScene(card, stage, playsImplement, null);
   return card;
 }
 
 function buildCelebrationCard(milestone, session, data, allMilestones) {
   if (!milestone || !milestone.type) return null;
   if (milestone.type === 'pr') {
-    const item = ITEMS.find((it) => it.id === milestone.event);
-    if (item && item.category === 'throw') return buildThrowsPrCard(milestone, session, data);
+    if (selectThrowCutScene(milestone.event)) return buildThrowsPrCard(milestone, session, data);
     return buildPrCard(milestone, session, data);
   }
   if (milestone.type === 'goal') return buildGoalCard(milestone, session, data);
