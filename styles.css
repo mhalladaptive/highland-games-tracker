@@ -1320,24 +1320,28 @@ body.kind-training .comp-only {
   animation-delay: 0.55s;
 }
 
+/* The stone lands toward the right, resting on the ground line, so the tape
+   has room to run out from the throwing line (left) to where it landed. */
 .throw-implement {
   position: absolute;
-  left: 50%;
-  top: 50%;
+  right: 15%;
+  bottom: 16%;
   width: 26%;
   aspect-ratio: 1;
   z-index: 1;
-  transform: translate(10%, 30%);
+  transform: translate(0, 0);
   filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.45));
   animation: throw-stone-arc 0.95s cubic-bezier(0.3, 0, 0.5, 1) backwards;
 }
 
+/* The tape is the ground line: it runs from the throwing line (left) out to
+   the stone and stops there — it does not run past it. */
 .throw-tape {
   position: absolute;
-  left: 10%;
-  right: 8%;
-  bottom: 16%;
-  height: 12px;
+  left: 8%;
+  right: 29%;
+  bottom: 14%;
+  height: 9px;
   border-radius: 2px;
   z-index: 1;
   background:
@@ -1360,10 +1364,10 @@ body.kind-training .comp-only {
 }
 
 @keyframes throw-stone-arc {
-  0% { transform: translate(-260%, 60%) scale(0.45); opacity: 0; }
+  0% { transform: translate(-340%, 30%) scale(0.4); opacity: 0; }
   12% { opacity: 1; }
-  55% { transform: translate(-90%, -150%) scale(0.8); }
-  100% { transform: translate(10%, 30%) scale(1); opacity: 1; }
+  55% { transform: translate(-160%, -200%) scale(0.78); }
+  100% { transform: translate(0, 0) scale(1); opacity: 1; }
 }
 
 @keyframes throw-tape-runout {
