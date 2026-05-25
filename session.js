@@ -964,18 +964,23 @@ function buildThrowImplement(skin) {
   const wrap = document.createElement('div');
   wrap.className = 'throw-implement throw-implement--stone';
   wrap.setAttribute('aria-hidden', 'true');
+  // A rough, irregular boulder — angular facets and a chipped outline rather
+  // than a smooth sphere, so it reads as a Highland Games putting stone and not
+  // a shot put. The radial shade gives volume; the facet lines add texture.
   wrap.innerHTML =
     '<svg viewBox="0 0 64 64" width="100%" height="100%" focusable="false">' +
-    '<defs><radialGradient id="stoneShade" cx="38%" cy="32%" r="72%">' +
-    '<stop offset="0%" stop-color="#9aa0a6"/>' +
-    '<stop offset="55%" stop-color="#6b7075"/>' +
-    '<stop offset="100%" stop-color="#3f4347"/>' +
+    '<defs><radialGradient id="stoneShade" cx="36%" cy="30%" r="78%">' +
+    '<stop offset="0%" stop-color="#a3a8ad"/>' +
+    '<stop offset="50%" stop-color="#6d7277"/>' +
+    '<stop offset="100%" stop-color="#3a3e42"/>' +
     '</radialGradient></defs>' +
-    '<path d="M30 6 C42 4 56 12 58 26 C60 40 52 58 34 59 C16 60 5 48 5 32 C5 18 16 8 30 6 Z" ' +
-    'fill="url(#stoneShade)" stroke="#2c2f33" stroke-width="1.5"/>' +
-    '<ellipse cx="26" cy="22" rx="9" ry="6" fill="#b9bec3" opacity="0.45"/>' +
-    '<circle cx="44" cy="38" r="2.4" fill="#2c2f33" opacity="0.4"/>' +
-    '<circle cx="22" cy="44" r="1.8" fill="#2c2f33" opacity="0.35"/>' +
+    '<path d="M9 40 L6 27 L13 17 L22 12 L33 11 L45 15 L55 24 L58 35 L53 47 L41 53 L25 54 L14 50 Z" ' +
+    'fill="url(#stoneShade)" stroke="#2a2d31" stroke-width="1.6" stroke-linejoin="round"/>' +
+    '<path d="M22 12 L33 11 L31 27 L18 24 Z" fill="#b6bbc0" opacity="0.32"/>' +
+    '<path d="M41 53 L53 47 L58 35 L46 36 L44 48 Z" fill="#2c2f33" opacity="0.3"/>' +
+    '<path d="M14 50 L25 54 L27 41 L13 39 Z" fill="#2c2f33" opacity="0.22"/>' +
+    '<polyline points="31 27 44 30 46 36" fill="none" stroke="#2a2d31" stroke-width="1" opacity="0.4"/>' +
+    '<polyline points="31 27 27 41 13 39" fill="none" stroke="#2a2d31" stroke-width="1" opacity="0.35"/>' +
     '</svg>';
   return wrap;
 }
