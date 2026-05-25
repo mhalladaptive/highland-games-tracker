@@ -1232,10 +1232,11 @@ body.kind-training .comp-only {
   border-top: 1px solid var(--border);
 }
 
-/* Stage 6a — throws PR card: Highland Games field background. The field is an
-   absolutely-positioned layer behind the card content; a top-and-bottom scrim
-   keeps the headline and the meta/wordmark legible over the photo while the
-   middle stays open for the implement cut-scene. */
+/* Stage 6a — throws PR card: a hand-drawn Highland Games field scene (SVG, no
+   image asset). The field is an absolutely-positioned layer behind the card
+   content; the SVG fills it and a top-and-bottom scrim (::after) over the SVG
+   keeps the headline and the meta/wordmark legible while the middle stays open
+   for the implement cut-scene. */
 .celebration-card--throw {
   color: #fff;
 }
@@ -1249,15 +1250,28 @@ body.kind-training .comp-only {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background:
-    linear-gradient(
-      to bottom,
-      rgba(16, 36, 64, 0.55) 0%,
-      rgba(16, 36, 64, 0.08) 28%,
-      rgba(10, 36, 20, 0.12) 58%,
-      rgba(8, 28, 14, 0.82) 100%
-    ),
-    url('images/grass-field.jpg') center / cover no-repeat;
+  overflow: hidden;
+}
+
+.throw-field svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.throw-field::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(16, 36, 64, 0.55) 0%,
+    rgba(16, 36, 64, 0.08) 28%,
+    rgba(10, 36, 20, 0.12) 58%,
+    rgba(8, 28, 14, 0.82) 100%
+  );
 }
 
 .celebration-card--throw .celebration-card-headline {

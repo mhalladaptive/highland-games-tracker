@@ -927,6 +927,35 @@ function playCelebrationSound(src) {
   }
 }
 
+// Stage 6a — the throws PR backdrop is a hand-drawn SVG scene, not a photo: a
+// Highland sky, far hills, and a field receding to a vanishing point with a
+// couple of distant flags to read as a games ground. It scales to fill the
+// card (slice) and a CSS scrim over it keeps the card text legible.
+const THROW_FIELD_SVG =
+  '<svg viewBox="0 0 100 125" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" focusable="false">' +
+  '<defs>' +
+  '<linearGradient id="thSky" x1="0" y1="0" x2="0" y2="1">' +
+  '<stop offset="0%" stop-color="#8ec3e8"/><stop offset="65%" stop-color="#c6e2e8"/>' +
+  '<stop offset="100%" stop-color="#e6efe1"/></linearGradient>' +
+  '<linearGradient id="thField" x1="0" y1="0" x2="0" y2="1">' +
+  '<stop offset="0%" stop-color="#519444"/><stop offset="45%" stop-color="#3b7c35"/>' +
+  '<stop offset="100%" stop-color="#2a6027"/></linearGradient>' +
+  '</defs>' +
+  '<rect x="0" y="0" width="100" height="68" fill="url(#thSky)"/>' +
+  '<path d="M0 64 Q22 50 44 60 Q60 67 78 55 Q90 49 100 60 L100 70 L0 70 Z" fill="#86a98e" opacity="0.85"/>' +
+  '<path d="M0 66 Q26 57 50 64 Q72 70 100 62 L100 72 L0 72 Z" fill="#6c977a"/>' +
+  '<rect x="0" y="64" width="100" height="61" fill="url(#thField)"/>' +
+  '<g stroke="#5ba24f" stroke-width="0.8" opacity="0.5">' +
+  '<line x1="50" y1="65" x2="-26" y2="125"/><line x1="50" y1="65" x2="16" y2="125"/>' +
+  '<line x1="50" y1="65" x2="42" y2="125"/><line x1="50" y1="65" x2="58" y2="125"/>' +
+  '<line x1="50" y1="65" x2="84" y2="125"/><line x1="50" y1="65" x2="126" y2="125"/></g>' +
+  '<g>' +
+  '<line x1="14" y1="50" x2="14" y2="64" stroke="#5b4a3a" stroke-width="0.8"/>' +
+  '<path d="M14 50 L22 52 L14 55 Z" fill="#c9433f"/>' +
+  '<line x1="84" y1="52" x2="84" y2="64" stroke="#5b4a3a" stroke-width="0.8"/>' +
+  '<path d="M84 52 L77 54 L84 57 Z" fill="#3f6fc9"/></g>' +
+  '</svg>';
+
 // Stage 6a — hand-rolled SVG for an implement skin. 6a ships the stone (covers
 // Braemar + Open Stone); the hammer / weight / sheaf skins are fill-in builds
 // and return null, which leaves the card on the no-implement fallback.
@@ -1016,6 +1045,7 @@ function buildThrowsPrCard(milestone, session, data) {
   const field = document.createElement('div');
   field.className = 'throw-field';
   field.setAttribute('aria-hidden', 'true');
+  field.innerHTML = THROW_FIELD_SVG;
   card.appendChild(field);
 
   const headline = document.createElement('p');
