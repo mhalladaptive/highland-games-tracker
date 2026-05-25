@@ -933,20 +933,88 @@ function bestMarkInSessions(sessions, eventId) {
   return { value: best, date: bestDate };
 }
 
-// Stage 5a — the Progress page's percentage-of-PR: the best-in-window mark
-// over the PR, as an integer clamped to 0–100. Pure. Reuses percentOfBaseline
-// for the raw ratio and returns null when there is no comparison to make (no
-// PR set, or no in-window mark).
+// Stage 5a/5b — the Progress page's percentage-of-PR: a mark as a fraction of
+// the PR, as an integer clamped to 0–100. Pure. Returns null when there is no
+// comparison to make (no PR set, or no mark).
+//
+// Direction-aware (Stage 5b, Resolved decision 1). For higher-is-better units
+// (the default — every throw, and weight/distance/count lifts) the fraction is
+// best / pr; for `time` (lower-is-better, faster wins) it flips to pr / best so
+// the result still reads as "fraction of the way to your PR" for every unit.
 //
 // The 0–100 contract is enforced here rather than trusting the caller:
-//   best >= pr  -> 100. Natively-grown v2 data keeps best <= pr, but migrated
-//                  v1 data can carry a session mark above a stale baseline
-//                  (Resolved decision 7), so a best above PR must clamp down.
-//   best <  pr  -> round(), capped at 99 (Resolved decision 6): plain round()
-//                  would show 100 from 99.5% up, but a displayed 100 must mean
-//                  the best meets or exceeds the recorded PR.
-function percentOfPr(best, pr) {
+//   met-or-beat PR -> 100. Natively-grown v2 data keeps a mark on the PR side
+//                  of the bound, but migrated v1 data can carry a session mark
+//                  past a stale baseline (Resolved decision 7), so a mark
+//                  beyond the PR clamps down. "Met-or-beat" is best >= pr for
+//                  higher, best <= pr for `time`.
+//   short of PR  -> round() of the fraction, capped at 99 (Resolved decision
+//                  6): plain round() would show 100 from 99.5% up, but a
+//                  displayed 100 must mean the mark met or beat the PR.
+function percentOfPr(best, pr, direction) {
+  if (direction === 'lower') {
+    const pct = percentOfBaseline(pr, best);
+    if (pct === null) return null;
+    return best <= pr ? 100 : Math.min(99, Math.round(pct));
+  }
   const pct = percentOfBaseline(best, pr);
   if (pct === null) return null;
   return best >= pr ? 100 : Math.min(99, Math.round(pct));
+}
+
+// Stage 5b — ISO date `days` before the given ISO date (YYYY-MM-DD), in UTC so
+// no daylight-saving shift creeps in. The rolling-window cutoff for Best 3.
+function isoDaysBefore(iso, days) {
+  const parts = String(iso).split('-').map(Number);
+  const d = new Date(Date.UTC(parts[0], (parts[1] || 1) - 1, parts[2] || 1));
+  d.setUTCDate(d.getUTCDate() - days);
+  const yyyy = d.getUTCFullYear();
+  const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(d.getUTCDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+// Stage 5b — Snapshot mode. The lift's most-recent mark: the direction-aware
+// best attempt of the most recently dated session that has a finite mark for
+// the lift, with that session's date. Pure — pass the unit `direction`
+// ('higher' | 'lower'), the same field eventDirection resolves. Returns
+// { value, date } or null when no session has a mark for the lift.
+function mostRecentLiftMark(sessions, liftId, direction) {
+  const chrono = sessionsByChronology(Array.isArray(sessions) ? sessions : []);
+  for (let i = chrono.length - 1; i >= 0; i--) {
+    const session = chrono[i];
+    if (!session || !session.marks) continue;
+    const best = eventBest(session.marks[liftId], direction);
+    if (best === null) continue;
+    return { value: best, date: session.date || null };
+  }
+  return null;
+}
+
+// Stage 5b — Best 3 mode. The top 3 session-bests within the rolling last
+// `days` days (365). Each qualifying session contributes its single
+// direction-aware best attempt; the top 3 of those session-bests are returned,
+// best-first — three different days, never three attempts pooled from one
+// (Resolved decision 2). A session qualifies when its date is on or after the
+// cutoff (today − days), inclusive of the boundary day. Pure — `todayIso`
+// defaults to the real today. Returns an array of { value, date }, length 0–3.
+function topSessionBestsInWindow(sessions, liftId, direction, days, todayIso) {
+  const list = Array.isArray(sessions) ? sessions : [];
+  const today = (typeof todayIso === 'string' && todayIso) ? todayIso : todayISO();
+  const cutoff = isoDaysBefore(today, days);
+  const sessionBests = [];
+  for (const session of list) {
+    if (!session || !session.marks) continue;
+    if (typeof session.date !== 'string' || session.date < cutoff) continue;
+    const best = eventBest(session.marks[liftId], direction);
+    if (best === null) continue;
+    sessionBests.push({ value: best, date: session.date });
+  }
+  sessionBests.sort((a, b) => {
+    if (a.value !== b.value) {
+      return direction === 'lower' ? a.value - b.value : b.value - a.value;
+    }
+    return b.date.localeCompare(a.date);
+  });
+  return sessionBests.slice(0, 3);
 }
