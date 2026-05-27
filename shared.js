@@ -1021,44 +1021,64 @@ function topSessionBestsInWindow(sessions, liftId, direction, days, todayIso) {
   return sessionBests.slice(0, 3);
 }
 
-// Stage 6a — celebration cut-scene selection. The throws PR card opens with a
-// short implement cut-scene in one of two motifs:
-//   - distance (Braemar/Open Stone, hammers, weights for distance): the
-//     implement arcs out, lands, and a tape measure reveals the mark.
-//   - height (Weight for Height, Sheaf Toss): the implement clears a bar and
-//     the bar itself is the ruler at the cleared height.
-// The motif is read from the event's measurementType (the data model already
-// carries it); the implement skin and whether that skin's rendering is built
-// yet come from the skin registry below. `built: false` — an un-skinned event,
-// or any height event before the height build — falls back to the field card +
-// tape-measure reveal with no implement cut-scene (Stage 6a scope point 6),
-// never a wrong or broken animation.
+// Stage 6a — celebration silhouette selection. A throws PR card carries an
+// implement-specific athlete silhouette as its hero. This picks which one.
 //
-// 6a ships only the distance motif and the stone skin. Hammer / weight /
-// sheaf skins and the height motif's rendering flip to built:true as their
-// fill-in builds land — no change needed here beyond the flag.
+// Returns null for any event that is NOT a throw — the caller then renders the
+// plain PR card. For a throw it returns { implement, athleteClass, src }:
+//   - implement is derived from the event id (the switch below).
+//   - athleteClass is 'adaptive' when the athlete's profile class is one of the
+//     four BCAA adaptive classes (the 'Adaptive' group), else 'able-bodied'
+//     (also the default when the class is unset or unknown).
+//   - src is the image path, or null when no silhouette exists for the event
+//     yet. Weight for Height has no silhouette in v2.0, so its src is null and
+//     the card renders un-skinned (soft-grey, no image). The day a
+//     weight-over-bar asset lands, this branch self-fills.
 //
-// Pure: reads ITEMS only, no DOM, no storage. session.js renders over the
-// returned { motif, skin, built } descriptor.
-const CUTSCENE_SKINS = {
-  'braemar-stone':         { skin: 'stone',  built: true },
-  'open-stone':            { skin: 'stone',  built: true },
-  'heavy-hammer':          { skin: 'hammer', built: false },
-  'light-hammer':          { skin: 'hammer', built: false },
-  'heavy-weight-distance': { skin: 'weight', built: false },
-  'light-weight-distance': { skin: 'weight', built: false },
-  'weight-over-bar':       { skin: 'weight', built: false },
-  'sheaf-toss':            { skin: 'sheaf',  built: false },
-};
+// stone + weight-distance ship adaptive + able-bodied pairs, so their filename
+// carries the class suffix. hammer + sheaf are single-variant for v2.0, so
+// their filename has no class suffix (the adaptive athlete gets the single art).
+//
+// Pure: reads ITEMS and PROFILE_CLASSES only, no DOM, no storage. session.js
+// renders over the returned descriptor. Same pattern as detectMilestones and
+// recomputeDerivedState.
+const SILHOUETTE_DIR = 'images/silhouettes/';
+const SILHOUETTE_PAIRED_IMPLEMENTS = new Set(['stone', 'weight-distance']);
 
-function selectThrowCutScene(eventId) {
+function throwImplementForEvent(eventId) {
+  switch (eventId) {
+    case 'braemar-stone':
+    case 'open-stone':
+      return 'stone';
+    case 'heavy-weight-distance':
+    case 'light-weight-distance':
+      return 'weight-distance';
+    case 'heavy-hammer':
+    case 'light-hammer':
+      return 'hammer';
+    case 'sheaf-toss':
+      return 'sheaf';
+    default:
+      // weight-over-bar (no asset yet) and any non-mapped event.
+      return null;
+  }
+}
+
+function athleteClassForProfile(profileClassId) {
+  const cls = getProfileClass(profileClassId);
+  return cls && cls.group === 'Adaptive' ? 'adaptive' : 'able-bodied';
+}
+
+function selectThrowSilhouette(eventId, profileClassId) {
   const item = ITEMS.find((it) => it.id === eventId);
   if (!item || item.category !== 'throw') return null;
-  const motif = item.measurementType === 'height' ? 'height' : 'distance';
-  const def = CUTSCENE_SKINS[eventId];
-  return {
-    motif,
-    skin: def ? def.skin : null,
-    built: !!(def && def.built),
-  };
+  const implement = throwImplementForEvent(eventId);
+  const athleteClass = athleteClassForProfile(profileClassId);
+  let src = null;
+  if (implement) {
+    src = SILHOUETTE_PAIRED_IMPLEMENTS.has(implement)
+      ? `${SILHOUETTE_DIR}silhouette-${implement}-${athleteClass}.png`
+      : `${SILHOUETTE_DIR}silhouette-${implement}.png`;
+  }
+  return { implement, athleteClass, src };
 }

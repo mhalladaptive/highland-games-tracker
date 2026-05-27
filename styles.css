@@ -1232,186 +1232,59 @@ body.kind-training .comp-only {
   border-top: 1px solid var(--border);
 }
 
-/* Stage 6a — throws PR card: a hand-drawn Highland Games field scene (SVG, no
-   image asset). The field is an absolutely-positioned layer behind the card
-   content; the SVG fills it and a top-and-bottom scrim (::after) over the SVG
-   keeps the headline and the meta/wordmark legible while the middle stays open
-   for the implement cut-scene. */
+/* Stage 6a — throws PR card: a soft-grey card (#F4F4F4, distinct from the page
+   background) carrying an implement-specific athlete silhouette as its hero. The
+   silhouette is anchored bottom-right and sits behind the content; the text is
+   left-aligned so it reads in the upper-left negative space the figure leaves. */
 .celebration-card--throw {
-  color: #fff;
+  background: #f4f4f4;
+  text-align: left;
 }
 
-.celebration-card--throw > :not(.throw-field) {
+/* Keep every text element above the silhouette layer. */
+.celebration-card--throw > :not(.throw-silhouette) {
   position: relative;
   z-index: 1;
 }
 
-.throw-field {
+.throw-silhouette {
   position: absolute;
-  inset: 0;
+  right: 0;
+  bottom: 0;
+  height: 74%;
+  width: auto;
+  max-width: 68%;
+  object-fit: contain;
+  object-position: bottom right;
   z-index: 0;
-  overflow: hidden;
+  pointer-events: none;
 }
 
-.throw-field svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-.throw-field::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(16, 36, 64, 0.55) 0%,
-    rgba(16, 36, 64, 0.08) 28%,
-    rgba(10, 36, 20, 0.12) 58%,
-    rgba(8, 28, 14, 0.82) 100%
-  );
-}
-
-/* Louder, more celebratory than the plain PR card: a bright gold banner, a big
-   bold white event name, and the mark as a giant hero number with a warm gold
-   glow. Every line keeps a dark shadow so it stays legible over the scene. */
-.celebration-card--throw .celebration-card-headline {
-  color: #ffd34d;
-  font-size: 0.92rem;
-  letter-spacing: 0.2em;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.75), 0 0 14px rgba(255, 180, 40, 0.45);
-}
-
+/* Louder than the plain PR card, but tuned for the soft-grey backdrop: a dark
+   bold event name and the mark as a big hero number, the mark pinned to the
+   top-left so it never collides with the bottom-right figure. */
 .celebration-card--throw .celebration-card-event {
-  color: #fff;
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   font-weight: 800;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+  color: var(--text);
 }
 
 .celebration-card--throw .celebration-card-mark {
-  color: #fff;
-  font-size: 3.4rem;
+  font-size: 3.2rem;
   font-weight: 900;
   letter-spacing: -0.01em;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.75), 0 0 22px rgba(255, 200, 70, 0.55);
+  justify-content: flex-start;
+  align-items: flex-start;
 }
 
-.celebration-card--throw .celebration-card-prev {
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 1rem;
-  font-style: italic;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+/* Weight for Height (and any other event without a silhouette yet) renders a
+   clean grey card; with no figure to read around, the text re-centres. */
+.celebration-card--throw.celebration-card--no-silhouette {
+  text-align: center;
 }
 
-.celebration-card--throw .celebration-card-meta {
-  color: rgba(255, 255, 255, 0.95);
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
-}
-
-.celebration-card--throw .celebration-card-wordmark {
-  color: #ffd34d;
-  border-top-color: rgba(255, 255, 255, 0.4);
-  letter-spacing: 0.22em;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
-}
-
-/* Stage 6a — the cut-scene stage. The implement arcs across it, the tape runs
-   out along the ground, and the mark reveals at the end of the tape. The base
-   (no-animation) state of every beat IS its final resting state, and the
-   keyframes run from off-stage back to it with animation-fill-mode: backwards —
-   so adding .is-revealed (animation: none) snaps the whole scene to its end,
-   which is how tap-to-skip and reduced-motion both land on the finished card. */
-.throw-stage {
-  flex: 1;
-  min-height: 0;
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
+.celebration-card--throw.celebration-card--no-silhouette .celebration-card-mark {
   justify-content: center;
-}
-
-.throw-mark-reveal {
-  flex: none;
-  position: relative;
-  z-index: 2;
-  animation: throw-mark-pop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2) 1.25s backwards;
-}
-
-.celebration-card--no-implement .throw-mark-reveal {
-  animation-delay: 0.55s;
-}
-
-/* The stone lands toward the right, resting on the ground line, so the tape
-   has room to run out from the throwing line (left) to where it landed. */
-.throw-implement {
-  position: absolute;
-  right: 15%;
-  bottom: 16%;
-  width: 26%;
-  aspect-ratio: 1;
-  z-index: 1;
-  transform: translate(0, 0);
-  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.45));
-  animation: throw-stone-arc 0.95s cubic-bezier(0.3, 0, 0.5, 1) backwards;
-}
-
-/* The tape is the ground line: it runs from the throwing line (left) out to
-   the stone and stops there — it does not run past it. */
-.throw-tape {
-  position: absolute;
-  left: 8%;
-  right: 29%;
-  bottom: 14%;
-  height: 9px;
-  border-radius: 2px;
-  z-index: 1;
-  background:
-    repeating-linear-gradient(to right, rgba(0, 0, 0, 0.4) 0 1px, transparent 1px 11px),
-    linear-gradient(to bottom, #f6f6f8 0%, #d7d7da 55%, #b0b0b5 100%);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
-  transform: scaleX(1);
-  transform-origin: left center;
-  animation: throw-tape-runout 0.55s ease-out 0.85s backwards;
-}
-
-.celebration-card--no-implement .throw-tape {
-  animation-delay: 0.15s;
-}
-
-.throw-stage.is-revealed .throw-implement,
-.throw-stage.is-revealed .throw-tape,
-.throw-stage.is-revealed .throw-mark-reveal {
-  animation: none;
-}
-
-@keyframes throw-stone-arc {
-  0% { transform: translate(-340%, 30%) scale(0.4); opacity: 0; }
-  12% { opacity: 1; }
-  55% { transform: translate(-160%, -200%) scale(0.78); }
-  100% { transform: translate(0, 0) scale(1); opacity: 1; }
-}
-
-@keyframes throw-tape-runout {
-  0% { transform: scaleX(0); }
-  100% { transform: scaleX(1); }
-}
-
-@keyframes throw-mark-pop {
-  0% { opacity: 0; transform: scale(0.7); }
-  60% { opacity: 1; }
-  100% { opacity: 1; transform: scale(1); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .throw-implement,
-  .throw-tape,
-  .throw-mark-reveal {
-    animation: none;
-  }
 }
 
 .celebration-card--awesomeDay .celebration-card-mark {

@@ -3645,40 +3645,60 @@ test('Progress toggle: switching to Lifts swaps the view and the secondary contr
   }
 });
 
-// --- Stage 6a: cut-scene selection ---
+// --- Stage 6a: silhouette selection ---
 
-test('selectThrowCutScene: Braemar Stone → distance motif, stone skin, built', () => {
-  assertDeepEqual(selectThrowCutScene('braemar-stone'), { motif: 'distance', skin: 'stone', built: true });
+test('selectThrowSilhouette: Braemar/Open Stone → stone, class-specific path', () => {
+  assertDeepEqual(selectThrowSilhouette('braemar-stone', 'amateur-a'),
+    { implement: 'stone', athleteClass: 'able-bodied', src: 'images/silhouettes/silhouette-stone-able-bodied.png' });
+  assertDeepEqual(selectThrowSilhouette('open-stone', 'para-seated'),
+    { implement: 'stone', athleteClass: 'adaptive', src: 'images/silhouettes/silhouette-stone-adaptive.png' });
 });
 
-test('selectThrowCutScene: Open Stone → distance motif, stone skin, built', () => {
-  assertDeepEqual(selectThrowCutScene('open-stone'), { motif: 'distance', skin: 'stone', built: true });
+test('selectThrowSilhouette: weights for distance → weight-distance, class-specific path', () => {
+  assertDeepEqual(selectThrowSilhouette('heavy-weight-distance', 'amateur-a'),
+    { implement: 'weight-distance', athleteClass: 'able-bodied', src: 'images/silhouettes/silhouette-weight-distance-able-bodied.png' });
+  assertDeepEqual(selectThrowSilhouette('light-weight-distance', 'para-standing-lower'),
+    { implement: 'weight-distance', athleteClass: 'adaptive', src: 'images/silhouettes/silhouette-weight-distance-adaptive.png' });
 });
 
-test('selectThrowCutScene: hammers → distance motif, hammer skin, not built', () => {
-  assertDeepEqual(selectThrowCutScene('heavy-hammer'), { motif: 'distance', skin: 'hammer', built: false });
-  assertDeepEqual(selectThrowCutScene('light-hammer'), { motif: 'distance', skin: 'hammer', built: false });
+test('selectThrowSilhouette: hammers → single-variant path (no class suffix)', () => {
+  assertDeepEqual(selectThrowSilhouette('heavy-hammer', 'amateur-a'),
+    { implement: 'hammer', athleteClass: 'able-bodied', src: 'images/silhouettes/silhouette-hammer.png' });
+  // An adaptive athlete still gets the single hammer art for v2.0; the class is
+  // computed but the path carries no class suffix until the adaptive art lands.
+  assertDeepEqual(selectThrowSilhouette('light-hammer', 'para-seated'),
+    { implement: 'hammer', athleteClass: 'adaptive', src: 'images/silhouettes/silhouette-hammer.png' });
 });
 
-test('selectThrowCutScene: weights for distance → distance motif, weight skin, not built', () => {
-  assertDeepEqual(selectThrowCutScene('heavy-weight-distance'), { motif: 'distance', skin: 'weight', built: false });
-  assertDeepEqual(selectThrowCutScene('light-weight-distance'), { motif: 'distance', skin: 'weight', built: false });
+test('selectThrowSilhouette: Sheaf Toss → single-variant path (no class suffix)', () => {
+  assertDeepEqual(selectThrowSilhouette('sheaf-toss', 'amateur-a'),
+    { implement: 'sheaf', athleteClass: 'able-bodied', src: 'images/silhouettes/silhouette-sheaf.png' });
 });
 
-test('selectThrowCutScene: Weight for Height → height motif, not built (fill-in)', () => {
-  assertDeepEqual(selectThrowCutScene('weight-over-bar'), { motif: 'height', skin: 'weight', built: false });
+test('selectThrowSilhouette: Weight for Height → un-skinned fallback (no src)', () => {
+  assertDeepEqual(selectThrowSilhouette('weight-over-bar', 'amateur-a'),
+    { implement: null, athleteClass: 'able-bodied', src: null });
 });
 
-test('selectThrowCutScene: Sheaf Toss → height motif, sheaf skin, not built (fill-in)', () => {
-  assertDeepEqual(selectThrowCutScene('sheaf-toss'), { motif: 'height', skin: 'sheaf', built: false });
+test('selectThrowSilhouette: class defaults to able-bodied when unset or unknown', () => {
+  assertEqual(selectThrowSilhouette('braemar-stone', undefined).athleteClass, 'able-bodied');
+  assertEqual(selectThrowSilhouette('braemar-stone', '').athleteClass, 'able-bodied');
+  assertEqual(selectThrowSilhouette('braemar-stone', 'not-a-class').athleteClass, 'able-bodied');
+  assertEqual(selectThrowSilhouette('braemar-stone', 'masters').athleteClass, 'able-bodied');
 });
 
-test('selectThrowCutScene: a lift event → null (not a throw, no cut-scene)', () => {
-  assertEqual(selectThrowCutScene('deadlift'), null);
+test('selectThrowSilhouette: all four BCAA adaptive classes → adaptive', () => {
+  for (const id of ['para-seated', 'para-standing-upper', 'para-standing-lower', 'para-standing-neuro']) {
+    assertEqual(selectThrowSilhouette('braemar-stone', id).athleteClass, 'adaptive', id);
+  }
 });
 
-test('selectThrowCutScene: an unknown event → null', () => {
-  assertEqual(selectThrowCutScene('not-an-event'), null);
+test('selectThrowSilhouette: a lift event → null (not a throw)', () => {
+  assertEqual(selectThrowSilhouette('deadlift', 'amateur-a'), null);
+});
+
+test('selectThrowSilhouette: an unknown event → null', () => {
+  assertEqual(selectThrowSilhouette('not-an-event', 'amateur-a'), null);
 });
 
 // --- Stage 6a: sound preference ---
@@ -3706,16 +3726,40 @@ test('sound preference: uses a key separate from the v2 data blob (no schema cha
   assertTrue(SOUND_PREF_KEY !== STORAGE_KEY, 'sound flag is not the data key');
 });
 
-// --- Stage 6a: rich path gated to the throws PR card ---
+// --- Stage 6a: silhouette path gated to the throws PR card ---
 
-test('rich path: a throws PR card takes the field/cut-scene path', () => {
+test('silhouette path: a throws PR card takes the silhouette/soft-grey path', () => {
   const card = buildCelebrationCard(
     { type: 'pr', event: 'braemar-stone', value: 300, previousValue: 280 },
     { id: 1, date: '2026-05-24' },
     {}
   );
-  assertTrue(card.classList.contains('celebration-card--throw'), 'throws PR is rich');
+  assertTrue(card.classList.contains('celebration-card--throw'), 'throws PR is a throw card');
   assertTrue(card.classList.contains('celebration-card--pr'), 'still a PR card');
+  assertTrue(!!card.querySelector('.throw-silhouette'), 'carries a silhouette image');
+});
+
+test('silhouette path: Weight for Height renders the un-skinned throw card', () => {
+  const card = buildCelebrationCard(
+    { type: 'pr', event: 'weight-over-bar', value: 180, previousValue: 168 },
+    { id: 1, date: '2026-05-24' },
+    {}
+  );
+  assertTrue(card.classList.contains('celebration-card--throw'), 'still a throw card');
+  assertTrue(card.classList.contains('celebration-card--no-silhouette'), 'un-skinned fallback');
+  assertTrue(!card.querySelector('.throw-silhouette'), 'no silhouette image');
+});
+
+test('silhouette path: an adaptive athlete gets the adaptive stone silhouette', () => {
+  const data = { profile: { class: 'para-seated' } };
+  const card = buildCelebrationCard(
+    { type: 'pr', event: 'open-stone', value: 300, previousValue: 280 },
+    { id: 1, date: '2026-05-24' },
+    data
+  );
+  const img = card.querySelector('.throw-silhouette');
+  assertTrue(!!img, 'has a silhouette');
+  assertMatch(img.getAttribute('src'), /silhouette-stone-adaptive\.png$/, 'adaptive variant');
 });
 
 test('rich path: a lift PR card does NOT take the throws path', () => {

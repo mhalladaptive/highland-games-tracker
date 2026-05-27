@@ -927,131 +927,36 @@ function playCelebrationSound(src) {
   }
 }
 
-// Stage 6a — the throws PR backdrop is a hand-drawn SVG scene, not a photo: a
-// Highland sky, far hills, and a field receding to a vanishing point with a
-// couple of distant flags to read as a games ground. It scales to fill the
-// card (slice) and a CSS scrim over it keeps the card text legible.
-const THROW_FIELD_SVG =
-  '<svg viewBox="0 0 100 125" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" focusable="false">' +
-  '<defs>' +
-  '<linearGradient id="thSky" x1="0" y1="0" x2="0" y2="1">' +
-  '<stop offset="0%" stop-color="#8ec3e8"/><stop offset="65%" stop-color="#c6e2e8"/>' +
-  '<stop offset="100%" stop-color="#e6efe1"/></linearGradient>' +
-  '<linearGradient id="thField" x1="0" y1="0" x2="0" y2="1">' +
-  '<stop offset="0%" stop-color="#519444"/><stop offset="45%" stop-color="#3b7c35"/>' +
-  '<stop offset="100%" stop-color="#2a6027"/></linearGradient>' +
-  '</defs>' +
-  '<rect x="0" y="0" width="100" height="68" fill="url(#thSky)"/>' +
-  '<path d="M0 64 Q22 50 44 60 Q60 67 78 55 Q90 49 100 60 L100 70 L0 70 Z" fill="#86a98e" opacity="0.85"/>' +
-  '<path d="M0 66 Q26 57 50 64 Q72 70 100 62 L100 72 L0 72 Z" fill="#6c977a"/>' +
-  '<rect x="0" y="64" width="100" height="61" fill="url(#thField)"/>' +
-  '<g stroke="#5ba24f" stroke-width="0.8" opacity="0.5">' +
-  '<line x1="50" y1="65" x2="-26" y2="125"/><line x1="50" y1="65" x2="16" y2="125"/>' +
-  '<line x1="50" y1="65" x2="42" y2="125"/><line x1="50" y1="65" x2="58" y2="125"/>' +
-  '<line x1="50" y1="65" x2="84" y2="125"/><line x1="50" y1="65" x2="126" y2="125"/></g>' +
-  '<g>' +
-  '<line x1="14" y1="50" x2="14" y2="64" stroke="#5b4a3a" stroke-width="0.8"/>' +
-  '<path d="M14 50 L22 52 L14 55 Z" fill="#c9433f"/>' +
-  '<line x1="84" y1="52" x2="84" y2="64" stroke="#5b4a3a" stroke-width="0.8"/>' +
-  '<path d="M84 52 L77 54 L84 57 Z" fill="#3f6fc9"/></g>' +
-  '</svg>';
-
-// Stage 6a — hand-rolled SVG for an implement skin. 6a ships the stone (covers
-// Braemar + Open Stone); the hammer / weight / sheaf skins are fill-in builds
-// and return null, which leaves the card on the no-implement fallback.
-function buildThrowImplement(skin) {
-  if (skin !== 'stone') return null;
-  const wrap = document.createElement('div');
-  wrap.className = 'throw-implement throw-implement--stone';
-  wrap.setAttribute('aria-hidden', 'true');
-  // A rough, irregular boulder — angular facets and a chipped outline rather
-  // than a smooth sphere, so it reads as a Highland Games putting stone and not
-  // a shot put. The radial shade gives volume; the facet lines add texture.
-  wrap.innerHTML =
-    '<svg viewBox="0 0 64 64" width="100%" height="100%" focusable="false">' +
-    '<defs><radialGradient id="stoneShade" cx="36%" cy="30%" r="78%">' +
-    '<stop offset="0%" stop-color="#a3a8ad"/>' +
-    '<stop offset="50%" stop-color="#6d7277"/>' +
-    '<stop offset="100%" stop-color="#3a3e42"/>' +
-    '</radialGradient></defs>' +
-    '<path d="M9 40 L6 27 L13 17 L22 12 L33 11 L45 15 L55 24 L58 35 L53 47 L41 53 L25 54 L14 50 Z" ' +
-    'fill="url(#stoneShade)" stroke="#2a2d31" stroke-width="1.6" stroke-linejoin="round"/>' +
-    '<path d="M22 12 L33 11 L31 27 L18 24 Z" fill="#b6bbc0" opacity="0.32"/>' +
-    '<path d="M41 53 L53 47 L58 35 L46 36 L44 48 Z" fill="#2c2f33" opacity="0.3"/>' +
-    '<path d="M14 50 L25 54 L27 41 L13 39 Z" fill="#2c2f33" opacity="0.22"/>' +
-    '<polyline points="31 27 44 30 46 36" fill="none" stroke="#2a2d31" stroke-width="1" opacity="0.4"/>' +
-    '<polyline points="31 27 27 41 13 39" fill="none" stroke="#2a2d31" stroke-width="1" opacity="0.35"/>' +
-    '</svg>';
-  return wrap;
-}
-
-// Stage 6a — drive the throws PR cut-scene and make it tap-to-skip. The beats
-// are CSS animations that play once on insert (the implement arc, the tape
-// run-out, the mark reveal). The first tap on the card finalizes the cut-scene
-// (snaps to the revealed state) instead of advancing the queue; once the
-// cut-scene is done — by tap or by elapsed time — a tap bubbles to the overlay
-// and advances as normal. This keeps showCelebrationQueue's contract untouched.
-function attachThrowCutScene(card, stage, playsImplement) {
-  const reduced = typeof window.matchMedia === 'function'
-    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const totalMs = reduced ? 0 : (playsImplement ? 1850 : 1100);
-  let pending = true;
-  let clangFired = false;
-
-  // The shout fires as the throw begins. Playback is gesture-initiated (Save
-  // Session or the View Celebrations click) and a no-op when sound is off.
-  playCelebrationSound(CELEBRATION_AUDIO.shout);
-
-  function clang() {
-    if (clangFired) return;
-    clangFired = true;
-    if (clangTimer) clearTimeout(clangTimer);
-    if (card.isConnected) playCelebrationSound(CELEBRATION_AUDIO.land);
-  }
-  // The clang lands with the implement. Skipped throws land immediately (see
-  // reveal); a clip is never played into a card that has already gone away.
-  const clangTimer = (playsImplement && !reduced) ? setTimeout(clang, 850) : null;
-
-  function reveal() {
-    if (!pending) return;
-    pending = false;
-    clearTimeout(timer);
-    stage.classList.add('is-revealed');
-    if (playsImplement) clang();
-  }
-  const timer = setTimeout(reveal, totalMs);
-
-  card.addEventListener('click', (e) => {
-    if (pending) {
-      e.stopPropagation();
-      reveal();
-    }
-  });
-}
-
-// Stage 6a — the throws PR card takes the rich path: a Highland Games field
-// background, an implement cut-scene, and a tape-measure reveal of the mark.
-// The rich path is gated to PR milestones whose event is a throw (selectThrow-
-// CutScene returns non-null); every other card type renders exactly as before.
+// Stage 6a — the throws PR card: a soft-grey card carrying an implement-specific
+// athlete silhouette as its hero, anchored bottom-right so the text reads in the
+// upper-left negative space. selectThrowSilhouette (shared.js, pure) picks the
+// asset; this is the rendering layer. Weight for Height has no silhouette yet,
+// so its card renders un-skinned (soft-grey, no image) — the
+// .celebration-card--no-silhouette modifier re-centres the text for that case.
 //
-// The cut-scene mechanism is parametrized by (motif, skin): the motif chooses
-// the beats, the skin chooses the implement art. 6a renders the distance motif
-// with the stone skin. An un-built skin or the (not-yet-built) height motif
-// falls back to the field card + tape-measure reveal with no implement.
-function buildThrowsPrCard(milestone, session, data) {
-  const cut = selectThrowCutScene(milestone.event);
-  const playsImplement = !!(cut && cut.built && cut.motif === 'distance');
-
+// A celebration sound fires when the card renders (a no-op while sound is off,
+// which is the default). Playback is gesture-initiated — the card fires from
+// Save Session or a View Celebrations click — so it stays within autoplay policy.
+function buildThrowsPrCard(milestone, session, data, sil) {
   const card = document.createElement('div');
   card.className = 'celebration-card celebration-card--pr celebration-card--throw';
-  if (cut) card.classList.add(`celebration-card--motif-${cut.motif}`);
-  if (!playsImplement) card.classList.add('celebration-card--no-implement');
 
-  const field = document.createElement('div');
-  field.className = 'throw-field';
-  field.setAttribute('aria-hidden', 'true');
-  field.innerHTML = THROW_FIELD_SVG;
-  card.appendChild(field);
+  if (sil && sil.src) {
+    const img = document.createElement('img');
+    img.className = 'throw-silhouette';
+    img.src = sil.src;
+    img.alt = '';
+    img.setAttribute('aria-hidden', 'true');
+    // A missing or undecodable asset must never break the card: drop the image
+    // and fall back to the un-skinned layout.
+    img.addEventListener('error', () => {
+      img.remove();
+      card.classList.add('celebration-card--no-silhouette');
+    });
+    card.appendChild(img);
+  } else {
+    card.classList.add('celebration-card--no-silhouette');
+  }
 
   const headline = document.createElement('p');
   headline.className = 'celebration-card-headline';
@@ -1063,28 +968,10 @@ function buildThrowsPrCard(milestone, session, data) {
   eventName.textContent = eventDisplayName(milestone.event, data) || milestone.event;
   card.appendChild(eventName);
 
-  // The stage: the implement arcs across it, the tape runs out along the
-  // ground, and the mark reveals at the end of the tape.
-  const stage = document.createElement('div');
-  stage.className = 'throw-stage';
-
-  let implement = null;
-  if (playsImplement) {
-    implement = buildThrowImplement(cut.skin);
-    if (implement) stage.appendChild(implement);
-  }
-
-  const tape = document.createElement('div');
-  tape.className = 'throw-tape';
-  tape.setAttribute('aria-hidden', 'true');
-  stage.appendChild(tape);
-
   const mark = document.createElement('p');
-  mark.className = 'celebration-card-mark throw-mark-reveal';
+  mark.className = 'celebration-card-mark';
   mark.textContent = formatEventValue(milestone.event, milestone.value, data);
-  stage.appendChild(mark);
-
-  card.appendChild(stage);
+  card.appendChild(mark);
 
   if (Number.isFinite(milestone.previousValue)) {
     const prev = document.createElement('p');
@@ -1096,14 +983,16 @@ function buildThrowsPrCard(milestone, session, data) {
   card.appendChild(buildCelebrationMeta(session));
   card.appendChild(buildCelebrationWordmark());
 
-  attachThrowCutScene(card, stage, playsImplement);
+  playCelebrationSound(CELEBRATION_AUDIO.shout);
   return card;
 }
 
 function buildCelebrationCard(milestone, session, data, allMilestones) {
   if (!milestone || !milestone.type) return null;
   if (milestone.type === 'pr') {
-    if (selectThrowCutScene(milestone.event)) return buildThrowsPrCard(milestone, session, data);
+    const profileClass = data && data.profile ? data.profile.class : undefined;
+    const sil = selectThrowSilhouette(milestone.event, profileClass);
+    if (sil) return buildThrowsPrCard(milestone, session, data, sil);
     return buildPrCard(milestone, session, data);
   }
   if (milestone.type === 'goal') return buildGoalCard(milestone, session, data);
