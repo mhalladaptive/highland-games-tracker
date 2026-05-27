@@ -1,9 +1,16 @@
-# Highland Games Tracker — v2 plan
+# Stone & Standard — v2 plan
 
 Working planning document for v2. Edit freely as planning evolves. The
 detailed design captured here came out of the May 19, 2026 design session
 (see `SESSION_NOTES.md` for the chronological journal). When v2.0 ships,
 this doc gets retired or rolled into a CONTRIBUTING / DESIGN file.
+
+The app was originally forked from `comeback-tracker` as **Highland Games
+Tracker**; on 2026-05-26 it was renamed to **Stone & Standard** for v2.0
+launch. The rename is part of Stage 6a (see Stage 6 below). The
+`highland-games-tracker` references in Stage 1–5 below are historical;
+they describe the app surface and storage as it existed during those
+stages.
 
 ## Status
 
@@ -14,14 +21,18 @@ this doc gets retired or rolled into a CONTRIBUTING / DESIGN file.
   5a (the throws windowed vs-PR view, replacing "See the Gap") and 5b
   (the S&C lifts view plus the Throws/Lifts toggle). The v2 feature
   build is complete.
-- **Stage 6 (v2.0 launch polish):** not started — the last v2 work.
-  Celebration-card visual polish, a cross-device smoke test, the
-  `v2.0.0` tag, the GitHub release, Cloudflare Web Analytics.
+- **Stage 6a (the structural piece of v2.0 launch):** spec'd
+  2026-05-26, handoff-ready. Bundles the throws PR celebration card
+  visual lift (soft-grey card with implement-specific silhouette,
+  audio plumbing) and the app rename from Highland Games Tracker to
+  Stone & Standard. See `docs/specs/v2-stage6a-spec.md`.
+- **Stage 6 housekeeping (after 6a):** the cross-device smoke test,
+  the `v2.0.0` tag, the GitHub release, Cloudflare Web Analytics.
 - **v2.0 launch:** targeted after Stage 6.
 
 ## Audience and intent
 
-Highland Games Tracker is for athletes in the Highland Games community at
+Stone & Standard is for athletes in the Highland Games community at
 any stage of the journey:
 
 - Veterans tracking how their current marks stack up against career peaks
@@ -187,11 +198,28 @@ window show "no marks logged."
 
 ### Stage 6: v2.0 launch
 
-- Final visual polish on the celebration cards (see Open Items)
-- Smoke test across mobile + desktop
+**Stage 6a — structural** (spec'd 2026-05-26, handoff-ready):
+- The throws PR celebration card lift: soft-grey card (`#F4F4F4`),
+  implement-specific athlete silhouette as hero, no animated cut-scene
+  (silhouette replaces it; cut-scene deferred to a possible v2.1+
+  upgrade path).
+- Audio plumbing on the celebration overlay: sound on/off toggle, off
+  by default, preference in a standalone `localStorage` flag, real
+  audio clips injected later (silent placeholders ship with 6a).
+- App rename from Highland Games Tracker to **Stone & Standard** across
+  surface, storage namespace, backup envelope (with backward-compat
+  for v1/v2 imports), `package.json`, and README.
+- Scope isolation: only the throws PR card takes the new silhouette
+  path; lift PR / Goal / Awesome Day cards untouched.
+
+See `docs/specs/v2-stage6a-spec.md` for the full sketch, acceptance
+criteria, files touched, and the ccode + gpt prompts.
+
+**Stage 6 housekeeping** (after 6a):
+- Cross-device smoke test (mobile + desktop)
 - Tag `v2.0.0`
 - GitHub release
-- Light usage analytics enabled (Cloudflare Web Analytics, no cookies)
+- Cloudflare Web Analytics (no cookies, no PII)
 
 ## Data model
 
