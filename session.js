@@ -1202,7 +1202,6 @@ function showCelebrationQueue(session, data, options) {
 
   function renderCard() {
     slot.innerHTML = '';
-    inChainPrompt = false;
     const card = buildCelebrationCard(queue[index], session, data, fullList);
     if (card) slot.appendChild(card);
   }
