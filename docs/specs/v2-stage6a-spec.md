@@ -29,7 +29,7 @@ The body below is the current state. Where earlier revisions still inform the de
 2. **The implement-specific silhouette as card hero** (`session.js`, `styles.css`, `shared.js`). When a throws PR card fires, the card displays an athlete silhouette specific to the event's implement, anchored bottom-right of the card so the figure occupies the hero space and the text reads in the upper-left negative space.
 
    - **Selection key:** `(implement, athleteClass)` where:
-     - `implement` is derived from the event id (Open Stone & Braemar Stone → `stone`; Heavy & Light WFD → `weight-distance`; Heavy & Light Hammer → `hammer`; Sheaf Toss → `sheaf`; Weight Over Bar → no asset yet, see point 5).
+     - `implement` is derived from the event id (Open Stone & Braemar Stone → `stone`; Heavy & Light WFD → `weight-distance`; Heavy & Light Hammer → `hammer`; Sheaf Toss → `sheaf`; Weight Over Bar → `weight-over-bar`).
      - `athleteClass` is `adaptive` if the athlete's profile class is one of the four BCAA adaptive classes (Para-Seated, Para Standing Upper Limb Loss, Para Standing Lower Limb Loss, Para Standing Neuro/Muscular); otherwise `able-bodied`.
    - **Default class:** `able-bodied` when the profile class is unset or doesn't map.
    - **Selection is a pure helper in `shared.js`** (DOM-free, unit-testable) — same pattern as `detectMilestones`, `recomputeDerivedState`, and the 5a/5b helpers. `session.js` renders over it.
@@ -56,7 +56,7 @@ The body below is the current state. Where earlier revisions still inform the de
 
    **4e. README rewrite** — `README.md`. Replace all brand mentions with Stone & Standard. The app's audience, description, and value prop stay the same; only the name changes.
 
-5. **Un-skinned-event fallback** (`session.js`). Weight Over Bar is currently the only throws event without a silhouette in `Images for Cards/`. For v2.0, when a Weight Over Bar PR fires, the card renders the soft-grey card with the text content but no silhouette image (background stays clean grey, layout adjusts). Spec-level call. When the Weight Over Bar silhouette lands in a later commit, the un-skinned branch self-removes (the file exists and is selected normally).
+5. **Defensive un-skinned fallback** (`session.js`). If a silhouette file is missing for any reason (manifest mismatch, asset not yet staged, future event added before its silhouette), the card renders the soft-grey card with text content and no silhouette image (background stays clean grey, layout adjusts). Spec-level call. As of 2026-05-26, all eight throws events have silhouettes staged in `Images for Cards/` — this fallback is purely defensive, not interim state for any specific event.
 
 6. **Scope isolation** (`session.js`). Only the **throws PR card** takes the new silhouette + audio path. Lift PR cards, all Goal cards, and the Awesome Day card keep their current rendering, untouched. The build path branches cleanly on "this is a PR card and its event is a throw."
 
@@ -73,7 +73,7 @@ Stage 6a is done when all of these are true:
 
 - [ ] When a throws PR card fires, the card shows the `#F4F4F4` background and the implement-specific silhouette anchored as the hero. The mark, headline, event, was-line, meta lines, and wordmark all stay legible over the silhouette.
 - [ ] Silhouette selection lives in a pure `shared.js` helper with test coverage. `session.js` is the rendering layer.
-- [ ] Each throw event's PR card resolves to the correct silhouette: Open Stone / Braemar Stone → `silhouette-stone-{class}.png`; Heavy / Light WFD → `silhouette-weight-distance-{class}.png`; Heavy / Light Hammer → `silhouette-hammer-{class}.png` (currently `silhouette-hammer.png` until the adaptive variant lands); Sheaf Toss → `silhouette-sheaf-{class}.png` (currently `silhouette-sheaf.png`); Weight Over Bar → un-skinned fallback (no image).
+- [ ] Each throw event's PR card resolves to the correct silhouette: Open Stone / Braemar Stone → `silhouette-stone-{class}.png`; Heavy / Light WFD → `silhouette-weight-distance-{class}.png`; Heavy / Light Hammer → `silhouette-hammer-{class}.png` (currently `silhouette-hammer.png` until the adaptive variant lands); Sheaf Toss → `silhouette-sheaf-{class}.png` (currently `silhouette-sheaf.png`); Weight Over Bar → `silhouette-weight-over-bar-{class}.png`.
 - [ ] Athletes with a BCAA adaptive profile class get the adaptive silhouette where one exists; otherwise the able-bodied silhouette. Default is able-bodied.
 - [ ] Sound is off by default; a toggle on the overlay turns it on; the preference persists across reloads in a standalone `localStorage` flag. Placeholder audio files do not error.
 - [ ] The app displays "Stone & Standard" as its name everywhere user-facing: page titles, h1 wordmarks, the celebration-card wordmark, the test-runner banner.
@@ -89,7 +89,6 @@ Stage 6a is done when all of these are true:
 ## Explicitly NOT in Stage 6a
 
 - The **animated cut-scene mechanism** (motifs, implement skins, tape-measure / bar-as-ruler reveals) — deferred to a possible v2.1+ enhancement. The silhouette card is the v2.0 hero.
-- The **Weight Over Bar silhouette** — Oak to generate when ready. The un-skinned fallback (point 5) covers v2.0 launch.
 - The **adaptive variants for hammer and sheaf** — Oak to generate iteratively. Single-variant silhouettes ship in v2.0 for those two events.
 - The **real audio files** — recorded and injected later; 6a ships silent placeholders.
 - The **cross-event visual-language harmonization** — accepted as-is (stone + WFD detailed-with-tartan, hammer + sheaf pure-black graphic). Not regenerating either set to match the other for v2.0.
@@ -97,7 +96,6 @@ Stage 6a is done when all of these are true:
 
 ## Known interim state (by design)
 
-- **Weight Over Bar** PRs render the soft-grey card with text content and no silhouette until a WOB silhouette lands. Expected, not a defect.
 - **Hammer and sheaf adaptive variants** don't exist yet; an adaptive athlete who PRs a hammer or sheaf gets the existing single silhouette for that implement. Expected.
 - **Audio is silent** — placeholder files until real clips are recorded. The plumbing, the toggle, and the off-by-default state are all real and testable now.
 - A review should treat all three as expected interim state.
@@ -132,7 +130,7 @@ Stage 6a is done when all of these are true:
 - `app.js` — verify any string literals; update if present.
 - `package.json` — `name` field. `package-lock.json` regenerates on next `npm install`.
 - `README.md` — rewrite for Stone & Standard.
-- **New asset files** — `images/silhouettes/silhouette-stone-adaptive.png`, `silhouette-stone-able-bodied.png`, `silhouette-weight-distance-adaptive.png`, `silhouette-weight-distance-able-bodied.png`, `silhouette-hammer.png`, `silhouette-sheaf.png`. Cowork stages the assets in `Images for Cards/`; ccode moves them to `images/silhouettes/` as part of the build.
+- **New asset files** — `images/silhouettes/silhouette-stone-adaptive.png`, `silhouette-stone-able-bodied.png`, `silhouette-weight-distance-adaptive.png`, `silhouette-weight-distance-able-bodied.png`, `silhouette-hammer.png`, `silhouette-sheaf.png`, `silhouette-weight-over-bar-adaptive.png`, `silhouette-weight-over-bar-able-bodied.png`. Cowork stages the assets in `Images for Cards/`; ccode moves them to `images/silhouettes/` as part of the build.
 - **Placeholder audio files** under `audio/` (verify what's there; add silent placeholder MP3/WAV if missing).
 - `biome.json` — verify for any app-name reference.
 
@@ -158,7 +156,6 @@ The gpt review's focus:
 
 - **Audio file format and location** — Oak to confirm path under `audio/` (e.g. `audio/throw-shout.mp3`, `audio/stone-clang.mp3`) and that ccode should add silent placeholders at those paths.
 - **Card layout for Sheaf Toss** — the sheaf silhouette includes the bar and vertical standards, making it taller than the distance-event silhouettes. The card layout (CSS) may need a sheaf-specific anchoring rule, or the silhouette may need to be re-cropped. Build-and-react during ccode's pass.
-- **Weight Over Bar silhouette** — Oak to generate when ready. v2.0 ships with the un-skinned fallback for this event.
 - **Hammer + sheaf adaptive variants** — Oak to generate when ready. v2.0 ships single-variant for those events.
 
 ## Handoff prompt for the next ccode session
@@ -194,8 +191,9 @@ docs:/refactor: prefixes, one concern each):
      "Images for Cards/" — move the v2.0 set into images/silhouettes/
      with the kebab-case naming the spec lists. Build the pure
      selection helper in shared.js first (DOM-free, unit-tested),
-     then the render layer in session.js. Un-skinned fallback for
-     Weight Over Bar.
+     then the render layer in session.js. Defensive un-skinned
+     fallback when a silhouette file is missing (all eight throws
+     events have silhouettes staged as of 2026-05-26).
 
   2. The audio plumbing — sound toggle on the overlay, OFF by
      default, preference in a standalone localStorage flag named
