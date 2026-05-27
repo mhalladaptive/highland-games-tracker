@@ -20,7 +20,11 @@ const ITEMS = [
   { id: 'good-mornings',  name: 'Good Mornings',               category: 'lift', measurementType: 'weight', protocol: '7RM' },
 ];
 
-const STORAGE_KEY = 'highland-games-tracker-v1';
+const STORAGE_KEY = 'stone-and-standard-v1';
+// The pre-rename storage key. Stage 6a renamed the app to Stone & Standard;
+// existing installs (and v2.0-staged builds) hold their data under this key.
+// migrateStorageNamespace() copies it forward — see loadData.
+const LEGACY_STORAGE_KEY = 'highland-games-tracker-v1';
 const SCHEMA_VERSION = 2;
 
 // Class / tier taxonomy used by the profile capture modal (and Stage 3+).
@@ -370,7 +374,25 @@ function migrateLegacyGamesLocation(data) {
   return migrated;
 }
 
+// Stage 6a — one-time storage-namespace migration for the Stone & Standard
+// rename. Copies the value from the old key to the new one, and only when the
+// new key is empty (absent) AND the old key has data. It only ever *copies* —
+// the old key is never removed — so the migration is non-destructive and safe
+// to re-run: once the new key is populated, every later call short-circuits.
+// Same conservative pattern Stage 1 used coming from comeback-tracker.
+function migrateStorageNamespace() {
+  try {
+    if (localStorage.getItem(STORAGE_KEY) !== null) return;
+    const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (legacy === null) return;
+    localStorage.setItem(STORAGE_KEY, legacy);
+  } catch {
+    // storage disabled (private mode) — nothing to migrate
+  }
+}
+
 function loadData() {
+  migrateStorageNamespace();
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) return freshData();
   try {
