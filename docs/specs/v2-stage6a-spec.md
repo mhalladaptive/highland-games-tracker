@@ -1,280 +1,254 @@
-# Highland Games Tracker — Stage 6a Spec Sketch (v2)
+# Stone & Standard — Stage 6a Spec Sketch (v2)
 
-**Date:** 2026-05-24 · **Revised:** 2026-05-25 — the silhouette pivot (see the Revision section; parts of the body below are superseded)
+**Date:** 2026-05-24 · **Revised:** 2026-05-26 — silhouette replaces cut-scene, app renamed to Stone & Standard (see Revision history)
 **Skill level:** L1 — Supported (L1 sub-gates paused for the rest of v2)
-**Project risk:** Normal — the low-to-moderate end (a presentation change to a shipped feature; the only new stored value is a small sound-preference flag)
+**Project risk:** Normal — moderate (a presentation change to a shipped feature, plus an app-wide rename that touches storage)
 **Repo:** `~/dev/highland-games-tracker` — on `main`, tagged `v2.0.0-stage5b`
-**Design source:** `v2-plan.md` (Stage 6 · the celebration-card visual-design Open Item) · the 2026-05-24 card-lift planning conversation
+**Design source:** `v2-plan.md` · the 2026-05-24 / -25 / -26 card-lift planning conversations
 
 ---
 
 ## What this is
 
-Stage 6 of the v2 build is the launch-polish basket — the celebration-card visual lift, a cross-device smoke test, Cloudflare Web Analytics, the `v2.0.0` tag, and the GitHub release. This sketch is **Stage 6a**: the first and largest piece of the card lift — the experiential lift of the **throws PR celebration card**.
+Stage 6 of the v2 build is the launch-polish basket — the celebration-card visual lift, a cross-device smoke test, Cloudflare Web Analytics, the `v2.0.0` tag, and the GitHub release. **Stage 6a** is the structural piece of that basket: the throws PR celebration card lift, the audio plumbing, and the rebrand from "Highland Games Tracker" to **Stone & Standard**. The remaining Stage 6 items (smoke test, analytics, tag, release) are housekeeping after 6a.
 
-Today the PR card is a plain white card. Stage 6a turns the throws PR card into a *moment*: a Highland Games field background, a cinematic cut-scene of the throw's implement, audio, and a measuring reveal. The card's content fields and 4:5 aspect ratio (settled in the Stage 4 design, confirmed correct in the Stage 5 wrap) do not change — this is the "visual feel" pass `v2-plan.md` deferred.
+Today the throws PR card is a plain white card. Stage 6a turns it into a moment: a soft-grey card carrying an **implement-specific athlete silhouette** as the hero, audio plumbing for a future sound layer, and a renamed app identity across the surface and the storage layer.
 
-*(The "Stage 6a" name is a spec-level call — the card lift sub-divides, and this is the throws PR card piece. Rename at spec review if you'd rather.)*
+## Revision history
 
-## Revision — the silhouette pivot (2026-05-25)
+- **2026-05-24** — original sketch. Card hero: Highland Games field background, animated implement cut-scene (two motifs — distance and height — with swappable implement skins), tape-measure reveal.
+- **2026-05-25** — the silhouette pivot. Field background dropped; card hero becomes a bold black athlete silhouette on a soft-grey card. Open question left: does the cut-scene still play over the silhouette, or does the silhouette replace it?
+- **2026-05-26 (this revision)** — the silhouette **replaces** the cut-scene; cut-scene work is deferred (possible v2.1+ upgrade path). Grey shade locked to `#F4F4F4`. Each implement renders at its own authentic throw moment. Visual-language mix (stone + WFD carry kilt tartan; hammer + sheaf are pure black) accepted as-is for v2.0. Adaptive pair coverage shipped as-is (stone + WFD complete; hammer + sheaf single-only — gaps filled iteratively). **App renamed to Stone & Standard, added to 6a scope.**
 
-**This section revises the card's visual direction. Where it conflicts with the body below, this section is authoritative.** The 2026-05-25 cowork design session reworked the throws PR card's hero visual. The cut-scene material in the body is preserved but its status is now an open question — see "The open question" below.
+The body below is the current state. Where earlier revisions still inform the design rationale, the text below incorporates it. The cut-scene mechanism, the two motifs, and the implement-skin architecture are **removed from 6a** entirely.
 
-### Why it changed
+## Stage 6a scope — the buildable chunks
 
-Scope point 1 below put a Highland Games **field photo** behind the card. Oak rejected it across two build-and-react rounds — the photo and illustrated backdrops "looked like a track," and the cards read as "fun, not badass." A celebration card is the app's share-virality surface; it has to feel badass to be worth sharing.
+1. **The soft-grey card foundation** (`session.js`, `styles.css`). Replace the throws PR card's white background with `#F4F4F4`. Keep the card's content fields and 4:5 aspect ratio (settled in Stage 4 design). The text content — headline, event, mark, the was-line, the meta lines, the wordmark — stays where it is; the visual lift is the background colour, the silhouette, and the wordmark text (see point 4).
 
-### The new card foundation — an athlete silhouette
+2. **The implement-specific silhouette as card hero** (`session.js`, `styles.css`, `shared.js`). When a throws PR card fires, the card displays an athlete silhouette specific to the event's implement, anchored bottom-right of the card so the figure occupies the hero space and the text reads in the upper-left negative space.
 
-The throws PR card's hero visual is now a **bold black silhouette of an athlete mid-throw** on a **soft-grey card**. Locked decisions:
+   - **Selection key:** `(implement, athleteClass)` where:
+     - `implement` is derived from the event id (Open Stone & Braemar Stone → `stone`; Heavy & Light WFD → `weight-distance`; Heavy & Light Hammer → `hammer`; Sheaf Toss → `sheaf`; Weight Over Bar → no asset yet, see point 5).
+     - `athleteClass` is `adaptive` if the athlete's profile class is one of the four BCAA adaptive classes (Para-Seated, Para Standing Upper Limb Loss, Para Standing Lower Limb Loss, Para Standing Neuro/Muscular); otherwise `able-bodied`.
+   - **Default class:** `able-bodied` when the profile class is unset or doesn't map.
+   - **Selection is a pure helper in `shared.js`** (DOM-free, unit-testable) — same pattern as `detectMilestones`, `recomputeDerivedState`, and the 5a/5b helpers. `session.js` renders over it.
+   - **Asset filenames:** kebab-case `silhouette-[implement]-[class].png` (e.g. `silhouette-stone-adaptive.png`). The app builds the filename from the selection — no lookup table.
+   - **Asset path:** cowork stages assets in `images/silhouettes/` (a new directory). The current working copies live in `Images for Cards/`; ccode moves the v2.0 set into `images/silhouettes/` as part of this stage.
 
-- **Silhouettes are implement-specific.** A weight-for-distance throw, a stone throw, a hammer throw are visually distinct; each implement gets its own silhouette. First pair built: weight-for-distance.
-- **Two silhouettes per implement — adaptive and able-bodied.** Broken Caber Adaptive serves both; the card shows an athlete their own body, and the adaptive silhouette puts the prosthetics front and centre.
-- **Selection follows the athlete's profile class.** The card builds the asset filename from `(event's implement, profile class)`. Default class is **able-bodied** — the majority case.
-- **Background is a soft grey**, not pure white (pure white read as too stark). Shade is `#F4F4F4` or `#ECECEC` — Oak to confirm (see open items).
-- **Black figure on the grey** — black-on-light, "for now." The assets are transparent PNGs and colour-agnostic; a later move to a dark card with a light figure is a background-and-fill swap, not new art.
-- **The ground shadow stays** — the gpt silhouettes carry a scratchy ground shadow under the feet; Oak likes it; keep it.
+3. **Audio plumbing** (`session.js`, `styles.css`). A sound layer on the throws PR card:
+   - A play trigger when the card fires (silent for v2.0 — placeholder audio files).
+   - A **sound on/off toggle** on the celebration overlay.
+   - **Sound off by default.**
+   - Preference persisted in a **standalone `localStorage` flag** (not part of the v2 data blob or `profile`). Rename the existing `SOUND_PREF_KEY` in `session.js` to `'stone-and-standard-sound'` as part of point 4's rename work.
+   - Placeholder audio files at fixed paths under `audio/`. The card is fully built and testable now; the real clips drop into those paths when recorded.
+   - Playback is gesture-initiated (the card fires from Save Session or the View Celebrations replay click), so it is within browser autoplay policy.
 
-### How the silhouettes are produced
+4. **App rename to Stone & Standard.** This is the biggest scope addition over the previous draft. The rename touches user-facing surface, storage, backup, and tooling. Atomic commits, v1 style — break the rename into focused commits below.
 
-Not hand-built. Oak generates each from a real photo of that throw using ChatGPT image generation, exporting a **transparent-background PNG**; cowork trims, recolours to black, and saves the app-ready asset. (cowork attempted a code-built silhouette first — seven passes across four techniques: geometric reconstruction, GrabCut segmentation, a MediaPipe-segmentation hybrid, and a manual point-by-point trace — all landed at "clip-art mascot." A badass silhouette is a skilled-illustration job; gpt image generation is the production route.)
+   **4a. Surface rename** — `index.html`, `session.html`, `progress.html`, `tests.html`, `session.js` (line 788, the wordmark `textContent`), and any string literals that display the app name. All user-facing instances of "Highland Games Tracker" become "Stone & Standard" (with ampersand — keep the `&` rather than spelling out "and"; it's a brand mark, not running prose). Page `<title>` tags, h1 wordmarks, test-runner banners, the celebration-card wordmark.
 
-When generating a new pair, ask gpt for: a solid black silhouette of the athlete mid-throw, fully transparent background (no vignette, no backdrop cloud), the implement and a ground shadow included; export a transparent PNG. Naming: `silhouette-[implement]-[class].png` — the app builds the filename, no lookup table.
+   **4b. Storage namespace migration** — `shared.js`. Rename the `STORAGE_KEY` constant from `'highland-games-tracker-v1'` to `'stone-and-standard-v1'`. Add a one-time migration in `loadData()` that checks for the old key, copies the value to the new key, and leaves the old key in place (don't `removeItem` — same conservative pattern Stage 1 used when stripping from `comeback-tracker-v1`). The migration runs once when the new key is empty AND the old key has data. Idempotent.
 
-### Assets so far — in `Images for Cards/`
+   **4c. Backup envelope rename** — `shared.js` `validateBackup` (line 508). Add `'stone-and-standard'` as an accepted `appName`. Continue accepting `'highland-games-tracker'` and `'comeback-tracker'` for backward compatibility (so existing v1 and v2 backups still import). Update `exportData` to write the new `appName` going forward. Carry the schema migration unchanged — that runs after appName validation.
 
-- `silhouette-weight-distance-adaptive.png` — built, app-ready
-- `silhouette-weight-distance-able-bodied.png` — built, app-ready
-- the stone-throw pair — Oak to produce next, same method
-- (`Images for Cards/` also holds the raw source photos, the gpt source exports, and `.mov` reference clips — working material, not all of it app assets.)
+   **4d. Tooling and metadata** — `package.json` `name` field changes from `"highland-games-tracker"` to `"stone-and-standard"`. `package-lock.json` updates on next `npm install`. Check `biome.json` for any name reference (probably none, but verify).
 
-### What this supersedes
+   **4e. README rewrite** — `README.md`. Replace all brand mentions with Stone & Standard. The app's audience, description, and value prop stay the same; only the name changes.
 
-- **Scope point 1 — the Highland Games field background — is dropped.** The card is a soft-grey card carrying the silhouette, not a field photo.
-- The "plain white card → field" framing throughout the body is replaced by "soft-grey card with an implement-specific athlete silhouette."
+5. **Un-skinned-event fallback** (`session.js`). Weight Over Bar is currently the only throws event without a silhouette in `Images for Cards/`. For v2.0, when a Weight Over Bar PR fires, the card renders the soft-grey card with the text content but no silhouette image (background stays clean grey, layout adjusts). Spec-level call. When the Weight Over Bar silhouette lands in a later commit, the un-skinned branch self-removes (the file exists and is selected normally).
 
-### The open question — silhouette vs. cut-scene
+6. **Scope isolation** (`session.js`). Only the **throws PR card** takes the new silhouette + audio path. Lift PR cards, all Goal cards, and the Awesome Day card keep their current rendering, untouched. The build path branches cleanly on "this is a PR card and its event is a throw."
 
-The body of this spec is built around an animated **cut-scene** — the implement arcs, lands, a tape measure reveals the mark (the two motifs). The silhouette pivot does not by itself kill the cut-scene, but it reshapes the card enough that the relationship is unresolved:
-
-- Does the implement cut-scene still play, now over the silhouette card?
-- Or does the implement-specific silhouette *replace* the cut-scene as the card's event-specific visual, with a simpler reveal of the mark?
-
-**This is the first thing to settle next session, and the spec is not ccode-handoff-ready until it is.** The build order, the acceptance criteria, and the handoff/review prompts below all assume the field-plus-cut-scene card and must be reconciled once the question is answered.
-
-### Open items from this revision
-
-- **Silhouette vs. cut-scene** (above) — the structural open question; resolve first.
-- **The exact grey** — `#F4F4F4` (barely off-white) or `#ECECEC` (clearly soft). Oak to pick.
-- **v2.0 silhouette coverage + fallback.** Not every throw event will have a silhouette pair by v2.0. The spec must say which events ship with one and what the card shows for the rest — a generic thrower, no silhouette, or another route. (Overlaps the body's un-skinned-event fallback, scope point 6.)
-- **The profile `class` field.** Selection keys off an athlete-class field on the profile. ccode to confirm whether the profile already carries one or whether it must be added; able-bodied is the default.
-- **Card layout** — where the PR mark, headline, and meta lines sit relative to the silhouette. Build-and-react, but the silhouette occupying the card changes the layout from the body's assumptions.
-
-## Why the card lift is sub-divided
-
-The celebration-card lift is too big for one build, and the card types diverge (decided in the 2026-05-24 planning conversation):
-
-- **Throws PR card** — the full cut-scene treatment. *(This sketch — Stage 6a.)*
-- **Lift PR card** — its own separate treatment. Later.
-- **Goal cards** — throws and lifts share one package; this is where the confetti goes. Later.
-- **Awesome Day card** — its own treatment. Later.
-
-6a is first because it establishes the **cut-scene mechanism** the later card pieces draw on, and the throws PR card is the one a brand-new athlete is most likely to hit and share.
-
-## The cut scene — two motifs
-
-The throws PR card opens with a cut-scene animation of the throw's implement. "Event-specific" resolves to **two motifs**, not eight bespoke animations:
-
-**Distance motif** — Braemar Stone, Open Stone, Heavy Hammer, Light Hammer, Heavy Weight for Distance, Light Weight for Distance. Beats:
-
-1. The implement arcs out across a Highland Games field.
-2. It lands — the weight-clang sound.
-3. A tape measure runs out along the ground and reveals the distance — the PR mark.
-
-The implement is a swappable **skin**: a stone, a hammer, a weight.
-
-**Height motif** — Weight over Bar, Sheaf Toss. These are scored by bar height, not ground distance, so the distance beats do not fit. Beats:
-
-1. The implement arcs up toward a horizontal **bar**.
-2. It clears the bar and lands beyond it — the landing sound.
-3. **The bar is the ruler** — the bar sits at the cleared height with the height marked on it; that is the PR mark. No separate measuring tool is invented for the card.
-
-The implement skin: a weight, a sheaf.
-
-The two motifs are the same sequence — throw, measure, reveal the mark — one horizontal, one vertical. The mechanism is one parametrized thing: `(motif, implement skin)`.
-
-## Stage 6a scope — the buildable chunk
-
-1. **The Highland Games field background** (`session.js`, `styles.css`). Replace the throws PR card's white background with a treatment that reads as a Highland Games field. The app already ships `grass-field.jpg` (carried forward from v1's See the Gap). The card content — headline, event, mark, the was-line, the meta lines, the wordmark — must stay fully legible over it; contrast is the builder's to handle.
-
-2. **The cut-scene mechanism** (`shared.js`, `session.js`). When the throws PR card fires, a short cut-scene animation of the throw's implement plays as the card resolves. The mechanism is one parametrized thing — `(motif, implementSkin)` — **architected for both motifs (distance and height) and swappable implement skins from the start**, so later skins and the height build slot in without rework.
-
-3. **The distance motif + the stone skin — built in 6a** (`session.js`, `styles.css`). 6a builds the distance motif's rendering in full and ships **one** implement skin: the **stone** (covers Braemar Stone and Open Stone). The beats are the three under "Distance motif" above, ending with the tape-measure reveal.
-
-4. **The height motif — specified, built later.** The height motif is fully designed in this spec (the "two motifs" section, Resolved decision 4) so the mechanism is architected to carry it. Its *rendering* — the bar, the over-the-bar arc, the bar-as-ruler reveal — is a fill-in build, **not 6a**.
-
-5. **The audio plumbing** (`session.js`, `styles.css`). A sound layer on the throws PR card: a play trigger when the cut-scene fires; a **sound on/off toggle** on the celebration overlay; **sound off by default**; the preference persisted in a standalone `localStorage` flag (not part of the v2 data blob or `profile`). Built against placeholder/silent audio files at fixed known paths — the card is fully built and testable now; the real clips (a "Big throw!" shout, a weight-clang) drop into those paths once recorded. Playback is gesture-initiated (the card fires from Save Session, or the View Celebrations replay click), so it is within browser autoplay policy.
-
-6. **Un-skinned-event fallback** (`session.js`). *(Spec-level call.)* Until the hammer and weight-for-distance skins exist, a PR for those events — and any height-event PR before the height build — still fires a card. It gets the new field background and the tape-measure reveal **but skips the implement cut-scene** (no wrong implement, no broken animation) until its skin lands. The card is never worse than today.
-
-7. **Scope isolation** (`session.js`). Only the **throws PR card** takes the rich path. Lift PR cards, all Goal cards, and the Awesome Day card keep their current rendering, untouched. The build path branches cleanly on "this is a PR card and its event is a throw."
-
-8. **Tests** (`shared.js`, `tests.js`). The animation, the field visual, and audio playback are verified by the cowork browser smoke test (build-and-react). The unit-testable logic: the motif/skin selection (a throw event → the right motif + implement skin; a height event → the height motif; an un-skinned event → the fallback); the sound on/off state and its persistence; and that the rich path is gated to the throws PR card only (a lift PR, a Goal, or an Awesome Day card does not take it). The selection logic is a pure `shared.js` helper, `session.js` a thin layer over it — the `detectMilestones` / 5a-5b-helper pattern.
+7. **Tests** (`tests.js`, `tests.html`). Coverage:
+   - **Selection helper.** Each throw event maps to the right `(implement, class)` pair. Profile class `Para-Seated` → adaptive; profile class `Amateur A` → able-bodied; profile class unset → able-bodied. Weight Over Bar → un-skinned fallback (selection returns sentinel).
+   - **Sound toggle.** Off by default. Toggle persists across reloads in the standalone `localStorage` flag.
+   - **Storage migration.** When localStorage has data under the old `highland-games-tracker-v1` key and nothing under `stone-and-standard-v1`, `loadData()` copies and continues. Idempotent on re-call.
+   - **Backup import backward-compat.** A backup with `appName: 'highland-games-tracker'` still imports. A backup with `appName: 'stone-and-standard'` imports. A backup with `appName: 'comeback-tracker'` still imports (carries the v1 path).
+   - **Scope isolation.** A lift PR card, a Goal card, and an Awesome Day card render without the silhouette path.
 
 ## Acceptance criteria
 
 Stage 6a is done when all of these are true:
 
-- [ ] When a throws PR card fires, the card shows the Highland Games field background and plays the distance-motif cut-scene with the stone implement, ending in the tape-measure reveal of the mark.
-- [ ] The cut-scene mechanism is parametrized by `(motif, implementSkin)` and architected to carry the height motif and additional skins without rework.
-- [ ] A throw PR whose skin is not yet built shows the field-background card and the tape-measure reveal, with no implement cut-scene — never a wrong or broken animation.
-- [ ] Sound is off by default; a toggle on the overlay turns it on; the preference persists across reloads in a standalone localStorage flag; the placeholder audio files do not error.
-- [ ] The motif/skin selection lives in a pure `shared.js` helper with test coverage; `session.js` is the rendering layer.
-- [ ] Lift PR cards, Goal cards, and the Awesome Day card render exactly as before — the rich path is gated to the throws PR card.
-- [ ] `version` stays `2`; the milestone data, the `session.milestones[]` shape, and `showCelebrationQueue`'s contract are unchanged; no schema change beyond the standalone sound flag.
+- [ ] When a throws PR card fires, the card shows the `#F4F4F4` background and the implement-specific silhouette anchored as the hero. The mark, headline, event, was-line, meta lines, and wordmark all stay legible over the silhouette.
+- [ ] Silhouette selection lives in a pure `shared.js` helper with test coverage. `session.js` is the rendering layer.
+- [ ] Each throw event's PR card resolves to the correct silhouette: Open Stone / Braemar Stone → `silhouette-stone-{class}.png`; Heavy / Light WFD → `silhouette-weight-distance-{class}.png`; Heavy / Light Hammer → `silhouette-hammer-{class}.png` (currently `silhouette-hammer.png` until the adaptive variant lands); Sheaf Toss → `silhouette-sheaf-{class}.png` (currently `silhouette-sheaf.png`); Weight Over Bar → un-skinned fallback (no image).
+- [ ] Athletes with a BCAA adaptive profile class get the adaptive silhouette where one exists; otherwise the able-bodied silhouette. Default is able-bodied.
+- [ ] Sound is off by default; a toggle on the overlay turns it on; the preference persists across reloads in a standalone `localStorage` flag. Placeholder audio files do not error.
+- [ ] The app displays "Stone & Standard" as its name everywhere user-facing: page titles, h1 wordmarks, the celebration-card wordmark, the test-runner banner.
+- [ ] `STORAGE_KEY` is `'stone-and-standard-v1'`. A localStorage migration moves data from the old key on first launch with no data at the new key. Idempotent.
+- [ ] `validateBackup` accepts `'stone-and-standard'`, `'highland-games-tracker'`, and `'comeback-tracker'` as valid `appName` values. `exportData` writes `'stone-and-standard'` going forward.
+- [ ] `package.json` `name` is `"stone-and-standard"`. README is rewritten for the new name.
+- [ ] Lift PR cards, Goal cards, and the Awesome Day card render exactly as before — the silhouette + audio path is gated to the throws PR card.
+- [ ] `version` stays `2`; the milestone data, the `session.milestones[]` shape, and `showCelebrationQueue`'s contract are unchanged.
 - [ ] Vanilla HTML/CSS/JS, no build step, no npm runtime dependency added.
+- [ ] `npm run lint` exits 0 and silent.
+- [ ] All existing tests pass; new tests added (selection helper, sound toggle, storage migration, backup import backward-compat) pass.
 
 ## Explicitly NOT in Stage 6a
 
-- The **hammer** and **weight-for-distance** implement skins — fill-in builds.
-- The **height motif's rendering** — the weight-over-bar and sheaf-toss skins. The motif is *designed* here; it is built later.
-- The **lift PR card**, the **Goal cards** (and their confetti), the **Awesome Day card** — separate later pieces.
+- The **animated cut-scene mechanism** (motifs, implement skins, tape-measure / bar-as-ruler reveals) — deferred to a possible v2.1+ enhancement. The silhouette card is the v2.0 hero.
+- The **Weight Over Bar silhouette** — Oak to generate when ready. The un-skinned fallback (point 5) covers v2.0 launch.
+- The **adaptive variants for hammer and sheaf** — Oak to generate iteratively. Single-variant silhouettes ship in v2.0 for those two events.
 - The **real audio files** — recorded and injected later; 6a ships silent placeholders.
-- The rest of **Stage 6** — the cross-device smoke test, Cloudflare Web Analytics, the `v2.0.0` tag, the GitHub release.
+- The **cross-event visual-language harmonization** — accepted as-is (stone + WFD detailed-with-tartan, hammer + sheaf pure-black graphic). Not regenerating either set to match the other for v2.0.
+- The rest of **Stage 6** — the cross-device smoke test, Cloudflare Web Analytics, the `v2.0.0` tag, the GitHub release. Those follow 6a.
 
 ## Known interim state (by design)
 
-- After 6a only the **stone** animates. Hammer / weight-for-distance / height-event PRs get the field background and the tape-measure reveal but no implement cut-scene until their skins land (scope point 6) — expected, not a defect.
-- Audio is **silent** — placeholder files until Oak's clips are recorded and injected. The plumbing, the toggle, and the off-by-default state are all real and testable now.
-- A review should treat both as expected interim state.
+- **Weight Over Bar** PRs render the soft-grey card with text content and no silhouette until a WOB silhouette lands. Expected, not a defect.
+- **Hammer and sheaf adaptive variants** don't exist yet; an adaptive athlete who PRs a hammer or sheaf gets the existing single silhouette for that implement. Expected.
+- **Audio is silent** — placeholder files until real clips are recorded. The plumbing, the toggle, and the off-by-default state are all real and testable now.
+- A review should treat all three as expected interim state.
 
 ## Resolved decisions
 
-Settled in the 2026-05-24 card-lift planning conversation. Spec-level calls are marked.
+1. **Silhouette replaces the cut-scene** (2026-05-26). Cut-scene mechanism deferred to a possible v2.1+ upgrade. The silhouette is the card hero for v2.0.
+2. **Soft-grey card background is `#F4F4F4`** (2026-05-26). Not `#ECECEC`, not the app's existing `#f5f5f7` bg token. Card needs to read distinct from the page background; `#F4F4F4` is the closest reading that still feels like a card.
+3. **Each implement at its own throw moment** (2026-05-26). No cross-event throw-beat harmonization. Stone wind-up, weight-distance release, hammer mid-spin, sheaf apex — each is the implement's authentic iconic moment.
+4. **Visual-language mix accepted** (2026-05-26). Stone + WFD carry detailed silhouettes with white kilt tartan accents; hammer + sheaf are pure black graphic silhouettes. Not regenerating either for v2.0 — the adaptive vs able-bodied distinction is so rarely shown side-by-side that visual-language consistency between events isn't critical.
+5. **Adaptive pair coverage ships as-is** (2026-05-26). Stone and WFD have adaptive + able-bodied pairs. Hammer and sheaf have single silhouettes (treated as able-bodied for selection). Adaptive variants for hammer + sheaf are gaps to be filled iteratively after v2.0.
+6. **App renamed to Stone & Standard** (2026-05-26). Added to 6a scope; ships in v2.0. Brand name combines distance (stone) and height (standard = the bar's vertical posts).
+7. **Sound off by default**, toggle on the overlay, real clips injected later (2026-05-24, carried forward).
+8. **Scope: throws PR card only** (2026-05-24, carried forward). Lift PR, Goal, Awesome Day cards untouched.
 
-1. **Full lift, not minimal polish.** The celebration cards are the app's share-virality surface — every shared card advertises the app — so the visual lift is worth real investment.
+## Tech notes
 
-2. **Confetti is not on the PR card.** It moves to the Goal cards (a "you hit your target" gesture). The PR card opens with an implement cut-scene instead.
-
-3. **The cut-scene is event-specific, in two motifs** — distance and height — with swappable implement skins. Not eight bespoke animations.
-
-4. **The bar is the ruler** (height motif). Weight-over-bar and sheaf-toss are scored by bar height; the measure beat is the bar at the cleared height with the number on it — no separate measuring tool.
-
-5. **Sound off by default**, with a toggle on the overlay. The audio plumbing is built now; the real clips are injected later.
-
-6. **Phasing.** The cut-scene mechanism (architected for both motifs) + the distance motif + the stone skin ship first (6a). Other distance skins, and the height motif's rendering, fill in after.
-
-7. **Scope: throws PR card only.** The lift PR card is a separate later treatment; the Goal cards are a single throws-and-lifts package (later, with the confetti); the Awesome Day card is later.
-
-8. *(Spec-level.)* **Un-skinned throw events** fall back to the field card + tape measure with no implement cut-scene until their skin is built.
-
-## Tech notes (decided)
-
-- Vanilla HTML/CSS/JS, no build step — held. The cut-scene and tape-measure animations are hand-rolled SVG + CSS. No npm runtime dependency. (Confetti — a Goal-card concern, not 6a — is the only place a single vendored MIT file might later be weighed.)
-- The celebration cards live in `session.js` — the `showCelebrationQueue` queue and the card builders — and `styles.css`. 6a branches the PR-card build path; it does not change `showCelebrationQueue`'s signature or the milestone data.
-- **The motif/skin selection is a pure helper in `shared.js`** — DOM-free, unit-testable — the same pattern as `detectMilestones`, `recomputeDerivedState`, and the 5a/5b helpers. `session.js` renders over it.
-- No schema change. The sound preference is a **standalone localStorage flag**, not part of the v2 data blob or `profile`. `version` stays `2`.
+- Vanilla HTML/CSS/JS, no build step — held. Silhouettes are static PNGs; no animation rendering required. No npm runtime dependency added.
+- The celebration cards live in `session.js` — the `showCelebrationQueue` queue and the card builders — and `styles.css`. 6a branches the PR-card build path for throws; it does not change `showCelebrationQueue`'s signature or the milestone data.
+- **The silhouette selection is a pure helper in `shared.js`** — DOM-free, unit-testable — same pattern as `detectMilestones`, `recomputeDerivedState`, and the 5a/5b helpers. `session.js` renders over it.
+- **The storage migration runs once in `loadData()`** — same idempotent pattern as `migrateSchemaV1toV2` (check, do, leave a sentinel). Subsequent loads see the new key populated and skip.
+- **No schema change.** The sound preference is a standalone `localStorage` flag. `version` stays `2`. The milestone data, `session.milestones[]`, and the v2 data blob are untouched.
 - Audio via the HTML5 `Audio` API; placeholder files at fixed paths so the real clips are a drop-in. The card fires from a user gesture, so playback is within browser autoplay policy.
-- **The cut-scene must be short and ideally tap-to-skip.** It plays every time a throws PR card fires; it cannot become something the athlete waits through on every save. Keep it brief; a skip affordance is recommended.
-- **Build-and-react.** The visual *feel* — the field treatment, the implement art style, the animation timing and easing — is iterated in code with cowork screenshots, not pixel-specified here. The spec fixes the *structure* (the beats, the two motifs, the scope, the plumbing); the feel comes together in the loop.
 
 ## Files Stage 6a touches
 
-- `session.js` — the celebration-card build path branches for the throws PR card: the cut-scene mechanism, the field background, the audio trigger and the sound toggle, the un-skinned fallback.
-- `shared.js` — the pure motif/skin selection helper.
-- `styles.css` — the field background, the card restyle, the cut-scene and tape-measure animations, the sound toggle.
-- `tests.js` — new coverage (scope point 8).
-- **New asset files** — placeholder audio under `audio/`, and any SVG/image assets for the field and the stone implement. ccode adds whatever it creates.
-- `index.html`, `progress.html`, `tests.html`, `app.js` — untouched.
+- `session.js` — the celebration-card build path branches for the throws PR card: the soft-grey background, the silhouette `<img>`, the audio trigger and the sound toggle, the un-skinned fallback for Weight Over Bar. Wordmark `textContent` updated. `SOUND_PREF_KEY` renamed.
+- `shared.js` — the pure silhouette-selection helper. `STORAGE_KEY` constant renamed. Storage migration added inside `loadData()`. `validateBackup` accepts the new `appName`; `exportData` writes the new `appName`.
+- `styles.css` — the soft-grey card background, the silhouette layout (anchoring, sizing, overflow handling), the sound-toggle styling. Remove any throw-card styling that was specific to the field-photo / cut-scene mechanism (verify what's left from the 2026-05-25 silhouette pivot work).
+- `tests.js` — new coverage (selection helper, sound toggle, storage migration, backup import backward-compat).
+- `index.html`, `session.html`, `progress.html`, `tests.html` — page `<title>`, h1 wordmark text updated to "Stone & Standard".
+- `app.js` — verify any string literals; update if present.
+- `package.json` — `name` field. `package-lock.json` regenerates on next `npm install`.
+- `README.md` — rewrite for Stone & Standard.
+- **New asset files** — `images/silhouettes/silhouette-stone-adaptive.png`, `silhouette-stone-able-bodied.png`, `silhouette-weight-distance-adaptive.png`, `silhouette-weight-distance-able-bodied.png`, `silhouette-hammer.png`, `silhouette-sheaf.png`. Cowork stages the assets in `Images for Cards/`; ccode moves them to `images/silhouettes/` as part of the build.
+- **Placeholder audio files** under `audio/` (verify what's there; add silent placeholder MP3/WAV if missing).
+- `biome.json` — verify for any app-name reference.
 
 ## Risk note
 
-Project risk is **Normal**, and 6a sits at the **low-to-moderate** end. It is a presentation change — it does not touch the milestone data or the schema, and the card still re-derives from `session.milestones[]`; the one new stored value is a standalone sound-preference flag, so there is no data-loss surface. What lifts it off "low": 6a is the first stage to modify a *shipped* feature's rendering (the Stage 4 celebration system), and animation plus audio carry browser-compat and performance surface.
+Project risk is **Normal**, sitting at the **moderate** end (higher than the original 6a draft) because the rename touches storage and backup — surfaces with user-data implications. The card visual is presentation-only and low-risk. The rename, by contrast, has two real risk surfaces:
+
+1. **Storage migration correctness.** Users of v2.0-staged builds have data under `highland-games-tracker-v1`. If the migration is wrong (overwrites without check, runs more than once, partial copies, key mismatch), data loss is possible. Mitigation: idempotent guard (only migrate if new key is empty AND old key has data); the migration only *copies*, never deletes the old key. Tests cover the migration paths.
+2. **Backup import backward-compat.** Existing exported backups carry `appName: 'highland-games-tracker'` (and v1 carries `'comeback-tracker'`). Both must continue to import. Mitigation: explicit `appName` allowlist in `validateBackup`; tests cover all three.
 
 The gpt review's focus:
 
-- The rich path is **isolated to the throws PR card** — a lift PR card, a Goal card, and an Awesome Day card render exactly as before.
-- The motif/skin selection is correct — each throw event maps to the right motif; a height event maps to the height motif; an un-skinned event maps to the graceful fallback (field card + tape measure, no cut-scene), never a broken or wrong-implement animation.
-- Audio: sound is genuinely off by default; the toggle works and persists; nothing autoplays against browser policy; the placeholder files do not throw.
-- The cut-scene cannot block or jank — short, ideally skippable; no performance cliff on save.
+- The silhouette path is **isolated to the throws PR card** — a lift PR card, a Goal card, and an Awesome Day card render exactly as before.
+- Silhouette selection is correct — each throw event maps to the right `(implement, class)` pair; adaptive athletes get the adaptive variant where one exists; Weight Over Bar maps to the un-skinned fallback.
+- Storage migration is **idempotent and safe** — never overwrites a populated new key; never deletes the old key.
+- `validateBackup` accepts all three legacy `appName` values; `exportData` writes the new one.
+- Sound is genuinely off by default; the toggle works and persists; nothing autoplays against browser policy; the placeholder files do not throw.
 - No schema change; `version` stays `2`; the milestone data and `showCelebrationQueue`'s contract are untouched.
 - The no-build / vanilla constraint held — no npm runtime dependency added.
+- `npm run lint` exits 0 and silent.
 
 ## Open items
 
-**The 2026-05-25 revision adds blocking open items — see "Open items from this revision" in the Revision section. Most important: the spec is not ccode-handoff-ready until the silhouette-vs-cut-scene question is resolved.**
-
-From the original (v1) sketch, none blocking:
-
-- The **visual feel** — the field treatment, the implement art style, the animation timing — is build-and-react, iterated with cowork screenshots. Not a spec item.
-- The **un-skinned-event fallback** (scope point 6) is a spec-level call — override at review if you picture it differently.
-- The **"Stage 6a" naming** is a spec-level call.
-- The **sheaf landing audio** — a sheaf lands soft, not a metal clang; when the audio is recorded, the sheaf event wants a softer landing sound or leans on the shout alone. A height-motif fill-in concern, flagged here so it is not lost.
-- Whether the cut-scene is **tap-to-skip** — recommended; builder/Oak call at review.
+- **Audio file format and location** — Oak to confirm path under `audio/` (e.g. `audio/throw-shout.mp3`, `audio/stone-clang.mp3`) and that ccode should add silent placeholders at those paths.
+- **Card layout for Sheaf Toss** — the sheaf silhouette includes the bar and vertical standards, making it taller than the distance-event silhouettes. The card layout (CSS) may need a sheaf-specific anchoring rule, or the silhouette may need to be re-cropped. Build-and-react during ccode's pass.
+- **Weight Over Bar silhouette** — Oak to generate when ready. v2.0 ships with the un-skinned fallback for this event.
+- **Hammer + sheaf adaptive variants** — Oak to generate when ready. v2.0 ships single-variant for those events.
 
 ## Handoff prompt for the next ccode session
 
-*(⚠ Stale as of the 2026-05-25 revision — written for the field-background + cut-scene card. Do not hand to ccode until the silhouette-vs-cut-scene open question is resolved and this prompt is reconciled with the Revision section.)*
-
 ```text
-ccd, this is Stage 6a of the Highland Games Tracker v2 build — the
-first piece of Stage 6 (launch polish): the throws PR celebration
-card lift.
+ccd, this is Stage 6a of the Stone & Standard v2 build — the final
+feature stage before v2.0 launch. It combines:
+
+  (a) The throws PR celebration card visual lift — soft-grey card with
+      an implement-specific athlete silhouette as the hero, plus audio
+      plumbing (sound toggle, off by default, placeholder files).
+  (b) The app rename from "Highland Games Tracker" to "Stone & Standard"
+      across surface, storage, backup, and tooling.
 
 Read these two files:
   - docs/specs/v2-stage6a-spec.md  (this spec — scope, acceptance
-                                    criteria, resolved decisions, the
-                                    two cut-scene motifs)
-  - v2-plan.md  (repo root — Stage 6, and the celebration-card design)
+                                    criteria, resolved decisions,
+                                    files touched, atomic commit
+                                    sequence)
+  - v2-plan.md  (repo root — Stage 6, the celebration-card design,
+                 the audience and product framing)
 
-The project is at ~/dev/highland-games-tracker, on main, tagged
-v2.0.0-stage5b. Stage 6a lifts the THROWS PR celebration card from a
-plain white card into a moment: a Highland Games field background, an
-event-specific implement cut-scene, audio plumbing, and a tape-measure
-reveal.
+The project is at ~/dev/highland-games-tracker (note: the repo
+directory keeps its old name; the rename is at the brand layer, not
+the filesystem layer — leaving the repo directory rename for after
+v2.0 ships). The project is on main, tagged v2.0.0-stage5b.
 
-Build, in this order:
-  1. The field background + the card restyle.
-  2. The cut-scene MECHANISM — architected for both motifs (distance
-     and height) and swappable implement skins — plus the DISTANCE
-     motif rendering and the STONE skin (covers Braemar + Open Stone),
-     ending in the tape-measure reveal.
-  3. The audio plumbing — a sound on/off toggle on the overlay, sound
-     OFF by default, the preference persisted in a standalone
-     localStorage flag, built against placeholder/silent audio files
-     at fixed paths. The real clips are injected later.
+Build in this order — atomic commits, v1 style (feat:/fix:/chore:/
+docs:/refactor: prefixes, one concern each):
 
-The HEIGHT motif (weight over bar, sheaf toss) is fully specified in
-the spec — architect the mechanism to carry it — but do NOT build its
-rendering or skins in 6a; that is a fill-in build. The hammer and
-weight-for-distance skins are fill-in too. An un-skinned throw event
-falls back to the field card + tape measure with no implement
-cut-scene (spec scope point 6).
+  1. The soft-grey card background + the silhouette as hero (the
+     visual lift). Use the silhouette PNGs already staged in
+     "Images for Cards/" — move the v2.0 set into images/silhouettes/
+     with the kebab-case naming the spec lists. Build the pure
+     selection helper in shared.js first (DOM-free, unit-tested),
+     then the render layer in session.js. Un-skinned fallback for
+     Weight Over Bar.
 
-Only the THROWS PR card takes the rich path. Lift PR cards, Goal
-cards, and the Awesome Day card render exactly as they do today —
-leave them untouched.
+  2. The audio plumbing — sound toggle on the overlay, OFF by
+     default, preference in a standalone localStorage flag named
+     'stone-and-standard-sound', placeholder audio files at fixed
+     paths under audio/.
 
-Put the motif/skin selection in a pure shared.js helper (DOM-free,
+  3. The surface rename — page titles, h1 wordmarks, the celebration-
+     card wordmark, the test-runner banner. All user-facing
+     "Highland Games Tracker" → "Stone & Standard" (with the
+     ampersand, not "and").
+
+  4. The storage namespace migration — STORAGE_KEY renamed, idempotent
+     migration in loadData() that copies from the old key to the new
+     when the new is empty AND the old has data. Never delete the old
+     key.
+
+  5. The backup envelope rename — validateBackup accepts
+     'stone-and-standard', 'highland-games-tracker', and
+     'comeback-tracker'. exportData writes 'stone-and-standard'.
+
+  6. The tooling and metadata — package.json name field, README
+     rewrite for the new brand.
+
+  7. Tests for everything: selection helper (per event, per class,
+     fallback for WOB), sound toggle persistence, storage migration
+     idempotence, backup import backward-compat across all three
+     appName values, scope isolation (lift/goal/awesomeDay cards
+     unchanged).
+
+Only the THROWS PR card takes the silhouette + audio path. Lift PR
+cards, Goal cards, and the Awesome Day card render exactly as they do
+today — leave them untouched.
+
+Put the silhouette selection in a pure shared.js helper (DOM-free,
 unit-tested), the same pattern as detectMilestones and the 5a/5b
 helpers; session.js (where showCelebrationQueue lives) is the
 rendering layer.
 
-Vanilla HTML/CSS/JS, no build step — hand-rolled SVG/CSS animation,
-no npm runtime dependency. version stays 2; no schema change beyond
-the standalone sound-preference flag.
+Vanilla HTML/CSS/JS, no build step — no animation logic, no npm
+runtime dependency. version stays 2; no schema change beyond the
+standalone sound-preference flag.
 
 Build to the spec's Acceptance criteria. Note the Resolved decisions —
-do not relitigate them. This is build-and-react: cowork will
-screenshot your pass and Oak will react on the visual feel, so an
-honest first pass is what's wanted, not pixel-perfection.
+do not relitigate them. Note the Risk note — concentrate on storage-
+migration correctness and backup backward-compat; data-loss surfaces
+are the real risk on this stage. The visual feel is build-and-react:
+cowork will screenshot your pass and Oak will react on the card
+visual.
 
 Skill level: L1 — Supported. Reviewer: gpt.
 
-Atomic commits, v1 style (feat:/fix:/chore:/refactor: prefixes, one
-concern each — the background, the cut-scene mechanism + stone, the
-audio plumbing, and the tests are natural separate commits). Do not
-push — give me the push commands when the local commits are ready.
+Do not push — give me the push commands when the local commits are
+ready. npm run lint must exit 0 and silent before handoff.
 ```
 
 ## Review prompt for the gpt review pass
@@ -282,73 +256,92 @@ push — give me the push commands when the local commits are ready.
 ```text
 You are gpt — the Reviewer in the Higgins Method, a solo build system.
 A build was done by ccode (Claude Code, a separate model); your job is
-an independent cross-check. This is Stage 6a of the Highland Games
-Tracker v2 project — the throws PR celebration card lift, the first
-piece of Stage 6 (launch polish). Skill level: L1 — Supported. Project
-risk: Normal — low-to-moderate (a presentation change to a shipped
-feature; no schema change beyond a standalone sound-preference flag).
+an independent cross-check. This is Stage 6a of the Stone & Standard
+v2 project — the final feature stage before v2.0 launch. It bundles
+the throws PR celebration card visual lift (silhouette + soft-grey
+card + audio plumbing) and the app rename from "Highland Games
+Tracker" to "Stone & Standard" (surface + storage + backup + tooling).
+Skill level: L1 — Supported. Project risk: Normal — moderate (storage
+and backup touched).
 
-WHAT TO READ — attach these 7 files. The list is alphabetical to match
-the file picker, and numbered so you know when all 7 are attached:
+WHAT TO READ — attach these 9 files. The list is alphabetical to
+match the file picker, and numbered so you know when all 9 are
+attached:
 
-1. higgins-method.md — your Reviewer role, the L1 level, the
+1. README.md — the rebrand on the user-facing intro.
+2. app.js — any name references; ensure the rebrand is complete.
+3. higgins-method.md — your Reviewer role, the L1 level, the
    one-review-pass rule.
-2. session.js — the celebration cards: showCelebrationQueue, the card
-   builders, the cut-scene mechanism, the audio toggle.
-3. shared.js — the pure motif/skin selection helper.
-4. styles.css — the field background, the card restyle, the cut-scene
-   and tape-measure animations.
-5. tests.js — the test suite.
-6. v2-plan.md — Stage 6 and the celebration-card design.
-7. v2-stage6a-spec.md — the Stage 6a spec. "Acceptance criteria" is
-   the bar; "Resolved decisions" fix the design calls (do not
-   relitigate them); "Risk note" says where to concentrate; "Known
-   interim state" says what is expected rather than a bug.
+4. package.json — name field changed.
+5. session.js — the celebration cards, the silhouette render path,
+   the sound toggle, the un-skinned fallback, the wordmark.
+6. shared.js — the pure silhouette-selection helper, STORAGE_KEY
+   rename, the storage migration, validateBackup, exportData.
+7. styles.css — the soft-grey card, the silhouette layout, the sound
+   toggle styling.
+8. tests.js — the new test coverage.
+9. v2-stage6a-spec.md — the spec. "Acceptance criteria" is the bar;
+   "Resolved decisions" fix the design calls (do not relitigate them);
+   "Risk note" says where to concentrate; "Known interim state" says
+   what is expected rather than a bug.
 
-If ccode created any new JS or CSS files for the cut-scene, attach
-those too. The placeholder audio files do not need attaching.
+If ccode created any new JS or CSS files, attach those too. The
+silhouette PNGs and placeholder audio do not need attaching.
 
 Review the code itself — do not rely on ccode's build report. This
 must be an independent read.
 
 CONCENTRATE HERE
-- The rich path is isolated to the throws PR card — a lift PR card, a
-  Goal card, and an Awesome Day card render exactly as before.
-- Motif/skin selection: each throw event maps to the right motif; a
-  height event maps to the height motif; an un-skinned event maps to
-  the graceful fallback (field card + tape measure, no cut-scene),
-  never a broken or wrong-implement animation.
+- Storage migration: idempotent, safe under re-call, never
+  destructive of the old key. The migration only runs when the new
+  key is empty AND the old key has data.
+- Backup import backward-compat: validateBackup accepts
+  'stone-and-standard', 'highland-games-tracker', and
+  'comeback-tracker'. exportData writes the new name. A v1
+  comeback-tracker backup still imports (carries through the schema
+  migration).
+- The silhouette path is isolated to the throws PR card — a lift PR
+  card, a Goal card, and an Awesome Day card render exactly as
+  before.
+- Silhouette selection: each throw event maps to the right
+  (implement, class) pair; adaptive athletes (BCAA adaptive classes)
+  get the adaptive variant where one exists; Weight Over Bar maps to
+  the un-skinned fallback (no image).
 - Audio: sound is genuinely off by default; the toggle works and the
   preference persists; nothing autoplays against browser policy; the
   placeholder files do not throw.
-- The cut-scene cannot block or jank — short, ideally skippable.
-- No schema change; version stays 2; the milestone data and
+- The rebrand is complete — no "Highland Games Tracker" or
+  "highland-games-tracker" strings remain in user-facing surface or
+  code constants (test fixtures referencing old keys for migration
+  tests are expected and correct).
+- No schema change; version stays 2; milestone data and
   showCelebrationQueue's contract are untouched.
 
 ALSO CHECK
-- The motif/skin selection logic is a pure shared.js helper with test
-  coverage; session.js is a thin rendering layer.
-- The HEIGHT motif and the non-stone skins were NOT built (fill-in) —
-  their absence is expected, not a defect.
+- The silhouette selection logic is a pure shared.js helper with
+  test coverage; session.js is a thin rendering layer.
 - The no-build / vanilla constraint held — no npm runtime dependency.
+- npm run lint exits 0 and silent.
 - Whether the build meets each item in the spec's Acceptance criteria.
 
 HOW TO REPORT
 - Classify every finding: Critical / Major / Minor / Nit.
-  Critical = a wrong computation that breaks the card, an acceptance
-  criterion unmet, or the rich path leaking into other card types.
+  Critical = a data-loss path in the storage migration, a backup
+  import path broken for legacy appName, an acceptance criterion
+  unmet, or the silhouette path leaking into other card types.
 - Be specific: file, function, what is wrong, why it matters.
 - Separate real defects from style preferences. The visual feel is
   build-and-react and out of scope for the review — do not critique
-  colors, spacing, or animation taste; review correctness.
+  colours, spacing, or layout taste; review correctness.
 - This is a personal/community vanilla-JS localStorage app at L1 /
-  Normal risk — calibrate to that. Don't demand enterprise hardening.
+  Normal-moderate risk — calibrate to that. Don't demand enterprise
+  hardening.
 
 METHOD CONSTRAINT
-This is the one review pass. A second round happens only if this pass
-finds something Critical. Give one complete review — findings by
-severity, then a one-line verdict: ship as-is, ship after fixes, or
-fix-and-re-review (Critical only).
+This is the one review pass. A second round happens only if this
+pass finds something Critical. Give one complete review — findings
+by severity, then a one-line verdict: ship as-is, ship after fixes,
+or fix-and-re-review (Critical only).
 ```
 
 Attach the listed files only — don't paste ccode's build report; gpt's review must be an independent read.
