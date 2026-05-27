@@ -3734,6 +3734,69 @@ test('sound preference: uses a key separate from the v2 data blob (no schema cha
   assertTrue(SOUND_PREF_KEY !== STORAGE_KEY, 'sound flag is not the data key');
 });
 
+// --- Stage 6a: storage namespace migration (Stone & Standard rename) ---
+//
+// Each test backs up and restores BOTH keys so the suite (which only snapshots
+// STORAGE_KEY) and any real browser data are left untouched.
+
+function withStorageKeysRestored(fn) {
+  const savedNew = localStorage.getItem(STORAGE_KEY);
+  const savedOld = localStorage.getItem(LEGACY_STORAGE_KEY);
+  try {
+    fn();
+  } finally {
+    if (savedNew === null) localStorage.removeItem(STORAGE_KEY);
+    else localStorage.setItem(STORAGE_KEY, savedNew);
+    if (savedOld === null) localStorage.removeItem(LEGACY_STORAGE_KEY);
+    else localStorage.setItem(LEGACY_STORAGE_KEY, savedOld);
+  }
+}
+
+test('storage migration: copies the old key forward when the new key is empty', () => {
+  withStorageKeysRestored(() => {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify({
+      version: 2, prs: { 'open-stone': 300 }, sessions: [],
+    }));
+    const data = loadData();
+    assertEqual(data.prs['open-stone'], 300, 'data resolved from the old key');
+    assertTrue(localStorage.getItem(STORAGE_KEY) !== null, 'new key populated');
+    assertTrue(localStorage.getItem(LEGACY_STORAGE_KEY) !== null, 'old key is never deleted');
+  });
+});
+
+test('storage migration: idempotent — never overwrites a populated new key', () => {
+  withStorageKeysRestored(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 2, prs: { 'open-stone': 999 }, sessions: [] }));
+    localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify({ version: 2, prs: { 'open-stone': 1 }, sessions: [] }));
+    assertEqual(loadData().prs['open-stone'], 999, 'new key wins; old never overwrites');
+    assertEqual(loadData().prs['open-stone'], 999, 'still the new key on re-call');
+  });
+});
+
+test('storage migration: nothing under either key => fresh v2 data', () => {
+  withStorageKeysRestored(() => {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
+    const data = loadData();
+    assertEqual(data.version, 2, 'fresh v2 data');
+    assertDeepEqual(data.prs, {}, 'empty prs');
+  });
+});
+
+test('storage migration: a copied v1 blob still runs the v1→v2 schema migration', () => {
+  withStorageKeysRestored(() => {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify({
+      version: 1, baselines: { 'open-stone': 280 }, sessions: [],
+    }));
+    const data = loadData();
+    assertEqual(data.version, 2, 'schema migrated to v2');
+    assertEqual(data.prs['open-stone'], 280, 'baselines → prs');
+    assertTrue(localStorage.getItem(LEGACY_STORAGE_KEY) !== null, 'old key still present');
+  });
+});
+
 // --- Stage 6a: silhouette path gated to the throws PR card ---
 
 test('silhouette path: a throws PR card takes the silhouette/soft-grey path', () => {
