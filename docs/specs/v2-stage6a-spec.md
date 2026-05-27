@@ -1,6 +1,6 @@
-# Highland Games Tracker — Stage 6a Spec Sketch (v1)
+# Highland Games Tracker — Stage 6a Spec Sketch (v2)
 
-**Date:** 2026-05-24
+**Date:** 2026-05-24 · **Revised:** 2026-05-25 — the silhouette pivot (see the Revision section; parts of the body below are superseded)
 **Skill level:** L1 — Supported (L1 sub-gates paused for the rest of v2)
 **Project risk:** Normal — the low-to-moderate end (a presentation change to a shipped feature; the only new stored value is a small sound-preference flag)
 **Repo:** `~/dev/highland-games-tracker` — on `main`, tagged `v2.0.0-stage5b`
@@ -15,6 +15,60 @@ Stage 6 of the v2 build is the launch-polish basket — the celebration-card vis
 Today the PR card is a plain white card. Stage 6a turns the throws PR card into a *moment*: a Highland Games field background, a cinematic cut-scene of the throw's implement, audio, and a measuring reveal. The card's content fields and 4:5 aspect ratio (settled in the Stage 4 design, confirmed correct in the Stage 5 wrap) do not change — this is the "visual feel" pass `v2-plan.md` deferred.
 
 *(The "Stage 6a" name is a spec-level call — the card lift sub-divides, and this is the throws PR card piece. Rename at spec review if you'd rather.)*
+
+## Revision — the silhouette pivot (2026-05-25)
+
+**This section revises the card's visual direction. Where it conflicts with the body below, this section is authoritative.** The 2026-05-25 cowork design session reworked the throws PR card's hero visual. The cut-scene material in the body is preserved but its status is now an open question — see "The open question" below.
+
+### Why it changed
+
+Scope point 1 below put a Highland Games **field photo** behind the card. Oak rejected it across two build-and-react rounds — the photo and illustrated backdrops "looked like a track," and the cards read as "fun, not badass." A celebration card is the app's share-virality surface; it has to feel badass to be worth sharing.
+
+### The new card foundation — an athlete silhouette
+
+The throws PR card's hero visual is now a **bold black silhouette of an athlete mid-throw** on a **soft-grey card**. Locked decisions:
+
+- **Silhouettes are implement-specific.** A weight-for-distance throw, a stone throw, a hammer throw are visually distinct; each implement gets its own silhouette. First pair built: weight-for-distance.
+- **Two silhouettes per implement — adaptive and able-bodied.** Broken Caber Adaptive serves both; the card shows an athlete their own body, and the adaptive silhouette puts the prosthetics front and centre.
+- **Selection follows the athlete's profile class.** The card builds the asset filename from `(event's implement, profile class)`. Default class is **able-bodied** — the majority case.
+- **Background is a soft grey**, not pure white (pure white read as too stark). Shade is `#F4F4F4` or `#ECECEC` — Oak to confirm (see open items).
+- **Black figure on the grey** — black-on-light, "for now." The assets are transparent PNGs and colour-agnostic; a later move to a dark card with a light figure is a background-and-fill swap, not new art.
+- **The ground shadow stays** — the gpt silhouettes carry a scratchy ground shadow under the feet; Oak likes it; keep it.
+
+### How the silhouettes are produced
+
+Not hand-built. Oak generates each from a real photo of that throw using ChatGPT image generation, exporting a **transparent-background PNG**; cowork trims, recolours to black, and saves the app-ready asset. (cowork attempted a code-built silhouette first — seven passes across four techniques: geometric reconstruction, GrabCut segmentation, a MediaPipe-segmentation hybrid, and a manual point-by-point trace — all landed at "clip-art mascot." A badass silhouette is a skilled-illustration job; gpt image generation is the production route.)
+
+When generating a new pair, ask gpt for: a solid black silhouette of the athlete mid-throw, fully transparent background (no vignette, no backdrop cloud), the implement and a ground shadow included; export a transparent PNG. Naming: `silhouette-[implement]-[class].png` — the app builds the filename, no lookup table.
+
+### Assets so far — in `Images for Cards/`
+
+- `silhouette-weight-distance-adaptive.png` — built, app-ready
+- `silhouette-weight-distance-able-bodied.png` — built, app-ready
+- the stone-throw pair — Oak to produce next, same method
+- (`Images for Cards/` also holds the raw source photos, the gpt source exports, and `.mov` reference clips — working material, not all of it app assets.)
+
+### What this supersedes
+
+- **Scope point 1 — the Highland Games field background — is dropped.** The card is a soft-grey card carrying the silhouette, not a field photo.
+- The "plain white card → field" framing throughout the body is replaced by "soft-grey card with an implement-specific athlete silhouette."
+
+### The open question — silhouette vs. cut-scene
+
+The body of this spec is built around an animated **cut-scene** — the implement arcs, lands, a tape measure reveals the mark (the two motifs). The silhouette pivot does not by itself kill the cut-scene, but it reshapes the card enough that the relationship is unresolved:
+
+- Does the implement cut-scene still play, now over the silhouette card?
+- Or does the implement-specific silhouette *replace* the cut-scene as the card's event-specific visual, with a simpler reveal of the mark?
+
+**This is the first thing to settle next session, and the spec is not ccode-handoff-ready until it is.** The build order, the acceptance criteria, and the handoff/review prompts below all assume the field-plus-cut-scene card and must be reconciled once the question is answered.
+
+### Open items from this revision
+
+- **Silhouette vs. cut-scene** (above) — the structural open question; resolve first.
+- **The exact grey** — `#F4F4F4` (barely off-white) or `#ECECEC` (clearly soft). Oak to pick.
+- **v2.0 silhouette coverage + fallback.** Not every throw event will have a silhouette pair by v2.0. The spec must say which events ship with one and what the card shows for the rest — a generic thrower, no silhouette, or another route. (Overlaps the body's un-skinned-event fallback, scope point 6.)
+- **The profile `class` field.** Selection keys off an athlete-class field on the profile. ccode to confirm whether the profile already carries one or whether it must be added; able-bodied is the default.
+- **Card layout** — where the PR mark, headline, and meta lines sit relative to the silhouette. Build-and-react, but the silhouette occupying the card changes the layout from the body's assumptions.
 
 ## Why the card lift is sub-divided
 
@@ -148,7 +202,9 @@ The gpt review's focus:
 
 ## Open items
 
-None blocking.
+**The 2026-05-25 revision adds blocking open items — see "Open items from this revision" in the Revision section. Most important: the spec is not ccode-handoff-ready until the silhouette-vs-cut-scene question is resolved.**
+
+From the original (v1) sketch, none blocking:
 
 - The **visual feel** — the field treatment, the implement art style, the animation timing — is build-and-react, iterated with cowork screenshots. Not a spec item.
 - The **un-skinned-event fallback** (scope point 6) is a spec-level call — override at review if you picture it differently.
@@ -157,6 +213,8 @@ None blocking.
 - Whether the cut-scene is **tap-to-skip** — recommended; builder/Oak call at review.
 
 ## Handoff prompt for the next ccode session
+
+*(⚠ Stale as of the 2026-05-25 revision — written for the field-background + cut-scene card. Do not hand to ccode until the silhouette-vs-cut-scene open question is resolved and this prompt is reconciled with the Revision section.)*
 
 ```text
 ccd, this is Stage 6a of the Highland Games Tracker v2 build — the
