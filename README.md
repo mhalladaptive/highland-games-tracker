@@ -112,12 +112,12 @@ tier modifiers.
 
 ### Backup import
 
-If you used the original *Comeback Tracker* fork or an earlier Highland
-Games Tracker build, your backup imports cleanly. The app accepts v1
-and v2 backup files under any of its historical names, migrates the
-schema forward, and maps your hardcoded lifts (Overhead Press,
-Deadlift, Hang Clean, etc.) into user-defined entries with their names,
-protocols, and IDs preserved.
+If you used the original *Comeback Tracker* fork or any prior version
+of this app, your backup imports cleanly. The app accepts v1 and v2
+backup files under any of its historical names, migrates the schema
+forward, and maps your hardcoded lifts (Overhead Press, Deadlift, Hang
+Clean, etc.) into user-defined entries with their names, protocols,
+and IDs preserved.
 
 ## Who it's for
 
@@ -153,8 +153,8 @@ manually.
 Forked from [`comeback-tracker`](https://github.com/mhalladaptive/comeback-tracker)
 at the v1.4 commit (tagged in this repo as `v1.4-fork`). The original
 lives on as the author's personal app; this repo is the
-community-facing version, first branded Highland Games Tracker and
-renamed **Stone & Standard** at the v2.0 launch.
+community-facing version, branded **Stone & Standard** at the v2.0
+launch.
 
 ## Contributing
 
