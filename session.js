@@ -785,7 +785,7 @@ function buildCelebrationMeta(session) {
 function buildCelebrationWordmark() {
   const wm = document.createElement('div');
   wm.className = 'celebration-card-wordmark';
-  wm.textContent = 'Highland Games Tracker';
+  wm.textContent = 'Stone & Standard';
   return wm;
 }
 
@@ -891,7 +891,7 @@ function buildAwesomeDayCard(session, milestones, data) {
 // or anything other than 'on' means off, which is the default. The clips are
 // placeholders at fixed paths today; the real "Big throw!" shout and weight-
 // clang drop in at the same paths once recorded.
-const SOUND_PREF_KEY = 'highland-games-tracker-sound';
+const SOUND_PREF_KEY = 'stone-and-standard-sound';
 const CELEBRATION_AUDIO = {
   shout: 'audio/big-throw.wav',
   land: 'audio/weight-clang.wav',
