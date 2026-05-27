@@ -1,6 +1,6 @@
 # Stone & Standard — Stage 6b Spec Sketch (v2)
 
-**Date:** 2026-05-26 (rewritten 2026-05-27 early)
+**Date:** 2026-05-26 (rewritten 2026-05-27 early; pre-handoff polish pass 2026-05-27 — see revision history at end)
 **Skill level:** L1 — Supported (L1 sub-gates paused for the rest of v2)
 **Project risk:** Normal — low (presentation-only; adds three static PNG assets, renames two, flips two implements into the paired-selection branch)
 **Repo:** `~/dev/highland-games-tracker` — on `main`, tagged `v2.0.0-stage6a` (when 6a ships)
@@ -22,7 +22,7 @@ The 6a selection helper in `shared.js` uses a `SILHOUETTE_PAIRED_IMPLEMENTS` Set
 
 ## Stage 6b scope
 
-1. **Stage the three new silhouette assets in `images/silhouettes/`** (`session.js` / asset pipeline). Move from `Images for Cards/` (cowork-side working folder) into the app's `images/silhouettes/` directory:
+1. **Stage the three new silhouette assets in `images/silhouettes/`.** Move from `Images for Cards/` (cowork-side working folder) into the app's `images/silhouettes/` directory:
    - `silhouette-hammer-adaptive.png` — net-new.
    - `silhouette-sheaf-adaptive.png` — net-new.
    - `silhouette-sheaf-able-bodied.png` — replaces the existing `silhouette-sheaf.png` (refreshed with taller standards).
@@ -31,11 +31,13 @@ The 6a selection helper in `shared.js` uses a `SILHOUETTE_PAIRED_IMPLEMENTS` Set
 
 3. **Update `SILHOUETTE_PAIRED_IMPLEMENTS` in `shared.js`** to include `hammer` and `sheaf` alongside `stone`, `weight-distance`, and `weight-over-bar`. After this change, the selection helper builds `silhouette-hammer-{class}.png` and `silhouette-sheaf-{class}.png` for both events, just like stone / WFD / WOB.
 
-4. **Update test coverage in `tests.js`** to reflect that hammer and sheaf now resolve to classed silhouette filenames. The 6a tests that asserted hammer and sheaf returned the non-classed filename are now wrong; replace those assertions with: adaptive class → `silhouette-{hammer,sheaf}-adaptive.png`; able-bodied or unset class → `silhouette-{hammer,sheaf}-able-bodied.png`. Keep the missing-file defensive-fallback test (or whichever test exercises that code path) intact.
+4. **Update test coverage in `tests.js`** to reflect that hammer and sheaf now resolve to classed silhouette filenames. The 6a tests that asserted hammer and sheaf returned the non-classed filename are now wrong; replace those assertions with: adaptive class → `silhouette-{hammer,sheaf}-adaptive.png`; able-bodied or unset class → `silhouette-{hammer,sheaf}-able-bodied.png`. **Symmetrize both events with the stone / WFD / WOB pattern: two assertions each, one adaptive and one able-bodied.** Today the hammer test has two assertions (both → single-variant) and the sheaf test has only one (able-bodied only, no adaptive); after 6b both should be paired. Keep the existing regression guard at `tests.js:3822` (the negative `--no-silhouette` assertion on the happy path) intact.
 
 5. **Version-test mockup update** (cowork-owned, `Images for Cards/card-version-test/`). Already updated in this session: the "All five implements as cards" section uses the new able-bodied sheaf; the style-consistency strip now shows all 10 silhouettes (5 implement pairs). ccode just needs to commit the cowork mockup updates alongside the build commits.
 
-6. **Update `v2-plan.md` and `PICKUP.md`** to reflect the post-6b state — eight silhouettes → ten silhouettes; hammer + sheaf gap noted in 6a interim state is closed.
+6. **Cowork-side `Images for Cards/silhouette-hammer.png`** (the working-folder mirror of the about-to-be-renamed shipped asset) — leave as expected-orphan in the working folder for now. Cowork will reconcile the mirror folder in the post-build docs follow-up.
+
+**Post-build cowork follow-up (NOT ccode's scope, handled in a separate `docs:` commit after 6b ships):** update `v2-plan.md` and `PICKUP.md` to reflect the post-6b state — eight silhouettes → ten silhouettes; hammer + sheaf gap noted in 6a interim state is closed. Reconcile the `Images for Cards/` mirror folder (rename or remove the orphaned `silhouette-hammer.png`).
 
 ## Acceptance criteria
 
@@ -47,7 +49,7 @@ The 6a selection helper in `shared.js` uses a `SILHOUETTE_PAIRED_IMPLEMENTS` Set
   - The old `silhouette-hammer.png` and `silhouette-sheaf.png` are removed (no orphaned files).
 - [ ] `SILHOUETTE_PAIRED_IMPLEMENTS` in `shared.js` contains `stone`, `weight-distance`, `hammer`, `sheaf`, and `weight-over-bar` — all five implements.
 - [ ] An adaptive athlete who PRs a hammer or sheaf event sees the adaptive silhouette; an able-bodied (or unset-class) athlete sees the able-bodied silhouette. Same for the other three implements (regression check).
-- [ ] The missing-file defensive un-skinned fallback in `session.js` is still in place and still tested.
+- [ ] The missing-file defensive un-skinned fallback in `session.js` (the `else` branch on `sil.src` falsy plus the `img.onerror` handler, around lines 945–960) is still in place. The regression guard at `tests.js:3822` (negative `--no-silhouette` assertion on the happy throw card) still passes. (A *positive* test of the fallback firing does not exist today and is not in 6b's scope — see the v2.x "test coverage" backlog item.)
 - [ ] `npm run lint` exits 0 and silent.
 - [ ] All existing tests pass; the updated hammer + sheaf selection tests pass; the full `tests.html` suite runs green.
 
@@ -72,8 +74,10 @@ The 6a selection helper in `shared.js` uses a `SILHOUETTE_PAIRED_IMPLEMENTS` Set
 
 ## Files Stage 6b touches
 
+**ccode-owned (in the 6b build commits):**
+
 - `shared.js` — add `hammer` and `sheaf` to `SILHOUETTE_PAIRED_IMPLEMENTS`.
-- `tests.js` — update the hammer + sheaf selection tests to expect classed filenames.
+- `tests.js` — update the hammer + sheaf selection tests to expect classed filenames; symmetrize both with the stone / WFD / WOB two-assertion pattern.
 - `images/silhouettes/silhouette-hammer-adaptive.png` — new asset.
 - `images/silhouettes/silhouette-hammer-able-bodied.png` — renamed from `silhouette-hammer.png` (unchanged content).
 - `images/silhouettes/silhouette-sheaf-adaptive.png` — new asset.
@@ -82,8 +86,12 @@ The 6a selection helper in `shared.js` uses a `SILHOUETTE_PAIRED_IMPLEMENTS` Set
 - `images/silhouettes/silhouette-sheaf.png` — removed.
 - `Images for Cards/card-version-test/` — cowork mockup updates (already staged in this session).
 - `Images for Cards/card-version-test-screenshot.png` — cowork mockup screenshot (already re-shot in this session).
+
+**Cowork-owned (post-build `docs:` follow-up, NOT in the 6b ccode commits):**
+
 - `v2-plan.md` — one-line update (silhouette count, hammer + sheaf adaptive variants now complete).
 - `PICKUP.md` — silhouette count updated to 10 (5 pairs), gap notes updated.
+- `Images for Cards/silhouette-hammer.png` — reconcile working-folder mirror (rename to match `-able-bodied` convention, or remove as orphan).
 
 ## Risk note
 
@@ -94,7 +102,7 @@ The gpt review's focus:
 - Hammer + sheaf selection logic is correct: adaptive → adaptive PNG, able-bodied / unset → able-bodied PNG. Same as the existing stone / WFD / WOB selection — should be a one-line Set membership change.
 - No regression in the 6a-shipped selection logic for stone, weight-distance, weight-over-bar.
 - The old `silhouette-hammer.png` and `silhouette-sheaf.png` files are removed (not orphaned in `images/silhouettes/`).
-- The missing-file defensive un-skinned fallback mechanism is still in place and still tested.
+- The missing-file defensive un-skinned fallback in `session.js` (around lines 945–960) is still in place; the regression guard at `tests.js:3822` still passes. A positive test of the fallback firing is a known gap, not 6b's scope.
 
 ## Open items
 
@@ -141,17 +149,22 @@ Build in this order — atomic commits, v1 style:
 
   5. Tests in tests.js: update the hammer + sheaf selection tests to
      expect the new classed filenames (adaptive class → adaptive PNG,
-     able-bodied or unset class → able-bodied PNG). Keep the
-     defensive missing-file fallback test intact.
+     able-bodied or unset class → able-bodied PNG). Symmetrize both
+     events with the stone / WFD / WOB pattern — two assertions each,
+     one adaptive and one able-bodied. (Today the hammer test has two
+     assertions both pointing at the single-variant and the sheaf test
+     has only an able-bodied assertion; after 6b both should be
+     paired.) Keep the existing happy-path regression guard at
+     tests.js:3822 (the negative --no-silhouette assertion) intact.
 
   6. Commit the cowork-owned version-test mockup updates that are
      already in the working tree (Images for Cards/card-version-test/
      and Images for Cards/card-version-test-screenshot.png) as a
      chore: commit.
 
-  7. Update v2-plan.md and PICKUP.md — silhouette count is now 10
-     (5 pairs); hammer + sheaf adaptive variants noted as 6b
-     completion.
+Do NOT update v2-plan.md or PICKUP.md — those are cowork-owned
+planning docs and will be refreshed in a separate post-build docs:
+commit by cowork.
 
 Vanilla HTML/CSS/JS, no build step. No new dependencies. No schema
 change. npm run lint must exit 0 and silent.
@@ -180,8 +193,10 @@ attached:
    one-review-pass rule.
 2. shared.js — the silhouette-selection helper; the
    SILHOUETTE_PAIRED_IMPLEMENTS Set membership change.
-3. tests.js — the updated hammer + sheaf selection tests, the
-   defensive missing-file fallback test.
+3. tests.js — the updated hammer + sheaf selection tests, plus the
+   negative `--no-silhouette` regression guard at line 3822 (the
+   only test currently touching the defensive-fallback code path;
+   see the CONCENTRATE block below).
 4. v2-stage6a-spec.md — for the contract that 6b is updating.
 5. v2-stage6b-spec.md — this spec. "Acceptance criteria" is the bar.
 
@@ -194,8 +209,13 @@ CONCENTRATE HERE
   weight-distance, weight-over-bar.
 - The old silhouette-hammer.png and silhouette-sheaf.png files are
   removed (not orphaned in images/silhouettes/).
-- The defensive missing-file un-skinned fallback mechanism is still
-  present and still tested.
+- The defensive missing-file un-skinned fallback in session.js
+  (the else branch on sil.src falsy plus the img.onerror handler,
+  around lines 945–960) is still present. The regression guard at
+  tests.js:3822 — the negative --no-silhouette assertion on the
+  happy throw card — still passes. A positive test of the fallback
+  firing does not exist today and is NOT 6b's scope; do not flag its
+  absence as a 6b finding.
 - The new PNG assets and renames at images/silhouettes/ match the
   kebab-case filenames the spec lists.
 
@@ -214,5 +234,18 @@ ship as-is, ship after fixes, or fix-and-re-review.
 Attach the listed files only — don't paste ccode's build report.
 
 ---
+
+## Revision history
+
+- **2026-05-26 late** — first draft (then for WOB pair; obsoleted by ccode incorporating WOB into 6a mid-build).
+- **2026-05-27 early** — rewritten as the hammer + sheaf adaptive-pair completion scope.
+- **2026-05-27 (pre-handoff polish pass)** — cowork walked the spec against on-disk reality before handoff. Seven small edits, all cowork-side, no scope change:
+  1. Stripped a leftover `(session.js / asset pipeline)` parenthetical from step 1.
+  2. Step 5 — added explicit symmetrization note: hammer and sheaf tests should both be paired (two assertions each), matching stone / WFD / WOB. Today the hammer test has two assertions both → single-variant, and the sheaf test has only an able-bodied assertion.
+  3. Step 6 — split. ccode commits the version-test mockup; v2-plan + PICKUP refresh moved to a post-build cowork `docs:` follow-up (matches the 2026-05-27 lessons-banked "spec changes before ccode starts or after the build ships" guidance). Added a cowork-side `Images for Cards/silhouette-hammer.png` orphan-cleanup note as part of the same follow-up.
+  4. Acceptance criterion + Risk-note "still tested" claim softened. The defensive un-skinned fallback in `session.js:945–960` IS in place; the only test touching it is the *negative* regression guard at `tests.js:3822`. A *positive* test of the fallback firing is a known gap, logged as a v2.x backlog item, NOT 6b's scope. Review prompt updated to match — gpt is told not to flag the absence of a positive fallback test as a 6b finding.
+  5. "Files Stage 6b touches" restructured into **ccode-owned** vs **cowork-owned post-build** sections; v2-plan + PICKUP moved into the cowork list.
+  6. Handoff prompt body — removed the old step 7 (v2-plan/PICKUP), with a `Do NOT update v2-plan.md or PICKUP.md` line for clarity.
+  7. Review-prompt WHAT TO READ item 3 (`tests.js`) — reworded the "defensive missing-file fallback test" phrasing to match the CONCENTRATE block: the only relevant test today is the negative `--no-silhouette` regression guard at `tests.js:3822`, not a fallback test as such.
 
 *End of sketch. Update only via cowork session.*

@@ -23,12 +23,16 @@ stages.
   plus the Throws/Lifts toggle). Stage 6a shipped 2026-05-27 in 9
   atomic commits on a feature branch plus 3 follow-up commits
   (docs reconciliation, README softening, 1-line chore cleanup).
-- **Stage 6b (post-6a adaptive-pair completion):** spec'd 2026-05-26
-  late session, handoff-ready. Small low-risk presentation-only
+- **Stage 6b (post-6a adaptive-pair completion):** spec'd 2026-05-26,
+  rewritten 2026-05-27 early, polished 2026-05-27 in a pre-handoff
+  walk-through; handoff-ready. Small low-risk presentation-only
   stage that adds hammer + sheaf to `SILHOUETTE_PAIRED_IMPLEMENTS`,
   renames the existing single-variant files to `-able-bodied`, adds
   the new adaptive variants (already staged in `Images for Cards/`),
-  updates tests + cowork mockup. See `docs/specs/v2-stage6b-spec.md`.
+  updates tests + cowork mockup. The post-6b `v2-plan.md` / `PICKUP.md`
+  refresh and the cowork-side asset mirror cleanup are a separate
+  post-build cowork `docs:` follow-up (not part of the ccode build).
+  See `docs/specs/v2-stage6b-spec.md`.
 - **Stage 6 housekeeping (after 6b):** the cross-device smoke test
   (mobile + desktop), the `v2.0.0` release tag, the GitHub release,
   Cloudflare Web Analytics.
@@ -556,6 +560,17 @@ Open, for the post-cards planning session:
   no cookies, no PII) on the deployed v2 build so the community
   release surfaces basic visibility into page views and unique
   visitors. Targets v2.0 launch (Stage 6 housekeeping).
+- **Positive test of the silhouette un-skinned fallback — v2.x.**
+  The defensive fallback in `session.js` (`else` branch on `sil.src`
+  falsy plus the `img.onerror` handler, around lines 945–960) drops
+  the silhouette image and applies the `.celebration-card--no-
+  silhouette` modifier when an asset is missing or fails to load.
+  Today the only test touching this code path is the *negative*
+  regression guard at `tests.js:3822` (asserting `--no-silhouette` is
+  absent on a happy throw card). No *positive* test exercises the
+  fallback firing. Surfaced during the 6b pre-handoff walk-through;
+  not blocking — the code is correct and the absence is a coverage
+  gap rather than a defect. Post-v2.0 cleanup.
 
 ## Field notes from v1 use
 
