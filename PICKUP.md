@@ -41,58 +41,79 @@ Context to load before we start:
 
 Current state:
 
-- The v2 feature build is COMPLETE through Stage 5b. Stages 1 through
-  5 are shipped and tagged — v2.0.0-rebrand, v2.0.0-stage2,
+- The v2 feature build is COMPLETE through Stage 6a. Stages 1 through
+  6a are shipped and tagged — v2.0.0-rebrand, v2.0.0-stage2,
   v2.0.0-stage3a / 3b, v2.0.0-stage4a / 4b / 4c, v2.0.0-stage5a,
-  v2.0.0-stage5b.
-- Stage 6a — v2.0 launch structural — is SPEC'D and handoff-ready
-  (docs/specs/v2-stage6a-spec.md, revised 2026-05-26). It bundles:
+  v2.0.0-stage5b, v2.0.0-stage6a (pushed to origin/main 2026-05-27).
+- Stage 6a shipped 2026-05-27 in 9 atomic commits on a feature branch
+  (stage-6a-stone-and-standard) plus three follow-up commits (cowork
+  docs reconciliation, README softening, and a 1-line chore commit
+  cleaning up a duplicated assignment). It bundles:
     (a) The throws PR celebration card lift — soft-grey card (#F4F4F4),
         implement-specific athlete silhouette as hero, no animated
-        cut-scene (silhouette replaces it; cut-scene work deferred to
-        a possible v2.1+ upgrade path).
+        cut-scene (deferred to a possible v2.1+ upgrade path).
     (b) Audio plumbing — sound on/off toggle on the overlay, off by
-        default, preference in a standalone localStorage flag.
-        Placeholder audio files ship; real clips inject later.
-    (c) The app rename from "Highland Games Tracker" to
-        "Stone & Standard" across surface, storage namespace (with
-        idempotent migration), backup envelope (with backward-compat
-        for v1 and v2 imports), package.json, and README.
-- Six silhouette assets staged in Images for Cards/ as transparent
-  RGBA PNGs: stone adaptive + able-bodied, weight-distance adaptive +
-  able-bodied (existing), hammer (single-variant), sheaf (single-
-  variant). Hammer + sheaf adaptive variants and a Weight Over Bar
-  silhouette are gaps to fill iteratively after v2.0. The 6a spec
-  carries an un-skinned fallback for WOB.
-- Cross-implement visual style is mixed by accepted decision: stone +
-  weight-distance carry detailed silhouettes with white kilt tartan
-  accents; hammer + sheaf are pure black graphic silhouettes. Each
-  implement renders at its own authentic throw moment (stone wind-up,
-  weight-distance release, hammer mid-spin, sheaf apex) — no
-  cross-event harmonization.
-- The remaining Stage 6 work after 6a: cross-device smoke test (5a/5b
-  were desktop-verified, mobile checked via CSS only), the v2.0.0
-  tag, the GitHub release, Cloudflare Web Analytics.
-- Tooling: the Biome linter is in the loop — `npm run lint` is a
-  verification step. The test suite runs in-browser via tests.html
-  (348 tests as of Stage 5b; new coverage in 6a).
+        default, preference in a standalone localStorage flag named
+        stone-and-standard-sound. Placeholder audio files ship;
+        real clips inject later.
+    (c) The app rename to "Stone & Standard" across surface, storage
+        namespace (stone-and-standard-v1, with idempotent copy-only
+        migration from highland-games-tracker-v1), backup envelope
+        (validateBackup accepts stone-and-standard, highland-games-
+        tracker, and comeback-tracker; exportData writes the new one),
+        package.json, and README.
+    (d) One bonus UX rename ccode added that's not in the spec — the
+        event display name "Weight Over Bar" became "Weight for
+        Height" (event id stays stable at weight-over-bar). "Height"
+        describes what's measured better than "Bar."
+- Eight silhouettes are at images/silhouettes/ in the shipped build:
+  stone, weight-distance, and weight-over-bar each as adaptive +
+  able-bodied pairs; hammer and sheaf as single-variant. Adaptive
+  variants for hammer and sheaf are gaps that 6b closes.
+- Stage 6b is SPEC'D and handoff-ready (docs/specs/v2-stage6b-spec.md).
+  Small post-6a scope: add hammer + sheaf to
+  SILHOUETTE_PAIRED_IMPLEMENTS, rename existing single-variants to
+  -able-bodied, add the new adaptive variants (staged in
+  Images for Cards/ as silhouette-hammer-adaptive.png,
+  silhouette-sheaf-adaptive.png, silhouette-sheaf-able-bodied.png
+  with taller standards). Updates tests + cowork mockup +
+  v2-plan/PICKUP. Low-risk, presentation-only.
+- After 6b ships: the Stage 6 housekeeping — cross-device smoke test
+  (mobile + desktop; 5a/5b/6a were desktop-verified, mobile checked
+  via CSS only), the v2.0.0 release tag, the GitHub release, and
+  Cloudflare Web Analytics.
+- Cross-implement visual style remains mixed by accepted decision:
+  stone + weight-distance carry detailed silhouettes with white kilt
+  tartan accents; hammer + sheaf + WOB are pure black graphic
+  silhouettes. Each implement at its own authentic throw moment.
+- Tooling: Biome lint in the loop — `npm run lint` is a verification
+  step. Test suite runs in-browser via tests.html (371 tests as of
+  Stage 6a ship — up from 348 at 5b, +23 tests for selection helper,
+  sound, migration, backup).
 - L1 gate: PAUSED for the rest of the v2 build, per Oak's 2026-05-23
   decision — to resume after the project ships. Don't plan, surface,
   or push L1 sub-gate work until then.
-- Repo state at the 2026-05-26 wrap: on main, everything through
-  Stage 5b shipped and tagged. Uncommitted from the 2026-05-26 design
-  session: the substantially revised 6a spec, the v2-plan.md updates,
-  this PICKUP refresh, the silhouette assets and version-test bundle
-  under Images for Cards/, and (when written) the session-end
-  SESSION_NOTES entry — one docs: commit closes them.
+- Repo state at the 2026-05-27 wrap: on main at v2.0.0-stage6a
+  (6c7b541), origin/main synced. The stage-6a-stone-and-standard
+  branch is preserved both locally and on origin — safe to delete
+  (`git branch -d stage-6a-stone-and-standard && git push origin
+  --delete stage-6a-stone-and-standard`) but not blocking. The 6b
+  scope assets are staged uncommitted in Images for Cards/ (hammer
+  adaptive, sheaf adaptive, sheaf able-bodied with taller standards)
+  ready for ccode to move into images/silhouettes/ during the 6b
+  build. v2.1 backlog now includes the "athlete adds own photo to
+  celebration card" feature alongside the existing v2.1 items
+  (Save-image button, native share sheet) — v2.1 becomes a coherent
+  "share story" release.
 
-Where I want to start today: [STATE YOUR GOAL. The 6a spec is
-handoff-ready, so the natural next move is the ccode build: hand the
-spec to ccode, build atomically per the spec's commit sequence, gpt
-review, fix, ship as v2.0.0-stage6a. Other possibilities — refine the
-6a spec further before handoff, generate the Weight Over Bar silhouette
-and the hammer/sheaf adaptive variants, jump ahead to the v2.0 launch
-checklist. State what you want.]
+Where I want to start today: [STATE YOUR GOAL. The 6b spec is
+handoff-ready, so the natural next move is the ccode build for 6b —
+small low-risk presentation-only stage that closes the adaptive-pair
+coverage gap. After 6b: Stage 6 housekeeping (cross-device smoke
+test, v2.0.0 release tag, GitHub release, Cloudflare Web Analytics).
+Other possibilities — jump ahead to one of the housekeeping items,
+refine the 6b spec further, or pivot to v2.1 design. State what
+you want.]
 
 How I want to work:
 

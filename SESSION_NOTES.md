@@ -6,6 +6,263 @@ of what got decided when.
 
 ---
 
+## 2026-05-27 — Stage 6a shipped; v2.0.0-stage6a tagged; brand rename live
+
+*Written by cowork at the session wrap. ccode shipped the build, cowork
+ran the smoke test in its own sandbox, gpt reviewed, fixes landed,
+v2.0.0-stage6a is tagged and pushed. Verify against `git log` and the
+tag before trusting.*
+
+The 6a build session — the last feature stage before v2.0 launch. Came
+out of the 2026-05-26 design wrap with the 6a spec handoff-ready;
+ended today with `v2.0.0-stage6a` tagged on `main` and pushed to
+`origin/main`. The app surface, storage namespace, and backup envelope
+now read as **Stone & Standard** for any new user; the
+celebration card displays an implement-specific athlete silhouette on
+a soft-grey card.
+
+### The ccode build — nine atomic commits on a feature branch
+
+ccode worked on a new branch `stage-6a-stone-and-standard` (the first
+time the Higgins loop has used a feature branch — a quiet method
+improvement worth banking). Nine atomic commits in the order the spec
+prescribed:
+
+1. `cb3eead chore: stage v2.0 card silhouettes in images/silhouettes/`
+2. `472710a feat(celebration): soft-grey throws PR card with athlete silhouette hero`
+3. `1892801 feat(brand): rename app surface to Stone & Standard`
+4. `04fa1cc feat(brand): migrate storage namespace to stone-and-standard-v1`
+5. `674a778 feat(brand): accept the stone-and-standard backup envelope`
+6. `8dbec4b chore: rename package + rewrite README for Stone & Standard`
+7. `203e161 test: cover the storage namespace migration`
+8. `337aca9 feat(celebration): add the Weight Over Bar silhouette`
+9. `8b5f830 docs: record the mid-build Stage 6a spec revision (WOB silhouette)`
+
+The 8th and 9th commits are notable: a **WOB silhouette pair landed
+mid-build**. Oak generated the Weight Over Bar silhouettes via gpt
+during the ccode build window; cowork processed them, edited the spec
+body to add WOB to the paired-implements set, and ccode picked up
+those mid-build edits and committed them. The "Will WOB be 6a or 6b?"
+question that cowork briefly created (cowork wrote a 6b spec for WOB
+before learning ccode had absorbed it) resolved cleanly: WOB is in 6a.
+ccode then renamed `silhouette-hammer.png` to `silhouette-hammer.png`
+(single-variant carried) and the new `silhouette-weight-over-bar-
+{class}.png` pair joined the `SILHOUETTE_PAIRED_IMPLEMENTS` set.
+
+ccode also did one thoughtful UX rename not in the spec: the event
+display name `Weight Over Bar` became **"Weight for Height"** — the
+event id stays stable so saved data still resolves. Cleaner copy
+("height" describes what's measured better than "bar" does); accepted.
+
+ccode's self-verification was thorough: lint exit 0 and silent, the
+storage migration verified in Node across all four idempotence/safety
+cases, validateBackup verified across three legacy `appName` values
+plus a rejection path. The only thing ccode couldn't run was the full
+browser test suite (no headless runner wired up); ccode flagged that
+explicitly and asked cowork to confirm via `tests.html`.
+
+### The cowork smoke test — sandbox-driven, 45-item checklist
+
+This was the first cowork smoke test run programmatically rather than
+narrated. Cowork ran headless Playwright Chromium against the branch
+state checked out in its sandbox (via `file://` URLs, no server
+needed — confirmed by `grep` that no `fetch()` calls exist). The
+checklist was derived from the spec's acceptance criteria, organised
+into 12 sections (A–L) covering pre-flight, the test suite, brand
+surface, profile setup, card visual lift, per-implement silhouette
+selection, adaptive vs able-bodied switching, audio toggle, scope
+isolation, storage migration, backup import backward-compat, and
+branch state.
+
+Results: **clean pass, no defects.**
+
+- `tests.html`: **371/371** green (up from 348 at 5b ship — 23 new
+  tests for selection, sound, migration, backup).
+- Brand surface: all four pages display "Stone & Standard" in title
+  + h1; zero residual "Highland Games Tracker" strings in user-facing
+  body text.
+- Silhouette selection matrix: **16 (event × class) combinations
+  exhaustively verified.** Every one resolves to the exact expected
+  `silhouette-*.png` filename — including WOB's classed pair.
+- Card foundation: bg `rgb(244, 244, 244) = #F4F4F4` ✓, aspect ratio
+  `4 / 5` ✓, wordmark and headline correct.
+- Audio toggle: off by default, persists to `stone-and-standard-sound`
+  localStorage, survives reloads, no console errors.
+- Scope isolation: lift PR cards, goal cards, awesome-day capstone
+  all render without the throw silhouette path.
+- Storage migration: idempotent, copy-not-move, old key preserved.
+- Backup backward-compat: accepts `stone-and-standard`,
+  `highland-games-tracker`, `comeback-tracker`; rejects unknown.
+
+One observation that's *not* a 6a defect but worth recording for a
+future cleanup ticket: the page-level `grass-field.jpg` background
+still loads on `session.html` (when `kind="competition"`) and
+`progress.html`. The 6a celebration card correctly drops the
+card-level field background per the silhouette pivot, but the
+*page-level* background carries over from v1's "See the Gap" styling.
+Mildly inconsistent with the "no track look" decision, deferred to
+post-v2.0.
+
+### The gpt review — a Critical that turned out to be a docs miss
+
+Independent gpt review with the 7-file spec-prompt manifest. Three
+findings: one Critical, one Minor, one Nit.
+
+The **Critical** was the most interesting of the three. gpt flagged
+that the code resolves Weight Over Bar to a classed silhouette, but
+the review prompt's CONCENTRATE HERE bullet said "Weight Over Bar
+maps to the un-skinned fallback (no image)." Code ≠ review prompt.
+Under gpt's reading: Critical.
+
+Under actual fact: docs miss on cowork's side. When cowork made the
+mid-build spec edits to add WOB to the paired set, cowork updated the
+spec body (selection-key bullet, scope point 5, acceptance criterion,
+files-touched, revision history) but **missed updating the review
+prompt at the bottom of the same spec.** The spec body and the code
+agreed (WOB → classed silhouette); only the review prompt was stale.
+gpt was reading the stale prompt as the criterion bar.
+
+The fix was a 5-line spec edit: the review prompt's bullet was
+rewritten to match the body. Code unchanged — it was always correct
+vs. the spec body's acceptance criterion. The re-review note went to
+gpt with the explanation; gpt confirmed the docs reconciliation
+closes the Critical and revised verdict to **ship as-is**.
+
+The **Minor**: README still had two residual "Highland Games Tracker"
+phrasings (one in Backup import context, one in Fork history). Oak's
+call: remove entirely. Both phrases rewritten — Backup import now
+says "any prior version of this app"; Fork history says "branded
+Stone & Standard at the v2.0 launch." No other user-facing surface
+has any HGT mentions; the remaining mentions in `PICKUP.md`,
+`v2-plan.md`, and `lint-setup-spec.md` are all internal docs with
+necessary historical context (the rename is a fact those docs
+describe).
+
+The **Nit**: a duplicated `inChainPrompt = false;` assignment in
+`showCelebrationQueue.renderCard()`. Pure cleanup; ccode handled it as
+a 1-line `chore:` commit in a quick follow-up session.
+
+**Lessons banked** (banking these in the dev journal because they're
+recurring traps):
+
+- **Mid-build spec edits are dangerous.** Cowork edits during a ccode
+  build window can either land in the build (as the WOB additions
+  did) or get missed entirely. Either is confusing. Better discipline:
+  spec changes should land BEFORE ccode starts, or hold until after
+  the build ships. The mid-build path can work but it requires both
+  the spec body AND the review prompt to be updated, and a status
+  check with ccode before the build commits. Cowork broke this rule
+  this session.
+- **The spec is two slabs of text.** The body and the
+  review-prompt block at the bottom are separate documents within one
+  file. Edits to one without the other create the kind of
+  contradiction gpt flagged as Critical here. Treat them as paired
+  surfaces — a spec change touches both.
+
+### The ccode-on-main goof and the tag-forward recovery
+
+ccode's nit-cleanup session opened with stale info: it thought the
+current branch was `stage-6a-stone-and-standard`, but the working
+copy was actually on `main` (Oak had already ff-merged the branch
+into main and tagged `v2.0.0-stage6a` at the merge point). ccode
+committed the nit fix directly to `main`, then fast-forwarded the
+stage branch to match — leaving both pointers at the same commit,
+just past the tag.
+
+ccode's classifier correctly blocked it from autonomously rewinding
+`main` and handed the recovery back to Oak. ccode framed the
+recovery as "reset main back to before the nit, then ff-merge after
+review" — but that was a misread of the topology. The cleaner fix
+was the **opposite direction**: move the tag forward from `3feca04`
+to `6c7b541` (the nit commit) so `v2.0.0-stage6a` includes the nit,
+which is what gpt's "ship as-is if both fixes included" verdict
+called for. Since the tag was local-only, moving it was free.
+
+Recovery sequence:
+
+1. `git tag -d v2.0.0-stage6a` (delete local tag at 3feca04)
+2. `git tag v2.0.0-stage6a 6c7b541` (re-create at the nit commit)
+3. `git push origin main --tags` (ff origin/main from 928a7bd → 6c7b541, push tag)
+4. `git push origin stage-6a-stone-and-standard` (ff branch)
+
+After that, both `main` and the stage branch pointed at `6c7b541`,
+the tag was on `6c7b541`, `origin/main` was synced, and the v2.0
+launch was structurally complete except for the housekeeping items.
+
+The classifier doing its job here is worth a note: moving `main`
+non-fast-forward is dangerous in general (could orphan unreachable
+commits). Even though THIS specific move was safe (the orphan would
+have been reachable via the stage branch), automated tooling can't
+cheaply verify reachability across branches AND know intent. The
+conservative default — "block, hand back" — is the right one. Cowork
+diagnosed the topology and proposed the tag-forward fix because that
+was the cleaner shape; ccode's framing was technically correct but
+worked the wrong direction.
+
+### What shipped in v2.0.0-stage6a
+
+- The throws PR celebration card visual lift: soft-grey card
+  (`#F4F4F4`), implement-specific athlete silhouette as hero, no
+  animated cut-scene. Sound on/off toggle, off by default, preference
+  in a standalone `localStorage` flag. Eight silhouettes staged at
+  `images/silhouettes/` covering all eight throws events; stone, WFD,
+  and WOB are paired adaptive/able-bodied, hammer and sheaf are
+  single-variant (adaptive variants to fill iteratively post-launch).
+- The app rename from Highland Games Tracker to **Stone & Standard**
+  across surface (page titles, h1s, wordmarks, profile welcome, test
+  banner), storage (`STORAGE_KEY` is `stone-and-standard-v1` with an
+  idempotent copy-only migration from the old key), backup envelope
+  (`validateBackup` accepts three legacy `appName` values, `exportData`
+  writes the new one), and tooling (`package.json` name, README).
+- Selection logic is a pure helper in `shared.js` —
+  `selectThrowSilhouette(eventId, profileClassId)` — same pattern as
+  `detectMilestones` and the 5a/5b helpers. `session.js` is a thin
+  render layer; `buildThrowsPrCard` branches the celebration card on
+  "this is a throw + has a silhouette descriptor."
+- 371/371 tests pass; lint clean.
+- One cosmetic UX win not in the spec: event display name "Weight
+  Over Bar" → "Weight for Height."
+
+### Where it stands
+
+v2.0.0-stage6a is **shipped to `origin/main`**. The first feature
+branch in the Higgins loop worked smoothly. The branch
+`stage-6a-stone-and-standard` is preserved locally and on origin —
+can be deleted whenever Oak wants (`git branch -d
+stage-6a-stone-and-standard && git push origin --delete
+stage-6a-stone-and-standard`), or left around as a reference until 6b
+ships.
+
+**Stage 6b is queued and ccode-handoff-ready.** Its spec
+(`docs/specs/v2-stage6b-spec.md`) was rewritten this session to cover
+the hammer + sheaf adaptive-pair completion (the WOB pair landed in
+6a, making the original 6b-for-WOB scope obsolete). 6b adds `hammer`
+and `sheaf` to the `SILHOUETTE_PAIRED_IMPLEMENTS` set, renames the
+existing single-variant files to `-able-bodied`, adds the new
+adaptive variants (already staged in `Images for Cards/`), updates
+tests, and updates the cowork mockup. Low-risk presentation-only
+stage.
+
+After 6b: the Stage 6 housekeeping (cross-device smoke test,
+`v2.0.0` release tag, GitHub release, Cloudflare Web Analytics).
+
+### Housekeeping
+
+- This SESSION_NOTES entry, the PICKUP refresh for the post-6a state,
+  and the v2-plan.md Status update are one `docs:` commit. Run before
+  bed or first thing tomorrow.
+- The `stage-6a-stone-and-standard` branch deletion is optional
+  cleanup; not blocking.
+- L1 gate remains paused for the rest of v2.0 (per 2026-05-23
+  decision); to resume after the project ships.
+- The "athlete adds own photo to the celebration card before sharing"
+  feature was discussed this session and parked for **v2.1**, alongside
+  the existing v2.1 backlog items (Save-image button via Canvas API,
+  native share sheet via `navigator.share()`). v2.1 becomes a coherent
+  "share story" release.
+
+---
+
 ## 2026-05-26 — Stage 6a spec'd handoff-ready; app renamed to Stone & Standard
 
 *Written by cowork at the session wrap. A design + asset session — no

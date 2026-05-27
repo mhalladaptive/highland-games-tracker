@@ -14,21 +14,25 @@ stages.
 
 ## Status
 
-- **Stages 1 through 5 are shipped.** Fork + rebrand (Stage 1) through
-  the Progress page (Stage 5b) are built, reviewed, and shipped, tagged
-  `v2.0.0-rebrand` and `v2.0.0-stage2` … `v2.0.0-stage5b` on
-  `origin/main`. Stage 5 — the Progress page — landed in two halves:
-  5a (the throws windowed vs-PR view, replacing "See the Gap") and 5b
-  (the S&C lifts view plus the Throws/Lifts toggle). The v2 feature
-  build is complete.
-- **Stage 6a (the structural piece of v2.0 launch):** spec'd
-  2026-05-26, handoff-ready. Bundles the throws PR celebration card
-  visual lift (soft-grey card with implement-specific silhouette,
-  audio plumbing) and the app rename from Highland Games Tracker to
-  Stone & Standard. See `docs/specs/v2-stage6a-spec.md`.
-- **Stage 6 housekeeping (after 6a):** the cross-device smoke test,
-  the `v2.0.0` tag, the GitHub release, Cloudflare Web Analytics.
-- **v2.0 launch:** targeted after Stage 6.
+- **Stages 1 through 6a are shipped.** Fork + rebrand (Stage 1)
+  through the celebration card lift + brand rename (Stage 6a) are
+  built, reviewed, and shipped, tagged `v2.0.0-rebrand` and
+  `v2.0.0-stage2` … `v2.0.0-stage6a` on `origin/main`. Stage 5 — the
+  Progress page — landed in two halves: 5a (the throws windowed
+  vs-PR view, replacing "See the Gap") and 5b (the S&C lifts view
+  plus the Throws/Lifts toggle). Stage 6a shipped 2026-05-27 in 9
+  atomic commits on a feature branch plus 3 follow-up commits
+  (docs reconciliation, README softening, 1-line chore cleanup).
+- **Stage 6b (post-6a adaptive-pair completion):** spec'd 2026-05-26
+  late session, handoff-ready. Small low-risk presentation-only
+  stage that adds hammer + sheaf to `SILHOUETTE_PAIRED_IMPLEMENTS`,
+  renames the existing single-variant files to `-able-bodied`, adds
+  the new adaptive variants (already staged in `Images for Cards/`),
+  updates tests + cowork mockup. See `docs/specs/v2-stage6b-spec.md`.
+- **Stage 6 housekeeping (after 6b):** the cross-device smoke test
+  (mobile + desktop), the `v2.0.0` release tag, the GitHub release,
+  Cloudflare Web Analytics.
+- **v2.0 launch:** targeted after Stage 6 housekeeping.
 
 ## Audience and intent
 
@@ -537,12 +541,21 @@ Open, for the post-cards planning session:
   "separate Log Session pages" in the `comeback-tracker` v1.x backlog;
   the in-page toggle is the cleaner form and keeps it consistent with
   the Progress page. Targeted at v2.1.
+- **Athlete photo overlay on the celebration card before share — v2.1.**
+  An affordance for the athlete to add their own photo to the PR card
+  before sharing it externally. Pairs naturally with the Save-image
+  button and native share sheet items below — together they make v2.1
+  a coherent "share story" release. Decision made 2026-05-26 to defer
+  from 6a/6b to v2.1.
+- **Save-image button on celebration cards — v2.1.** Canvas API →
+  PNG download for sharing. Pairs with the athlete photo overlay.
+- **Native share sheet — v2.x.** `navigator.share()` integration.
 - **View as a dedicated nav tab.** Promote the read-only session
   browser to its own top-level entry. v2.x.
 - **Lightweight usage analytics.** Cloudflare Web Analytics (free,
   no cookies, no PII) on the deployed v2 build so the community
   release surfaces basic visibility into page views and unique
-  visitors. Targets v2.0 launch.
+  visitors. Targets v2.0 launch (Stage 6 housekeeping).
 
 ## Field notes from v1 use
 
