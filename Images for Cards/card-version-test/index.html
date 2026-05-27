@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stage 6a — Silhouette card version test (v2)</title>
+<style>
+  :root {
+    --text: #1a1a1a;
+    --muted: #6e6e73;
+    --accent: #0a7d3e;
+    --border: #d1d1d6;
+    --grey-A: #F4F4F4;
+    --grey-B: #ECECEC;
+    --grey-app: #f5f5f7;
+  }
+  body {
+    margin: 0;
+    background: #2a2a2a;
+    color: #eaeaea;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    padding: 32px;
+  }
+  h1 { font-size: 1.4rem; font-weight: 700; margin: 0 0 4px; }
+  h2 { font-size: 1rem; font-weight: 600; margin: 32px 0 12px; color: #ccc; letter-spacing: 0.04em; }
+  p.lede { color: #aaa; margin: 0 0 24px; max-width: 760px; line-height: 1.5; }
+  .legend { font-size: 0.85rem; color: #999; margin: 0 0 12px; }
+
+  .card-row { display: flex; gap: 22px; flex-wrap: wrap; margin-bottom: 18px; }
+  .card-frame { display: flex; flex-direction: column; gap: 6px; }
+  .card-frame .caption { color: #bbb; font-size: 0.78rem; text-align: center; }
+
+  .celebration-card {
+    width: 360px;
+    aspect-ratio: 4 / 5;
+    background: var(--grey-A);
+    color: var(--text);
+    border-radius: 14px;
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.35);
+    padding: 24px;
+    box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .grey-b { background: var(--grey-B); }
+  .grey-app { background: var(--grey-app); }
+
+  /* The new silhouette is near-square, so anchor it bottom-right
+     filling about 75% of the card. Bleed slightly past the right edge. */
+  .silhouette {
+    position: absolute;
+    right: -6%;
+    bottom: -2%;
+    height: 76%;
+    width: auto;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .card-headline {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-weight: 700;
+    color: var(--accent);
+    margin: 0 0 8px;
+    position: relative;
+    z-index: 1;
+  }
+  .card-event {
+    margin: 0 0 6px;
+    font-size: 1rem;
+    color: var(--muted);
+    font-weight: 600;
+    position: relative;
+    z-index: 1;
+  }
+  .card-mark {
+    font-size: 3.4rem;
+    font-weight: 900;
+    color: var(--text);
+    margin: 0 0 4px;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    position: relative;
+    z-index: 1;
+  }
+  .card-prev {
+    font-size: 0.88rem;
+    color: var(--muted);
+    font-style: italic;
+    margin: 0 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+  .card-meta {
+    margin: 0;
+    font-size: 0.72rem;
+    color: var(--muted);
+    line-height: 1.45;
+    position: relative;
+    z-index: 1;
+  }
+  .card-meta-line { display: block; }
+  .card-wordmark {
+    margin: 14px 0 0;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    color: var(--muted);
+    font-weight: 700;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Smaller reference tiles for the weight-distance pair */
+  .ref-row { display: flex; gap: 20px; margin-top: 8px; }
+  .ref-tile {
+    width: 220px;
+    height: 220px;
+    background: var(--grey-A);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .ref-tile img { max-width: 85%; max-height: 85%; }
+  .ref-caption { color: #aaa; font-size: 0.75rem; text-align: center; margin-top: 4px; }
+
+  .swatch-row { display: flex; gap: 14px; align-items: center; margin: 12px 0 0; }
+  .swatch { display: inline-block; width: 28px; height: 28px; border-radius: 4px; border: 1px solid #444; }
+  .swatch.a { background: #F4F4F4; }
+  .swatch.b { background: #ECECEC; }
+  .swatch.app { background: #f5f5f7; }
+  .swatch-label { font-size: 0.78rem; color: #ccc; }
+</style>
+</head>
+<body>
+
+<h1>Stage 6a — Throws PR celebration card · version test v2</h1>
+<p class="lede">
+  New stone-throw silhouettes (better throw form, silhouette-style with
+  white tartan accents — same visual language as the weight-for-distance
+  pair, so the prior flat-vs-photo-cutout fork is resolved by these
+  sources). Sample card content: Open Stone PR, 42'8".
+</p>
+
+<h2>The new pair on the soft-grey card</h2>
+<p class="legend">Both silhouettes on #F4F4F4 with full card content. The pose is wind-up/load — body coiled, stone at the chin, trailing arm out for balance.</p>
+<div class="card-row">
+
+  <div class="card-frame">
+    <div class="celebration-card">
+      <img class="silhouette" src="silhouette-stone-adaptive.png" alt="">
+      <p class="card-headline">New Personal Record</p>
+      <p class="card-event">Open Stone</p>
+      <p class="card-mark">42'8"</p>
+      <p class="card-prev">was 40'6"</p>
+      <p class="card-meta">
+        <span class="card-meta-line">May 23, 2026</span>
+        <span class="card-meta-line">Pacific NW Highland Games</span>
+        <span class="card-meta-line">Mount Vernon, WA</span>
+      </p>
+      <p class="card-wordmark">Stone &amp; Standard</p>
+    </div>
+    <div class="caption">Adaptive · #F4F4F4</div>
+  </div>
+
+  <div class="card-frame">
+    <div class="celebration-card">
+      <img class="silhouette" src="silhouette-stone-able-bodied.png" alt="">
+      <p class="card-headline">New Personal Record</p>
+      <p class="card-event">Open Stone</p>
+      <p class="card-mark">42'8"</p>
+      <p class="card-prev">was 40'6"</p>
+      <p class="card-meta">
+        <span class="card-meta-line">May 23, 2026</span>
+        <span class="card-meta-line">Pacific NW Highland Games</span>
+        <span class="card-meta-line">Mount Vernon, WA</span>
+      </p>
+      <p class="card-wordmark">Stone &amp; Standard</p>
+    </div>
+    <div class="caption">Able-bodied · #F4F4F4</div>
+  </div>
+
+</div>
+
+<h2>Grey shade comparison</h2>
+<p class="legend">Adaptive card on each candidate. App's existing bg token (#f5f5f7) shown rightmost for reference — sits between the two candidates.</p>
+<div class="card-row">
+
+  <div class="card-frame">
+    <div class="celebration-card">
+      <img class="silhouette" src="silhouette-stone-adaptive.png" alt="">
+      <p class="card-headline">New Personal Record</p>
+      <p class="card-event">Open Stone</p>
+      <p class="card-mark">42'8"</p>
+      <p class="card-prev">was 40'6"</p>
+      <p class="card-meta">
+        <span class="card-meta-line">May 23, 2026</span>
+        <span class="card-meta-line">Pacific NW Highland Games</span>
+        <span class="card-meta-line">Mount Vernon, WA</span>
+      </p>
+      <p class="card-wordmark">Stone &amp; Standard</p>
+    </div>
+    <div class="caption">#F4F4F4 · barely off-white</div>
+  </div>
+
+  <div class="card-frame">
+    <div class="celebration-card grey-b">
+      <img class="silhouette" src="silhouette-stone-adaptive.png" alt="">
+      <p class="card-headline">New Personal Record</p>
+      <p class="card-event">Open Stone</p>
+      <p class="card-mark">42'8"</p>
+      <p class="card-prev">was 40'6"</p>
+      <p class="card-meta">
+        <span class="card-meta-line">May 23, 2026</span>
+        <span class="card-meta-line">Pacific NW Highland Games</span>
+        <span class="card-meta-line">Mount Vernon, WA</span>
+      </p>
+      <p class="card-wordmark">Stone &amp; Standard</p>
+    </div>
+    <div class="caption">#ECECEC · clearly soft</div>
+  </div>
+
+  <div class="card-frame">
+    <div class="celebration-card grey-app">
+      <img class="silhouette" src="silhouette-stone-adaptive.png" alt="">
+      <p class="card-headline">New Personal Record</p>
+      <p class="card-event">Open Stone</p>
+      <p class="card-mark">42'8"</p>
+      <p class="card-prev">was 40'6"</p>
+      <p class="card-meta">
+        <span class="card-meta-line">May 23, 2026</span>
+        <span class="card-meta-line">Pacific NW Highland Games</span>
+        <span class="card-meta-line">Mount Vernon, WA</span>
+      </p>
+      <p class="card-wordmark">Stone &amp; Standard</p>
+    </div>
+    <div class="caption">#f5f5f7 · app's existing bg token</div>
+  </div>
+
+</div>
+
+<div class="swatch-row">
+  <span class="swatch a"></span> <span class="swatch-label">#F4F4F4</span>
+  <span class="swatch b"></span> <span class="swatch-label">#ECECEC</span>
+  <span class="swatch app"></span> <span class="swatch-label">#f5f5f7 (app bg)</span>
+</div>
+
+<h2>All four implements as cards</h2>
+<p class="legend">Sample PR cards for each implement. Stone and weight-for-distance use detailed silhouettes (kilt tartan visible). Hammer and sheaf are pure black silhouettes without internal detail — different visual languages within the same set; worth a deliberate look.</p>
+<div class="card-row">
+
+  <div class="card-frame">
+    <div class="celebration-card">
+      <img class="silhouette" src="silhouette-stone-able-bodied.png" alt="">
+      <p class="card-headline">New Personal Record</p>
+      <p class="card-event">Open Stone</p>
+      <p class="card-mark">42'8"</p>
+      <p class="card-prev">was 40'6"</p>
+      <p class="card-meta">
+        <span class="card-meta-line">May 23, 2026</span>
+        <span class="card-meta-line">Pacific NW Highland Games</span>
+        <span class="card-meta-line">Mount Vernon, WA</span>
+      </p>
+      <p class="card-wordmark">Stone &amp; Standard</p>
+    </div>
+    <div class="caption">Open Stone · stone silhouette</div>
+  </div>
+
+  <div class="card-frame">
+    <div class="celebration-card">
+      <img class="silhouette" src="../silhouette-weight-distance-able-bodied.png" alt="">
+      <p class="card-headline">New Personal Record</p>
+      <p class="card-event">Heavy Weight for Distance</p>
+      <p class="card-mark">38'2"</p>
+      <p class="card-prev">was 36'10"</p>
+      <p class="card-meta">
+        <span class="card-meta-line">May 23, 2026</span>
+        <span class="card-meta-line">Pacific NW Highland Games</span>
+        <span class="card-meta-line">Mount Vernon, WA</span>
+      </p>
+      <p class="card-wordmark">Stone &amp; Standard</p>
+    </div>
+    <div class="caption">Heavy Weight for Distance</div>
+  </div>
+
+  <div class="card-frame">
+    <div class="celebration-card">
+      <img class="silhouette" src="silhouette-hammer.png" alt="">
+      <p class="card-headline">New Personal Record</p>
+      <p class="card-event">Heavy Hammer</p>
+      <p class="card-mark">124'6"</p>
+      <p class="card-prev">was 119'3"</p>
+      <p class="card-meta">
+        <span class="card-meta-line">May 23, 2026</span>
+        <span class="card-meta-line">Pacific NW Highland Games</span>
+        <span class="card-meta-line">Mount Vernon, WA</span>
+      </p>
+      <p class="card-wordmark">Stone &amp; Standard</p>
+    </div>
+    <div class="caption">Heavy Hammer · pure black</div>
+  </div>
+
+  <div class="card-frame">
+    <div class="celebration-card">
+      <img class="silhouette" src="silhouette-sheaf.png" alt="" style="height: 92%;">
+      <p class="card-headline">New Personal Record</p>
+      <p class="card-event">Sheaf Toss</p>
+      <p class="card-mark">28'</p>
+      <p class="card-prev">was 26'</p>
+      <p class="card-meta">
+        <span class="card-meta-line">May 23, 2026</span>
+        <span class="card-meta-line">Pacific NW Highland Games</span>
+        <span class="card-meta-line">Mount Vernon, WA</span>
+      </p>
+      <p class="card-wordmark">Stone &amp; Standard</p>
+    </div>
+    <div class="caption">Sheaf Toss · height event</div>
+  </div>
+
+</div>
+
+<h2>Style-consistency check · all silhouettes side by side</h2>
+<p class="legend">All six available silhouettes at the same scale on the same grey. Look across the row — the stone and weight-for-distance carry white tartan accents on the kilt; hammer and sheaf don't. Cross-event consistency call sits here.</p>
+<div class="ref-row">
+  <div>
+    <div class="ref-tile"><img src="silhouette-stone-adaptive.png" alt=""></div>
+    <div class="ref-caption">stone adaptive</div>
+  </div>
+  <div>
+    <div class="ref-tile"><img src="silhouette-stone-able-bodied.png" alt=""></div>
+    <div class="ref-caption">stone able-bodied</div>
+  </div>
+  <div>
+    <div class="ref-tile"><img src="../silhouette-weight-distance-adaptive.png" alt=""></div>
+    <div class="ref-caption">weight-dist adaptive</div>
+  </div>
+  <div>
+    <div class="ref-tile"><img src="../silhouette-weight-distance-able-bodied.png" alt=""></div>
+    <div class="ref-caption">weight-dist able-bodied</div>
+  </div>
+  <div>
+    <div class="ref-tile"><img src="silhouette-hammer.png" alt=""></div>
+    <div class="ref-caption">hammer</div>
+  </div>
+  <div>
+    <div class="ref-tile"><img src="silhouette-sheaf.png" alt=""></div>
+    <div class="ref-caption">sheaf toss</div>
+  </div>
+</div>
+
+</body>
+</html>
