@@ -529,7 +529,7 @@ test('validateBackup: string input => error', () => {
 
 test('validateBackup: wrong appName => error', () => {
   const out = validateBackup(makeBackup({ appName: 'other-app' }));
-  assertTrue(typeof out === 'string' && out.includes('Highland Games Tracker'));
+  assertTrue(typeof out === 'string' && out.includes('Stone & Standard'));
 });
 
 test('validateBackup: missing data section => error', () => {
@@ -827,6 +827,14 @@ test('validateBackup: highland-games-tracker + v1 envelope => null', () => {
 
 test('validateBackup: highland-games-tracker + v2 envelope => null', () => {
   assertEqual(validateBackup(makeV2Backup()), null);
+});
+
+test('validateBackup: stone-and-standard + v2 envelope => null', () => {
+  assertEqual(validateBackup(makeV2Backup({ appName: 'stone-and-standard' })), null);
+});
+
+test('validateBackup: stone-and-standard + v1 envelope => null (still migrates)', () => {
+  assertEqual(validateBackup(makeBackup({ appName: 'stone-and-standard' })), null);
 });
 
 test('validateBackup: v2 missing prs => error', () => {

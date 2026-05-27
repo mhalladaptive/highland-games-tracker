@@ -527,8 +527,15 @@ function validateBackup(parsed) {
   if (!parsed || typeof parsed !== 'object') {
     return 'File is not a valid object.';
   }
-  if (parsed.appName !== 'highland-games-tracker' && parsed.appName !== 'comeback-tracker') {
-    return 'Not a Highland Games Tracker backup file.';
+  // Accept the current Stone & Standard envelope plus both legacy names so
+  // existing v2 (highland-games-tracker) and v1 (comeback-tracker) backups
+  // still import. The schema migration below normalises v1 payloads to v2.
+  if (
+    parsed.appName !== 'stone-and-standard' &&
+    parsed.appName !== 'highland-games-tracker' &&
+    parsed.appName !== 'comeback-tracker'
+  ) {
+    return 'Not a Stone & Standard backup file.';
   }
   if (!parsed.data || typeof parsed.data !== 'object') {
     return 'Backup file is missing the data section.';

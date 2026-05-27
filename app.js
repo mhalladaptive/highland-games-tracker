@@ -461,7 +461,7 @@ function showDataStatus(message, isError) {
 function exportData() {
   const data = loadData();
   const envelope = {
-    appName: 'highland-games-tracker',
+    appName: 'stone-and-standard',
     exportedAt: new Date().toISOString(),
     data,
   };
@@ -470,7 +470,7 @@ function exportData() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `highland-games-tracker-backup-${todayISO()}.json`;
+  a.download = `stone-and-standard-backup-${todayISO()}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
