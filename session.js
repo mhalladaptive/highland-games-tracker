@@ -930,9 +930,10 @@ function playCelebrationSound(src) {
 // Stage 6a — the throws PR card: a soft-grey card carrying an implement-specific
 // athlete silhouette as its hero, anchored bottom-right so the text reads in the
 // upper-left negative space. selectThrowSilhouette (shared.js, pure) picks the
-// asset; this is the rendering layer. Weight for Height has no silhouette yet,
-// so its card renders un-skinned (soft-grey, no image) — the
-// .celebration-card--no-silhouette modifier re-centres the text for that case.
+// asset; this is the rendering layer. All eight throws events have a silhouette;
+// if one is ever missing (no src, or the image fails to load) the card falls
+// back to the un-skinned layout — the .celebration-card--no-silhouette modifier
+// re-centres the text for that case.
 //
 // A celebration sound fires when the card renders (a no-op while sound is off,
 // which is the default). Playback is gesture-initiated — the card fires from

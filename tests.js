@@ -3683,9 +3683,11 @@ test('selectThrowSilhouette: Sheaf Toss → single-variant path (no class suffix
     { implement: 'sheaf', athleteClass: 'able-bodied', src: 'images/silhouettes/silhouette-sheaf.png' });
 });
 
-test('selectThrowSilhouette: Weight for Height → un-skinned fallback (no src)', () => {
+test('selectThrowSilhouette: Weight for Height → weight-over-bar, class-specific path', () => {
   assertDeepEqual(selectThrowSilhouette('weight-over-bar', 'amateur-a'),
-    { implement: null, athleteClass: 'able-bodied', src: null });
+    { implement: 'weight-over-bar', athleteClass: 'able-bodied', src: 'images/silhouettes/silhouette-weight-over-bar-able-bodied.png' });
+  assertDeepEqual(selectThrowSilhouette('weight-over-bar', 'para-standing-neuro'),
+    { implement: 'weight-over-bar', athleteClass: 'adaptive', src: 'images/silhouettes/silhouette-weight-over-bar-adaptive.png' });
 });
 
 test('selectThrowSilhouette: class defaults to able-bodied when unset or unknown', () => {
@@ -3810,15 +3812,17 @@ test('silhouette path: a throws PR card takes the silhouette/soft-grey path', ()
   assertTrue(!!card.querySelector('.throw-silhouette'), 'carries a silhouette image');
 });
 
-test('silhouette path: Weight for Height renders the un-skinned throw card', () => {
+test('silhouette path: Weight for Height renders with its silhouette', () => {
   const card = buildCelebrationCard(
     { type: 'pr', event: 'weight-over-bar', value: 180, previousValue: 168 },
     { id: 1, date: '2026-05-24' },
     {}
   );
-  assertTrue(card.classList.contains('celebration-card--throw'), 'still a throw card');
-  assertTrue(card.classList.contains('celebration-card--no-silhouette'), 'un-skinned fallback');
-  assertTrue(!card.querySelector('.throw-silhouette'), 'no silhouette image');
+  assertTrue(card.classList.contains('celebration-card--throw'), 'is a throw card');
+  assertTrue(!card.classList.contains('celebration-card--no-silhouette'), 'is skinned');
+  const img = card.querySelector('.throw-silhouette');
+  assertTrue(!!img, 'has a silhouette image');
+  assertMatch(img.getAttribute('src'), /silhouette-weight-over-bar-able-bodied\.png$/, 'WOB able-bodied');
 });
 
 test('silhouette path: an adaptive athlete gets the adaptive stone silhouette', () => {

@@ -1059,20 +1059,21 @@ function topSessionBestsInWindow(sessions, liftId, direction, days, todayIso) {
 //   - athleteClass is 'adaptive' when the athlete's profile class is one of the
 //     four BCAA adaptive classes (the 'Adaptive' group), else 'able-bodied'
 //     (also the default when the class is unset or unknown).
-//   - src is the image path, or null when no silhouette exists for the event
-//     yet. Weight for Height has no silhouette in v2.0, so its src is null and
-//     the card renders un-skinned (soft-grey, no image). The day a
-//     weight-over-bar asset lands, this branch self-fills.
+//   - src is the image path. As of 2026-05-26 all eight throws events have a
+//     silhouette, so a throw always resolves a src. src is null only for the
+//     defensive case (an event with no mapped implement) — the card then
+//     renders un-skinned (soft-grey, no image).
 //
-// stone + weight-distance ship adaptive + able-bodied pairs, so their filename
-// carries the class suffix. hammer + sheaf are single-variant for v2.0, so
-// their filename has no class suffix (the adaptive athlete gets the single art).
+// stone + weight-distance + weight-over-bar ship adaptive + able-bodied pairs,
+// so their filename carries the class suffix. hammer + sheaf are single-variant
+// for v2.0, so their filename has no class suffix (the adaptive athlete gets the
+// single art).
 //
 // Pure: reads ITEMS and PROFILE_CLASSES only, no DOM, no storage. session.js
 // renders over the returned descriptor. Same pattern as detectMilestones and
 // recomputeDerivedState.
 const SILHOUETTE_DIR = 'images/silhouettes/';
-const SILHOUETTE_PAIRED_IMPLEMENTS = new Set(['stone', 'weight-distance']);
+const SILHOUETTE_PAIRED_IMPLEMENTS = new Set(['stone', 'weight-distance', 'weight-over-bar']);
 
 function throwImplementForEvent(eventId) {
   switch (eventId) {
@@ -1087,8 +1088,11 @@ function throwImplementForEvent(eventId) {
       return 'hammer';
     case 'sheaf-toss':
       return 'sheaf';
+    case 'weight-over-bar':
+      return 'weight-over-bar';
     default:
-      // weight-over-bar (no asset yet) and any non-mapped event.
+      // Defensive: a throw event with no mapped implement (e.g. a future event
+      // added before its silhouette). Renders the un-skinned card.
       return null;
   }
 }
