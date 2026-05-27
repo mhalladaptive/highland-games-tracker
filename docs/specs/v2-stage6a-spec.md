@@ -303,8 +303,12 @@ CONCENTRATE HERE
   before.
 - Silhouette selection: each throw event maps to the right
   (implement, class) pair; adaptive athletes (BCAA adaptive classes)
-  get the adaptive variant where one exists; Weight Over Bar maps to
-  the un-skinned fallback (no image).
+  get the adaptive variant where one exists. As of the mid-build
+  2026-05-26 revision, all eight throws events have silhouettes
+  staged including Weight Over Bar (silhouette-weight-over-bar-
+  {class}.png) — the un-skinned fallback in scope point 5 is purely
+  defensive against any missing silhouette file, not the expected
+  behavior for any specific event.
 - Audio: sound is genuinely off by default; the toggle works and the
   preference persists; nothing autoplays against browser policy; the
   placeholder files do not throw.
