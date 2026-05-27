@@ -1064,16 +1064,16 @@ function topSessionBestsInWindow(sessions, liftId, direction, days, todayIso) {
 //     defensive case (an event with no mapped implement) — the card then
 //     renders un-skinned (soft-grey, no image).
 //
-// stone + weight-distance + weight-over-bar ship adaptive + able-bodied pairs,
-// so their filename carries the class suffix. hammer + sheaf are single-variant
-// for v2.0, so their filename has no class suffix (the adaptive athlete gets the
-// single art).
+// All five implements ship adaptive + able-bodied pairs, so their filename
+// always carries the class suffix. The single-variant (no class suffix) branch
+// below is kept as a defensive fallback for any future implement added before
+// its adaptive variant exists.
 //
 // Pure: reads ITEMS and PROFILE_CLASSES only, no DOM, no storage. session.js
 // renders over the returned descriptor. Same pattern as detectMilestones and
 // recomputeDerivedState.
 const SILHOUETTE_DIR = 'images/silhouettes/';
-const SILHOUETTE_PAIRED_IMPLEMENTS = new Set(['stone', 'weight-distance', 'weight-over-bar']);
+const SILHOUETTE_PAIRED_IMPLEMENTS = new Set(['stone', 'weight-distance', 'hammer', 'sheaf', 'weight-over-bar']);
 
 function throwImplementForEvent(eventId) {
   switch (eventId) {

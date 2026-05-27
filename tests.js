@@ -3669,18 +3669,18 @@ test('selectThrowSilhouette: weights for distance → weight-distance, class-spe
     { implement: 'weight-distance', athleteClass: 'adaptive', src: 'images/silhouettes/silhouette-weight-distance-adaptive.png' });
 });
 
-test('selectThrowSilhouette: hammers → single-variant path (no class suffix)', () => {
+test('selectThrowSilhouette: hammers → hammer, class-specific path', () => {
   assertDeepEqual(selectThrowSilhouette('heavy-hammer', 'amateur-a'),
-    { implement: 'hammer', athleteClass: 'able-bodied', src: 'images/silhouettes/silhouette-hammer.png' });
-  // An adaptive athlete still gets the single hammer art for v2.0; the class is
-  // computed but the path carries no class suffix until the adaptive art lands.
+    { implement: 'hammer', athleteClass: 'able-bodied', src: 'images/silhouettes/silhouette-hammer-able-bodied.png' });
   assertDeepEqual(selectThrowSilhouette('light-hammer', 'para-seated'),
-    { implement: 'hammer', athleteClass: 'adaptive', src: 'images/silhouettes/silhouette-hammer.png' });
+    { implement: 'hammer', athleteClass: 'adaptive', src: 'images/silhouettes/silhouette-hammer-adaptive.png' });
 });
 
-test('selectThrowSilhouette: Sheaf Toss → single-variant path (no class suffix)', () => {
+test('selectThrowSilhouette: Sheaf Toss → sheaf, class-specific path', () => {
   assertDeepEqual(selectThrowSilhouette('sheaf-toss', 'amateur-a'),
-    { implement: 'sheaf', athleteClass: 'able-bodied', src: 'images/silhouettes/silhouette-sheaf.png' });
+    { implement: 'sheaf', athleteClass: 'able-bodied', src: 'images/silhouettes/silhouette-sheaf-able-bodied.png' });
+  assertDeepEqual(selectThrowSilhouette('sheaf-toss', 'para-standing-upper'),
+    { implement: 'sheaf', athleteClass: 'adaptive', src: 'images/silhouettes/silhouette-sheaf-adaptive.png' });
 });
 
 test('selectThrowSilhouette: Weight for Height → weight-over-bar, class-specific path', () => {
