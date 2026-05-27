@@ -1,36 +1,39 @@
-# Highland Games Tracker
+# Stone & Standard
 
 A no-account, no-database web app for tracking Highland Games training
 sessions, competition marks, and the milestones that come out of them.
 Plain HTML, CSS, and vanilla JavaScript. Open it in a browser and it
 just works.
 
-## What it does today
+The name pairs the two shapes of the sport: the **stone** you throw for
+distance and the **standard** — the vertical posts of the bar — you
+clear for height.
 
-Four pages, each focused on one job. The current build (tagged
-`v2.0.0-rebrand`) is feature-identical to the original Comeback Tracker
-v1.4 but rebranded as the community-facing Highland Games Tracker.
+## What it does
 
-- **Set Baseline** — reference marks per event (throws and S&C).
+Four pages, each focused on one job.
+
+- **Set PRs & Goals** — two reference marks per event: your **PR**
+  (personal record, your best ever) and your **Goal** (what you're
+  chasing). Both optional and independent. Throws are a fixed list;
+  Strength & Conditioning Milestones are user-defined.
 - **Log Session** — log what you threw or lifted on a given day,
   flagged training or competition. Competition sessions capture the
   Highland Games title (e.g. *Grandfather Mountain*) and per-section
-  notes.
-- **See the Gap** — compare your best mark since you started logging
-  against your baseline. Filter by competition, training, or all.
+  notes. Saving a session that breaks a PR or hits a Goal fires a
+  celebration card.
+- **Progress** — compare your best mark in a time window (last session,
+  past 3 sessions, or year to date) against your PR, as a percentage.
 - **Tests** — runs the built-in test suite against the data layer.
 
 All data lives in your browser via `localStorage`. Download a JSON
 backup to keep a copy or move to another device.
 
-## What's coming in v2.0
-
-The full v2 design is captured in [`v2-plan.md`](./v2-plan.md). The
-short version of what changes:
+## Features
 
 ### PRs and Goals per event
 
-The single "baseline" mark per event splits into two reference marks:
+Each event carries two reference marks:
 
 - **PR** — personal record, your best ever for that event
 - **Goal** — what you're chasing
@@ -41,13 +44,12 @@ PRs from their peak years and Goals that are their recovery targets.
 
 ### Strength and Conditioning Milestones
 
-The "Lifts" section becomes **Strength and Conditioning Milestones** —
-a name that reflects what the section is actually for. You log here
-only when you hit something notable: a 1RM test, a max-effort day, a
-planned PR attempt. You don't need to log every gym day.
+The S&C section is for the moments worth recording: a 1RM test, a
+max-effort day, a planned PR attempt. You don't need to log every gym
+day.
 
-Lifts are now **user-defined**, not a hardcoded list. You name your
-own lifts ("Front Squat," "Trap Bar Deadlift," whatever your training
+Lifts are **user-defined**, not a hardcoded list. You name your own
+lifts ("Front Squat," "Trap Bar Deadlift," whatever your training
 calls them) and pick how to measure them — pounds, kilograms, miles,
 kilometers, meters, yards, time, reps, rounds, or calories. Every unit
 covers a different training modality, so the section fits CrossFit
@@ -60,9 +62,9 @@ competition).
 
 ### Progress page
 
-Replaces "See the Gap." Lands on a **vs-PR comparison** by default —
-how close your current marks are to your best. Three time-window
-filters at the top, matching the v1 pattern of competition/training/all:
+Lands on a **vs-PR comparison** by default — how close your current
+marks are to your best. Three time-window filters at the top, matching
+the competition/training/all pattern:
 
 - Last session logged
 - Past 3 sessions
@@ -77,9 +79,10 @@ When you save a session that breaks a PR or hits a Goal, the app
 celebrates the moment. **PR cards** and **Goal cards** appear with the
 mark, the event, the date, the Highland Games title (if it's a
 competition session), and a wordmark — designed for screenshot and
-share. If a single session triggers more than one milestone, an
-**Awesome Day** capstone card appears after the individual cards as
-the trophy for great competition days.
+share. A throws PR card carries an implement-specific athlete
+silhouette as its hero. If a single session triggers more than one
+milestone, an **Awesome Day** capstone card appears after the
+individual cards as the trophy for great competition days.
 
 Cards are persisted on the session record, so you can pull them up
 later from Past Sessions — useful if you tapped through too fast at
@@ -107,13 +110,14 @@ Para Standing Upper Limb Loss, Para Standing Lower Limb Loss, and Para
 Standing Neuro/Muscular, with BCAA's Masters 40+ / Senior Master 50+
 tier modifiers.
 
-### v1 backup import
+### Backup import
 
-If you used the original *Comeback Tracker* fork, your backup will
-import cleanly into v2. The app accepts both v1 and v2 backup files,
-migrates the schema forward, and maps your hardcoded lifts (Overhead
-Press, Deadlift, Hang Clean, etc.) into user-defined entries with
-their names, protocols, and IDs preserved.
+If you used the original *Comeback Tracker* fork or an earlier Highland
+Games Tracker build, your backup imports cleanly. The app accepts v1
+and v2 backup files under any of its historical names, migrates the
+schema forward, and maps your hardcoded lifts (Overhead Press,
+Deadlift, Hang Clean, etc.) into user-defined entries with their names,
+protocols, and IDs preserved.
 
 ## Who it's for
 
@@ -149,11 +153,8 @@ manually.
 Forked from [`comeback-tracker`](https://github.com/mhalladaptive/comeback-tracker)
 at the v1.4 commit (tagged in this repo as `v1.4-fork`). The original
 lives on as the author's personal app; this repo is the
-community-facing version.
-
-The strip-phase rebrand commits are visible between `v1.4-fork` and
-`v2.0.0-rebrand`. Stage 2 onward begins the v2.0 feature work
-described above.
+community-facing version, first branded Highland Games Tracker and
+renamed **Stone & Standard** at the v2.0 launch.
 
 ## Contributing
 
