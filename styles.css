@@ -112,6 +112,18 @@ body.kind-training .comp-only {
   font-size: 0.95rem;
 }
 
+/* v2.0.1 Edit Profile affordance. Re-opens the profile modal from any
+   state — first-launch dismissed, profile fully completed, anything
+   between. Right-aligned at the top of <main> so it reads as a settings
+   tool, not a primary CTA. Uses the existing .ghost-btn surface so it
+   sits with the same visual weight as the Backup/Restore buttons in
+   the Data section. */
+.profile-edit-row {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 0.5rem;
+}
+
 .group {
   background: var(--card);
   border: 1px solid var(--border);

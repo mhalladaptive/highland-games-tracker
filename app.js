@@ -638,6 +638,9 @@ function init() {
     openProfileModal();
   }
 
+  const editProfileBtn = document.getElementById('edit-profile-btn');
+  if (editProfileBtn) editProfileBtn.addEventListener('click', openProfileModal);
+
   const form = document.getElementById('pr-goal-form');
   form.addEventListener('submit', (event) => {
     event.preventDefault();
