@@ -1281,11 +1281,13 @@ body.kind-training .comp-only {
 /* Stone plaque region (inset parchment plaque on the stone slab, visual
    centre ~y=67%). Anchoring by centre — not by top — so a longer event name
    pushes the block evenly inside the plaque rather than overflowing down
-   into the scroll banner. Engraved-on-stone dark warm brown reads as carved
-   text against the parchment. All rules are scoped under .celebration-card--
-   throw so they win the cascade over the legacy .celebration-card-headline /
-   -event / -mark / -prev / -wordmark rules above (which still apply on the
-   lift PR + Goal + Awesome Day cards, unchanged). */
+   into the scroll banner. Pale warm cream (#fff8d8) on this region's dark
+   parchment hits 8.18:1 AA contrast (codex review of the dark-brown starting
+   value measured 1.58:1 — the parchment is too dark to carry dark text). All
+   rules are scoped under .celebration-card--throw so they win the cascade
+   over the legacy .celebration-card-headline / -event / -mark / -prev /
+   -wordmark rules above (which still apply on the lift PR + Goal + Awesome
+   Day cards, unchanged). */
 .celebration-card--throw .card-plaque {
   position: absolute;
   left: 50%;
@@ -1294,16 +1296,17 @@ body.kind-training .comp-only {
   width: 76%;
   z-index: 2;
   text-align: center;
-  color: #3a2a14;
+  color: #fff8d8;
   pointer-events: none;
 }
 
 .celebration-card--throw .card-headline {
   /* Headline + subhead sit in the dark stone above the inset parchment.
      Brass colour (matching the wordmark and the template's scroll-banner
-     fittings) reads as decorative label text against the dark stone,
-     while the larger event/mark/prev below sit on the bright parchment
-     in engraved dark brown. */
+     fittings) reads as decorative label text against the dark stone (3.91:1
+     — passes AA large-text). The event/mark/prev below sit on the dark
+     parchment in pale warm cream — see the .card-plaque comment for the
+     contrast rationale. */
   font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.06em;
@@ -1327,7 +1330,7 @@ body.kind-training .comp-only {
   font-size: 0.92rem;
   font-weight: 700;
   line-height: 1.2;
-  color: #3a2a14;
+  color: #fff8d8;
   margin: 0;
 }
 
@@ -1336,7 +1339,7 @@ body.kind-training .comp-only {
   font-size: 1.85rem;
   font-weight: 900;
   letter-spacing: -0.01em;
-  color: #3a2a14;
+  color: #fff8d8;
   line-height: 1;
   margin: 0.05rem 0 0;
   /* Reset the inherited 6a flex-fill so the mark sits inside the plaque
@@ -1349,7 +1352,7 @@ body.kind-training .comp-only {
 .celebration-card--throw .card-prev {
   font-size: 0.7rem;
   line-height: 1.2;
-  color: #3a2a14;
+  color: #fff8d8;
   opacity: 0.75;
   margin: 0.05rem 0 0;
 }
@@ -1364,7 +1367,7 @@ body.kind-training .comp-only {
   width: 76%;
   z-index: 2;
   text-align: center;
-  color: #3a2a14;
+  color: #fff8d8;
   font-size: 0.66rem;
   line-height: 1.15;
   display: flex;
