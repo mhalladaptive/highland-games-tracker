@@ -1291,9 +1291,9 @@ body.kind-training .comp-only {
 }
 
 /* Stone plaque region (inset parchment plaque on the stone slab, visual
-   centre ~y=67%). Anchoring by centre — not by top — so a longer event name
-   pushes the block evenly inside the plaque rather than overflowing down
-   into the scroll banner. Pale warm cream (#fff8d8) on this region's dark
+   centre ~y=75% in the v2.0.1 template). Anchoring by centre — not by top
+   — so a longer event name pushes the block evenly inside the plaque
+   rather than overflowing down into the scroll banner. Pale warm cream (#fff8d8) on this region's dark
    parchment hits 8.18:1 AA contrast (codex review of the dark-brown starting
    value measured 1.58:1 — the parchment is too dark to carry dark text). All
    rules are scoped under .celebration-card--throw so they win the cascade
@@ -1303,7 +1303,7 @@ body.kind-training .comp-only {
 .celebration-card--throw .card-plaque {
   position: absolute;
   left: 50%;
-  top: 71%;
+  top: 74%;
   transform: translate(-50%, -50%);
   width: 76%;
   z-index: 2;
@@ -1374,7 +1374,7 @@ body.kind-training .comp-only {
 .celebration-card--throw .card-scroll {
   position: absolute;
   left: 50%;
-  top: 90%;
+  top: 91%;
   transform: translate(-50%, -50%);
   width: 76%;
   z-index: 2;
@@ -1392,20 +1392,59 @@ body.kind-training .comp-only {
   display: block;
 }
 
-/* Bottom-center wordmark in the dark mountain shadow below the scroll. Warm
-   brass to echo the scroll banner. Reset the legacy wordmark's border-top
-   + top padding — those decorate the 6a in-flow wordmark, but here it's a
-   positioned overlay. The translateX(-50%) is the standard absolute-position-
-   centering recipe — anchor by centerline then pull back half the element's
-   own width. A future Stone & Standard icon (v2.x) sits to the side of or
-   replaces this text. */
+/* The date is rendered as inline SVG with <textPath> so the type follows
+   the brass scroll's gentle curve. The SVG carries the .card-meta-date
+   class for sizing in the flex column; the actual styling (brass color,
+   uppercase, weight, letter-spacing) lives on the inner <text> element
+   because SVG uses `fill` for color and inherits text properties
+   selectively. Matches the NEW PR ACHIEVED headline typography so the
+   two read as a paired set. */
+.celebration-card--throw .card-scroll .card-meta-date {
+  display: block;
+  width: 100%;
+  overflow: visible;
+  /* The curve dips the bottom of the glyphs below the SVG's logical
+     centre, so the date visually rides low on the brass scroll. translateY
+     re-centres just the date — applied via transform so it doesn't pull
+     the games/location lines up with it (margin would). */
+  transform: translateY(-0.4rem);
+}
+
+.celebration-card--throw .card-scroll .card-meta-date text {
+  font-family: inherit;
+  /* viewBox is 0 0 200 24; font-size 14 reads ~58% of viewBox height which
+     scales with the scroll-banner width and keeps proportion with the
+     headline. */
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  fill: #d4b876;
+  /* Outline against the brass scroll illustration — brass-on-brass would
+     vanish, so a dark warm-brown stroke creates the contrast. paint-order
+     puts the stroke behind the fill so the brass glyph stays its true
+     thickness and the outline reads as a halo around it. */
+  stroke: #1a1208;
+  stroke-width: 1;
+  paint-order: stroke fill;
+}
+
+/* Bottom-left wordmark rotated 90° counterclockwise — book-spine pattern,
+   reading bottom-to-top. Warm brass to echo the scroll banner. Reset the
+   legacy wordmark's border-top + top padding — those decorate the 6a
+   in-flow wordmark, but here it's a positioned overlay. transform-origin
+   pins the rotation pivot to the wordmark's bottom-left corner so the
+   rotated text rises UP from (left, bottom) rather than swinging around
+   its centre — that's what makes the position read as "anchored at the
+   bottom-left". white-space: nowrap keeps the wordmark on one line so the
+   rotation produces a single vertical strip, not a wider stacked block.
+   A future Stone & Standard icon (v2.x) sits in or near the same slot. */
 .celebration-card--throw .card-wordmark {
   position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: 3%;
+  left: 4%;
+  bottom: 4%;
   z-index: 2;
-  font-size: 0.7rem;
+  font-size: 0.7875rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   color: #c5a76b;
@@ -1413,7 +1452,10 @@ body.kind-training .comp-only {
   padding-top: 0;
   margin-top: 0;
   pointer-events: none;
-  text-align: center;
+  text-align: left;
+  white-space: nowrap;
+  transform-origin: left bottom;
+  transform: rotate(-90deg);
 }
 
 /* Defensive fallbacks. --no-template: the template image failed to load;

@@ -2500,7 +2500,7 @@ test('buildCelebrationCard: PR card renders headline, event, mark, and previous 
   };
   const card = buildCelebrationCard(milestone, session, data, [milestone]);
   assertTrue(card.classList.contains('celebration-card--pr'), 'pr class');
-  assertMatch(card.querySelector('.celebration-card-headline').textContent, /Personal Record/);
+  assertMatch(card.querySelector('.celebration-card-headline').textContent, /New PR Achieved/);
   assertMatch(card.querySelector('.celebration-card-event').textContent, /Braemar Stone/);
   assertMatch(card.querySelector('.celebration-card-mark').textContent, /35'/);
   assertMatch(card.querySelector('.celebration-card-prev').textContent, /was 33'/);

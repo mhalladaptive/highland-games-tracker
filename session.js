@@ -897,6 +897,13 @@ const CELEBRATION_AUDIO = {
   land: 'audio/weight-clang.wav',
 };
 
+// Per-card-render counter so each throws PR card's date-curve path gets
+// a unique id. Replay queues cards one at a time so collision is unlikely
+// in practice, but a counter is cheaper than reasoning about every code
+// path that might mount two at once. Increment, then use.
+let cardDatePathCounter = 0;
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
 function isSoundOn() {
   try {
     return localStorage.getItem(SOUND_PREF_KEY) === 'on';
@@ -984,21 +991,16 @@ function buildThrowsPrCard(milestone, session, data, sil) {
     card.classList.add('celebration-card--no-silhouette');
   }
 
-  // Stone plaque region — headline, subhead, event, mark, previous-mark.
-  // textContent stays mixed-case "Personal Record" so the Stage 4b regex
-  // tests still match; CSS text-transform: uppercase carries the visual.
+  // Stone plaque region — headline, event, mark, previous-mark. textContent
+  // stays mixed-case "New PR Achieved" so the Stage 4b regex test still
+  // matches; CSS text-transform: uppercase carries the visual.
   const plaque = document.createElement('div');
   plaque.className = 'card-plaque';
 
   const headline = document.createElement('p');
   headline.className = 'card-headline celebration-card-headline';
-  headline.textContent = 'Personal Record';
+  headline.textContent = 'New PR Achieved';
   plaque.appendChild(headline);
-
-  const subhead = document.createElement('p');
-  subhead.className = 'card-subhead';
-  subhead.textContent = 'New PR Achieved';
-  plaque.appendChild(subhead);
 
   const eventName = document.createElement('p');
   eventName.className = 'card-event celebration-card-event';
@@ -1021,12 +1023,35 @@ function buildThrowsPrCard(milestone, session, data, sil) {
 
   // Brass scroll banner — date, games title (only when set), location.
   // One per line; the scroll is wide enough for short location strings.
+  // Date is rendered as inline SVG with <textPath> so the type can follow
+  // the gentle curve of the brass scroll illustration below it. Path id
+  // is suffixed per card to keep multi-card render scenarios safe.
   const scroll = document.createElement('div');
   scroll.className = 'card-scroll';
-  const dateLine = document.createElement('span');
-  dateLine.className = 'card-meta-line';
-  dateLine.textContent = formatSessionDate(session.date);
-  scroll.appendChild(dateLine);
+  const dateSvg = document.createElementNS(SVG_NS, 'svg');
+  dateSvg.setAttribute('class', 'card-meta-line card-meta-date');
+  dateSvg.setAttribute('viewBox', '0 0 200 24');
+  dateSvg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  const datePathId = `card-date-curve-${++cardDatePathCounter}`;
+  const datePath = document.createElementNS(SVG_NS, 'path');
+  datePath.setAttribute('id', datePathId);
+  // Smile — control point pulls the baseline down to y=32 (~9-unit visual
+  // dip at the curve apex, since a quadratic Bezier only reaches halfway
+  // toward its control point). Edit the Q control point's Y to deepen or
+  // flatten the curve; flip the sign (relative to the endpoints' y=14)
+  // to invert smile ↔ frown.
+  datePath.setAttribute('d', 'M 10 14 Q 100 32 190 14');
+  datePath.setAttribute('fill', 'none');
+  dateSvg.appendChild(datePath);
+  const dateText = document.createElementNS(SVG_NS, 'text');
+  dateText.setAttribute('text-anchor', 'middle');
+  const dateTextPath = document.createElementNS(SVG_NS, 'textPath');
+  dateTextPath.setAttribute('href', `#${datePathId}`);
+  dateTextPath.setAttribute('startOffset', '50%');
+  dateTextPath.textContent = formatSessionDate(session.date);
+  dateText.appendChild(dateTextPath);
+  dateSvg.appendChild(dateText);
+  scroll.appendChild(dateSvg);
   if (session.games) {
     const games = document.createElement('span');
     games.className = 'card-meta-line';
