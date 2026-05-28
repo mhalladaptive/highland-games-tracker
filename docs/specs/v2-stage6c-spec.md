@@ -96,7 +96,7 @@ The three surfaces:
 
 6. **Move the refreshed WOB adaptive silhouette** from `Images for Cards/silhouette-weight-over-bar-adaptive.png` (Oak's updated artwork, 2026-05-27 evening) to `images/silhouettes/silhouette-weight-over-bar-adaptive.png`, replacing the shipped version. Use `git mv` if Git treats it as a rename (content differs, so likely a content-changed move; cowork mirror folder will need its own update via cowork follow-up).
 
-7. **Move the refreshed WOB able-bodied silhouette** from `Images for Cards/silhouette-weight-over-bar-able-bodied.png` (Oak regenerates with the same weight-clearly-above-bar treatment as the adaptive variant) to `images/silhouettes/silhouette-weight-over-bar-able-bodied.png`. Both WOB variants refresh inside 6c — decision locked 2026-05-27 late session. Use `git mv` if Git treats it as a rename (content differs).
+7. **WOB able-bodied stays as-shipped.** The currently shipped `images/silhouettes/silhouette-weight-over-bar-able-bodied.png` already has the weight clearly above the bar with proper air between them — the composition is correct at full resolution. The earlier 6c draft requiring an able-bodied refresh was based on a flawed cowork observation (the weight appearing close to the bar at small mobile-viewport scale was a scale-compression artifact, not a defect in the source artwork). Walked back 2026-05-27 late session after side-by-side eyeball. Only the adaptive refreshes in 6c; the able-bodied is unchanged.
 
 ## Acceptance criteria
 
@@ -107,7 +107,7 @@ The three surfaces:
 - [ ] `prefers-reduced-motion: reduce` users see the frozen flag immediately with no wave animation.
 - [ ] All text on the card (headline, event name, mark, was-line, date, games title, location, wordmark) is fully legible against any combination of card background, flag, and silhouette overlap — at every frame of the wave animation, not just the final frozen state.
 - [ ] Refreshed WOB adaptive silhouette is at `images/silhouettes/silhouette-weight-over-bar-adaptive.png` and renders with weight clearly above the bar.
-- [ ] Refreshed WOB able-bodied silhouette is at `images/silhouettes/silhouette-weight-over-bar-able-bodied.png` and renders with weight clearly above the bar.
+- [ ] WOB able-bodied silhouette at `images/silhouettes/silhouette-weight-over-bar-able-bodied.png` is unchanged from its 6a-shipped state — the composition was already correct.
 - [ ] `npm run lint` exits 0 and silent.
 - [ ] `tests.html` runs green (no test changes expected — this is presentation-only).
 - [ ] Mobile-emulated Playwright viewport screenshots (per implement, per class) show the relaxed layout reading well.
@@ -126,7 +126,7 @@ The three surfaces:
 2. **Silhouette size dominant, not subtle** (decided 2026-05-27 evening). The figure should be the visual anchor; whitespace was the problem, smaller silhouette is the wrong fix.
 3. **Scottish Saltire as the background** (decided 2026-05-27 evening). The Saltire is on-brand for the Highland Games context and fills the negative space; one image across all implements for consistency.
 4. **One flag image, not per-implement variants** (decided 2026-05-27 evening). Different positions/sizes can come later if needed.
-5. **Both WOB silhouettes refresh inside 6c** (decided 2026-05-27 late session — locked from the earlier "adaptive only" position). Both adaptive and able-bodied variants land in `images/silhouettes/` with the weight-clearly-above-the-bar treatment.
+5. **WOB adaptive refreshes; WOB able-bodied stays as-shipped** (decided 2026-05-27 late session, walked back from a brief "refresh both" position taken earlier the same evening). The able-bodied composition was already correct at the source — the "weight close to bar" appearance that prompted the earlier scope expansion was a scale-compression artifact at small mobile-viewport size, not a defect in the artwork.
 6. **Saltire waves for 5 seconds then freezes** (decided 2026-05-27 late session). CSS keyframe animation on the `::before` pseudo-element of `.celebration-card--throw`, `animation-iteration-count: 1`, `animation-fill-mode: forwards`, plays once per card mount. Fires both at save-time and on Past Sessions replay. Guards on `prefers-reduced-motion: reduce` so motion-sensitive users see the frozen state immediately.
 7. **Media licensing carries forward.** Flag asset is cowork-generated programmatically (PIL polygon-fill) from the public-domain Saltire flag specification — no stock or third-party imagery, no Oak-generated input. The flag *design* is public-domain (national flag); the *rendering* is freshly produced code, not derived from any third-party artwork.
 
@@ -208,10 +208,11 @@ v2.0.0-stage6b.
 
 Build in this order — atomic commits, v1 style:
 
-  1. Stage both refreshed WOB silhouettes from
-     Images for Cards/silhouette-weight-over-bar-adaptive.png and
-     silhouette-weight-over-bar-able-bodied.png into
-     images/silhouettes/, replacing the shipped versions.
+  1. Stage the refreshed WOB adaptive silhouette from
+     Images for Cards/silhouette-weight-over-bar-adaptive.png into
+     images/silhouettes/, replacing the shipped version. The WOB
+     able-bodied stays as-shipped — its composition was already
+     correct.
 
   2. Create the images/decorations/ directory if it does not exist
      and move the Saltire flag asset from Images for Cards/saltire.png
@@ -295,8 +296,8 @@ CONCENTRATE HERE
 - prefers-reduced-motion: reduce media query is present and
   correctly suppresses the animation. This is a real accessibility
   requirement, not a nice-to-have.
-- Both refreshed WOB silhouettes (adaptive and able-bodied) are at
-  the correct shipped paths.
+- The refreshed WOB adaptive silhouette is at the correct shipped
+  path; the WOB able-bodied is unchanged from its 6a-shipped state.
 - Z-index discipline preserved — text above silhouette above flag
   pseudo-element.
 - No regression on lift PR cards, Goal cards, or Awesome Day
@@ -323,5 +324,6 @@ ship as-is, ship after fixes, or fix-and-re-review.
 - **2026-05-27 evening** — first draft, post Oak's iPhone smoke test surfacing the silhouette-too-small + WOB-weight-position findings, and the locked design call to add a Scottish Saltire flag background.
 - **2026-05-27 late session** — three pre-handoff updates locking the open items: (1) Saltire flag waves for 5 seconds then freezes via CSS keyframes — `animation-iteration-count: 1`, `animation-fill-mode: forwards`, plus a `prefers-reduced-motion` accessibility guard. (2) Both WOB silhouettes (adaptive and able-bodied) refresh inside 6c — locked from the earlier "adaptive only" position. (3) Spec sketch lands as a `docs:` commit before ccode picks up the build.
 - **2026-05-27 late session (asset sourcing flip)** — Saltire asset shifted from Oak-generated (via GPT image gen) to cowork-generated (programmatically, via PIL polygon-fill). Reason: stylized stock-rendered Saltires carry license risk even when the underlying flag design is public-domain; a flat geometric Saltire produced from spec dodges that and also animates better under CSS skew (no fabric texture or photographic artifacts to distort). Asset filename simplified from `saltire-waving.png` to `saltire.png` since the asset is no longer the wave — it's the at-rest flag, the CSS does the waving.
+- **2026-05-27 late session (WOB able-bodied scope walk-back)** — the "refresh both WOB variants" decision walked back to "refresh adaptive only." Side-by-side eyeball at full resolution confirmed the shipped able-bodied composition already has the weight clearly above the bar with proper air; the earlier finding that prompted the scope expansion was a scale-compression artifact at small mobile-viewport size, not a defect in the source artwork. Lesson banked: visual findings on mobile renders are worth re-checking against the source asset before scoping a refresh.
 
 *End of sketch. Update only via cowork session.*
