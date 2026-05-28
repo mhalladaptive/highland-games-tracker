@@ -6,6 +6,330 @@ of what got decided when.
 
 ---
 
+## 2026-05-27 evening — Stage 6b shipped; Higgins Method v0.6; Stones deferred to v2.1; v2 feature build complete
+
+*Written by cowork at the session wrap. ccode shipped 6b on a feature
+branch, cowork verified in its sandbox, codex reviewed (the Reviewer
+role was renamed from gpt to codex mid-session — see below), the
+Minor finding was fixed, v2.0.0-stage6b is tagged and pushed. Verify
+against `git log` and the tag before trusting.*
+
+A long evening session that began as "hand 6b to ccode" and ended
+with the v2 feature build structurally complete, Higgins Method
+revised to v0.6, the Stones section deferred to v2.1, a four-layer
+git-lock prevention plan banked, and the post-build cowork docs
+follow-up landed. Today saw two stage ships (6a in the morning, 6b
+in the evening) and a substantive method update — the most ground
+covered in a single calendar day across the v2 build.
+
+### Stage 6b — small, low-risk, clean
+
+The 6b spec was handoff-ready coming into the evening. Pre-handoff
+polish pass first: cowork walked the spec against on-disk reality,
+caught seven small things (a leftover parenthetical in step 1, a
+test-asymmetry note worth making explicit, the role/commit boundary
+between ccode and cowork on step 6, a "still tested" claim that was
+half-true, and three small wording fixes). All cowork-side; no scope
+change. Landed as commit `e21f349`.
+
+ccode then built 6b on `stage-6a-stone-and-standard` (the deviation
+worth banking: the spec said "on main, tagged v2.0.0-stage6a" but
+ccode chose the branch because the polished 6b spec only existed
+there — main still carried the pre-polish version. That call was
+right; the deeper structural learning is that cowork docs commits
+should land on main, not feature branches, so future spec headers'
+"on main" instructions are accurate). Two atomic ccode commits:
+
+1. `d2ab2c0 chore: stage hammer + sheaf adaptive silhouette pairs in images/silhouettes/`
+2. `30bf4a8 feat(celebration): pair hammer + sheaf silhouettes by athlete class`
+
+Both clean. ccode also caught a stale block comment above
+`SILHOUETTE_PAIRED_IMPLEMENTS` that still claimed hammer and sheaf
+were single-variant — rewrote it to match the new reality. That
+edit wasn't in the spec; ccode noticed it from the 2026-05-27
+morning's WOB precedent (where the same kind of stale comment was
+the docs Critical of the 6a review). Good instinct — load-bearing
+comments are part of the change surface.
+
+### Cowork verification — clean pass
+
+The verification pattern from the morning's 6a session repeated:
+sandbox-driven, programmatic, Playwright-against-`tests.html`.
+
+- `tests.html`: **371 / 371 passed**, same count as 6a (the 6b
+  test changes were assertion-level inside existing test blocks, so
+  the top-line count didn't move).
+- All 10 silhouettes present at `images/silhouettes/`, no orphans.
+- `SILHOUETTE_PAIRED_IMPLEMENTS` contains all five implements.
+- Tests symmetrized correctly: hammer and sheaf both have paired
+  assertions (one able-bodied, one adaptive) matching the
+  stone/WFD/WOB pattern.
+- Regression guard at `tests.js:3822` intact.
+- `npm run lint` clean.
+
+### The codex rename surfaced mid-flow
+
+Mid-verification, Oak mentioned ChatGPT could now read repo files
+directly through VS Code without manual upload. Surface-level: nice
+workflow improvement. Two follow-up exchanges later it became clear
+the actual tool was **Codex** (the agentic ChatGPT IDE integration),
+not ChatGPT chat. The tell was the review report's link format:
+`[shared.js](/Users/matthewhall/dev/highland-games-tracker/shared.js:1076)`
+— absolute paths Codex discovered itself, not paths from an upload.
+
+This matters because Codex is an agent with filesystem access. It
+can edit, run commands, possibly commit — capabilities ChatGPT chat
+never had. The Higgins Method's Reviewer role is read-only by
+design, but with Codex the read-only constraint has to be enforced
+in the prompt rather than coming for free from the tool's
+capabilities.
+
+### Higgins Method v0.6
+
+Oak's call: rename the Reviewer callsign for accuracy and add
+explicit read-only guardrails. Landed in `higgins-method.md` (both
+the Obsidian canonical copy and the repo mirror) as commit
+`5bf77b3`. Substantive changes:
+
+- Reviewer callsign `gpt` → `codex`.
+- Role description now carries an explicit *"Operates in
+  review-only mode: produces findings only; does not edit files,
+  run write commands, or commit changes"* clause.
+- New subsection **"Review-prompt opener (canonical, v0.6)"** with
+  the verbatim opener future spec sketches should use. The opener
+  states the read-only constraint up front so Codex doesn't blur
+  the Builder/Reviewer boundary by "helpfully" editing something
+  it found.
+- Reviewer-model LOCKED block updated to "Codex (since v0.6 /
+  2026-05-27)," with the prior naming noted as historical context.
+- Settled list reflects the rename and the new guardrail.
+- Historical-artifacts note: v2-stage6a and v2-stage6b specs keep
+  their "gpt" framing — they're frozen in time, not defective.
+
+The v0.6 commit landed on main directly (not on the 6b branch),
+which is the right shape — method-doc updates are project-wide,
+not stage-specific. The v2.0.0-stage6b tag stays clean as "6b
+stage content only."
+
+### codex review of 6b — one Minor
+
+codex (Codex) read the 5 manifested files and produced a clean
+review: one **Minor** finding, structural checks pass.
+
+The Minor: `Images for Cards/card-version-test/index.html` line
+296 referenced the now-removed `silhouette-hammer.png` on the
+Heavy Hammer card. The sheaf and WOB cards in the same section
+were correctly updated to the `-able-bodied` convention but
+hammer was missed — a cowork edit gap in the version-test mockup.
+The shipped app path was unaffected; mockup-only.
+
+Fix shape worth banking: when codex review surfaces a defect in
+a **cowork-owned file** that was in-scope for the stage, the fix
+lands on the stage branch alongside the ccode commits — not as a
+post-build cowork follow-up. The role-boundary norm carves out
+"cowork docs follow-ups happen after the build ships," but
+gpt/codex review feedback that says *"ship after fixes"* is a
+fix-before-ship signal that overrides the post-build pattern.
+Different surfaces of the same role boundary.
+
+Landed as commit `b5aa667 fix(mockup): update Heavy Hammer card
+to silhouette-hammer-able-bodied.png`. The v2.0.0-stage6b tag
+sits on this commit.
+
+### The lockfile-name residual — sandbox side-effect, real finding
+
+Mid-verification cowork ran `npm install` in its sandbox to be
+able to verify `npm run lint` independently rather than trusting
+ccode's report. That polluted Oak's working tree with a modified
+`package-lock.json`. Oak caught it.
+
+The diff turned out to be two ingredients mixed: machine-noise
+(`libc` arrays removed because the sandbox is Linux and Oak's
+machine is macOS) plus **a real residual** (`"name":
+"highland-games-tracker"` flipped to `"name": "stone-and-standard"`
+— the 6a rename commit updated `package.json` but never
+regenerated the lockfile, so the lockfile still carried the old
+project name).
+
+Oak's call: fix the residual now rather than defer. He cleaned the
+sandbox pollution, ran a fresh `npm install` on his Mac to produce
+the clean two-line diff, and committed as
+`7b37db5 chore: regenerate package-lock.json after Stone & Standard rename`.
+
+**Teaching point worth banking:** incidental side-effects sometimes
+do useful work. The npm install was the wrong move from a
+cowork-discipline standpoint (touched the user's tree), but the
+diff was diagnostic — it surfaced a tracked-file residual that
+would otherwise have shipped to v2.0 with the old project name
+embedded. The discipline correction is valid; the byproduct is
+worth keeping.
+
+### The four-layer git-lock prevention plan
+
+The stale `.git/index.lock` problem hit Oak twice today. Root
+cause traced to the bridge layer between cowork's sandbox and
+Oak's macOS filesystem: git in the sandbox creates the lock and
+removes it on completion, but the deletion doesn't always
+propagate cleanly through the bridge. The file persists on Oak's
+side, blocking his next commit. The sandbox cannot remove it
+once stale (Operation not permitted, even though the file
+appears sandbox-owned).
+
+Oak's question was the right one: *"what can we do, or what
+process can we put in place to stop this from happening?"* The
+four-layer plan that landed in working-norms memory:
+
+- **Layer 1 — `git --no-optional-locks` for all inspection
+  commands** in the sandbox. Tested working with git 2.34.1.
+  Suppresses the optional write lock git takes for fsmonitor /
+  untracked-cache hints during `status`, `ls-files`, etc.
+- **Layer 2 — no mutating git commands from the sandbox.**
+  `git add`, `restore`, `rm`, `commit`, `checkout`, `merge`,
+  `rebase`, `push`, `fetch <refspec>`, `pull` are all Builder/Oak
+  actions, never Cowork verification.
+- **Layer 3 — defensive `rm -f .git/index.lock 2>/dev/null` at
+  the top of any paste block** that runs git commands on Oak's
+  side. Belt-and-suspenders.
+- **Layer 4 — pre-flight check** before handing Oak commit
+  commands: inspect `.git/index.lock` from the sandbox; if it
+  exists, surface it in the response rather than letting Oak
+  discover it by hitting the wall.
+
+Banked in `feedback_working-norms.md`. Net effect: from this
+point forward, cowork's sandbox shouldn't be the source of stale
+locks. If they recur after this, one of the layers has a hole and
+we tighten further.
+
+### Paste-block format norm
+
+Separate but related: Oak hit a paste-format issue mid-session
+when a multi-line commit-message block with `#`-prefixed labels
+and single-quoted terms inside double-quoted strings broke during
+Ctrl-C-then-paste. Banked the rule: **code blocks meant for
+terminal paste contain only commands — no comment lines, no
+descriptive prose, no separator labels.** Explanatory text lives
+between blocks, not inside them. Inside `git commit -m "..."`
+messages, plain words preferred over single-quoted terms to dodge
+nested-quote risk.
+
+### The Stones-to-v2.1 decision — and a cowork miss
+
+After the 6b ship, the v0.6 commit, the post-6b docs follow-up
+was the natural next move. Cowork claimed "the v2 feature build
+is structurally complete" — Oak caught the miss in one read.
+
+The `## Stones section — pending design` block in v2-plan.md had
+been sitting there since 2026-05-24, flagged for v2.0 placement,
+listing five open design questions (data model, measurement
+model, page integration, celebration system, default-section
+setting). Cowork had read v2-plan.md root-to-bottom during the
+context load earlier in the session but didn't grep for unsettled
+blocks when making the completion claim.
+
+**Lesson banked:** verify-before-asserting applies to completion
+claims, not just factual claims. *"Is this complete?"* needs a
+grep of the canonical plan for any block marked
+*pending / open / deferred*, not a recall from memory of "do I
+remember any unfinished features." Memory says "remember"; the
+plan is authoritative.
+
+Oak's call on the Stones miss: defer to v2.1. His stone-lifting
+expert friend can close the open design questions tomorrow with
+domain knowledge in a single conversation — far better than
+another internal planning pass guessing at measurement models for
+the Dinnie Stones, the Ardblair Stone, the Inver Stone, and
+others. v2.0 launches without Stones; v2.1 becomes the
+**"share story + Stones"** release alongside the existing v2.1
+cluster (athlete photo overlay, Save-image button, native share
+sheet).
+
+### Post-build cowork docs follow-up — the consolidated finish
+
+Five things consolidated into one `docs:` commit
+(`e4c37d0 docs: post-6b cowork follow-up — Status update, Stones to v2.1, PICKUP refresh, mirror cleanup`):
+
+1. **v2-plan.md Status block** updated for Stages 1-6b shipped;
+   the v2 feature build flagged as structurally complete;
+   remaining v2.0 work explicitly the Stage 6 housekeeping
+   cluster only.
+2. **v2-plan.md Stones section** reframed as v2.1-deferred with
+   the 2026-05-27 expert-input rationale captured.
+3. **v2-plan.md backlog** gets a Stones bullet alongside the v2.1
+   share-story cluster.
+4. **PICKUP.md rewritten** to end-of-2026-05-27 state: codex
+   Reviewer framing per Higgins v0.6, ten silhouettes, Stones to
+   v2.1, housekeeping-only path to launch. Working-norms
+   appendix carries the paste-block format rule banked today.
+5. **`Images for Cards/silhouette-hammer.png` renamed** to
+   `silhouette-hammer-able-bodied.png` so the cowork-side mirror
+   folder matches the shipped `images/silhouettes/` state. Git
+   auto-detected as a rename at commit time.
+
+The 6b spec's post-build cowork follow-up scope is now closed.
+
+### What shipped today
+
+Across two stage ships and one method revision, the commit chain
+above v2.0.0-stage6a (`6c7b541`) on `origin/main`:
+
+```
+3d755af docs: 2026-05-27 wrap — Stage 6a shipped, 6b queued
+e21f349 docs: polish 6b spec pre-handoff; reconcile v2-plan status block
+d2ab2c0 chore: stage hammer + sheaf adaptive silhouette pairs in images/silhouettes/
+30bf4a8 feat(celebration): pair hammer + sheaf silhouettes by athlete class
+7b37db5 chore: regenerate package-lock.json after Stone & Standard rename
+b5aa667 fix(mockup): update Heavy Hammer card to silhouette-hammer-able-bodied.png   ← v2.0.0-stage6b
+5bf77b3 docs(method): Higgins Method v0.6 — Reviewer rename and read-only guardrails
+e4c37d0 docs: post-6b cowork follow-up — Status update, Stones to v2.1, PICKUP refresh, mirror cleanup
+```
+
+Eight commits in one calendar day, all atomic, all v1-style, all
+on `origin/main` with `origin/main` synced. The v2.0.0-stage6b
+tag is at `b5aa667`; the two commits past the tag are
+method-doc-level and docs-followup-level, correctly outside the
+stage's own scope.
+
+### Where it stands
+
+v2.0.0-stage6b is shipped. **The v2 feature build is structurally
+complete.** Eleven tagged stages from v2.0.0-rebrand (Stage 1)
+through v2.0.0-stage6b are built, reviewed, and on origin/main.
+
+Remaining v2.0 work is the **Stage 6 housekeeping cluster**, all
+Oak-driven verification and packaging — no more feature commits:
+
+- **Cross-device smoke test** (mobile + desktop). 5a/5b/6a/6b
+  were desktop-verified; mobile only via CSS. Need to drive the
+  live app on phone + Mac, walk each major flow, hard-reload
+  (Cmd+Shift+R) to dodge stale cache.
+- **`v2.0.0` launch tag** (distinct from the per-stage
+  `v2.0.0-stage*` tags). The launch tag.
+- **GitHub release** at the v2.0.0 tag with release notes.
+- **Cloudflare Web Analytics** on the deployed v2 build (free,
+  no cookies, no PII).
+
+Stones expert-input session: tomorrow.
+
+L1 gate: still paused for the rest of v2 build through launch,
+per Oak's 2026-05-23 decision — resumes after v2.0 ships.
+
+### Housekeeping
+
+- This SESSION_NOTES entry lands as its own `docs:` commit
+  separate from the `e4c37d0` docs follow-up — the entry's a
+  narrative of what shipped, not part of the shipping itself.
+- The `stage-6a-stone-and-standard` and
+  `stage-6b-stone-and-standard` branches are preserved both
+  locally and on origin — safe to delete whenever Oak wants
+  (`git branch -d <branch> && git push origin --delete <branch>`),
+  not blocking.
+- Tomorrow's session: Stones expert-input conversation, then a
+  v2.1 design session sketching the Stones spec from what the
+  expert closes. v2.0 launch housekeeping continues in parallel
+  or beforehand at Oak's pace.
+
+---
+
 ## 2026-05-27 — Stage 6a shipped; v2.0.0-stage6a tagged; brand rename live
 
 *Written by cowork at the session wrap. ccode shipped the build, cowork
