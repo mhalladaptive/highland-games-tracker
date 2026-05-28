@@ -1380,14 +1380,17 @@ body.kind-training .comp-only {
   display: block;
 }
 
-/* Lower-left wordmark in the dark mountain shadow below the scroll. Warm
+/* Bottom-center wordmark in the dark mountain shadow below the scroll. Warm
    brass to echo the scroll banner. Reset the legacy wordmark's border-top
    + top padding — those decorate the 6a in-flow wordmark, but here it's a
-   positioned overlay. Reserves space for a future Stone & Standard icon
-   (v2.x) — icon slots in next to or replaces this text. */
+   positioned overlay. The translateX(-50%) is the standard absolute-position-
+   centering recipe — anchor by centerline then pull back half the element's
+   own width. A future Stone & Standard icon (v2.x) sits to the side of or
+   replaces this text. */
 .celebration-card--throw .card-wordmark {
   position: absolute;
-  left: 4%;
+  left: 50%;
+  transform: translateX(-50%);
   bottom: 3%;
   z-index: 2;
   font-size: 0.7rem;
@@ -1398,6 +1401,7 @@ body.kind-training .comp-only {
   padding-top: 0;
   margin-top: 0;
   pointer-events: none;
+  text-align: center;
 }
 
 /* Defensive fallbacks. --no-template: the template image failed to load;
