@@ -574,29 +574,55 @@ function syncProfileWeightScheduleField() {
   if (matched) scheduleSelect.value = matched;
 }
 
-function openProfileModal() {
-  const modal = document.getElementById('profile-modal');
-  if (!modal) return;
+// Split in two so the modal is safe to re-open (v2.0.1 Edit Profile flow).
+// setupProfileModal runs once at init: it populates the class dropdown,
+// attaches the change/submit listeners to elements that persist across
+// open/close, and wires the save handler. openProfileModal runs every
+// time the modal is shown: it pre-populates fields from current profile
+// data and shows the dialog. Keeping listener attachment out of open
+// means re-opening doesn't accumulate duplicate submit/change handlers.
+function setupProfileModal() {
+  const form = document.getElementById('profile-form');
+  if (!form) return;
   populateProfileClassOptions();
   const classSelect = document.getElementById('profile-class');
-  classSelect.addEventListener('change', syncProfileTierField);
-  syncProfileTierField();
+  if (classSelect) classSelect.addEventListener('change', syncProfileTierField);
   const genderSelect = document.getElementById('profile-gender');
-  genderSelect.addEventListener('change', syncProfileWeightScheduleField);
-  syncProfileWeightScheduleField();
-  const form = document.getElementById('profile-form');
+  if (genderSelect) genderSelect.addEventListener('change', syncProfileWeightScheduleField);
   form.addEventListener('submit', () => {
+    // Read current first so we can pass the existing setupCompletedAt
+    // through to the builder — it preserves an incoming timestamp and
+    // only stamps a new one when absent. Without this, every re-save
+    // would overwrite the original first-launch timestamp.
+    const current = loadData();
     const profile = buildProfileFromFormValues({
       name: document.getElementById('profile-name').value,
       gender: document.getElementById('profile-gender').value,
       weightSchedule: document.getElementById('profile-weight-schedule').value,
-      class: classSelect.value,
+      class: document.getElementById('profile-class').value,
       tier: document.getElementById('profile-tier').value,
+      setupCompletedAt: current.profile && current.profile.setupCompletedAt,
     });
-    const current = loadData();
     current.profile = profile;
     saveData(current);
-  }, { once: true });
+  });
+}
+
+function openProfileModal() {
+  const modal = document.getElementById('profile-modal');
+  if (!modal) return;
+  const data = loadData();
+  const profile = (data && data.profile) || {};
+  document.getElementById('profile-name').value = profile.name || '';
+  document.getElementById('profile-gender').value = profile.gender || '';
+  document.getElementById('profile-weight-schedule').value = profile.weightSchedule || '';
+  document.getElementById('profile-class').value = profile.class || '';
+  // Tier options depend on the selected class — sync first so the tier
+  // dropdown is populated, THEN set the tier value into the now-correct
+  // option list.
+  syncProfileTierField();
+  document.getElementById('profile-tier').value = profile.tier || '';
+  syncProfileWeightScheduleField();
   if (typeof modal.showModal === 'function') {
     modal.showModal();
   } else {
@@ -607,6 +633,7 @@ function openProfileModal() {
 function init() {
   const data = loadData();
   renderForm(data);
+  setupProfileModal();
   if (!data.profile || !data.profile.setupCompletedAt) {
     openProfileModal();
   }

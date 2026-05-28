@@ -1044,6 +1044,30 @@ test('buildProfileFromFormValues: explicit weightSchedule overrides gender defau
   assertEqual(p.weightSchedule, 'womens');
 });
 
+// v2.0.1 Edit Profile flow: the modal can now re-open after first save.
+// The save handler reads the existing profile's setupCompletedAt and
+// passes it through to the builder so a re-save preserves the original
+// first-launch timestamp instead of overwriting it. These two tests pin
+// the builder's two branches the call site relies on.
+test('buildProfileFromFormValues: preserves existing setupCompletedAt across repeated calls', () => {
+  const original = '2026-05-19T00:00:00.000Z';
+  const input = { name: 'Matt', gender: 'male', class: 'amateur-b', setupCompletedAt: original };
+  const first = buildProfileFromFormValues(input);
+  const second = buildProfileFromFormValues(input);
+  assertEqual(first.setupCompletedAt, original);
+  assertEqual(second.setupCompletedAt, original);
+});
+
+test('buildProfileFromFormValues: stamps fresh setupCompletedAt when absent', () => {
+  const before = Date.now();
+  const p = buildProfileFromFormValues({ name: 'Matt' });
+  const after = Date.now();
+  assertMatch(p.setupCompletedAt, /^\d{4}-\d{2}-\d{2}T/);
+  const stamped = new Date(p.setupCompletedAt).getTime();
+  assertTrue(stamped >= before && stamped <= after,
+    'setupCompletedAt timestamp falls within the call window');
+});
+
 test('defaultWeightScheduleForGender: male/female map to mens/womens; others empty', () => {
   assertEqual(defaultWeightScheduleForGender('male'), 'mens');
   assertEqual(defaultWeightScheduleForGender('female'), 'womens');
