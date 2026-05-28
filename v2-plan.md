@@ -14,31 +14,50 @@ stages.
 
 ## Status
 
-- **Stages 1 through 6b are shipped.** Fork + rebrand (Stage 1)
-  through the hammer + sheaf adaptive-pair completion (Stage 6b)
-  are built, reviewed, and shipped, tagged `v2.0.0-rebrand` through
-  `v2.0.0-stage6b` on `origin/main`. Stage 5 — the Progress page —
-  landed in two halves: 5a (the throws windowed vs-PR view,
-  replacing "See the Gap") and 5b (the S&C lifts view plus the
-  Throws/Lifts toggle). Stage 6a (2026-05-27) bundled the throws
-  PR celebration card visual lift (soft-grey card `#F4F4F4`,
-  implement-specific athlete silhouette as hero), audio plumbing
-  (sound toggle off by default), and the brand rename to Stone &
-  Standard across surface, storage namespace, backup envelope,
-  `package.json`, and README. Stage 6b (2026-05-27, same day)
-  completed the adaptive-pair coverage — hammer + sheaf joined the
-  `SILHOUETTE_PAIRED_IMPLEMENTS` set; ten silhouettes now cover
-  all five throws implements as adaptive + able-bodied pairs.
-- **The v2 feature build is structurally complete.** Remaining v2.0
-  work is the Stage 6 housekeeping cluster — Oak-driven verification
-  and packaging, no more feature commits: cross-device smoke test
-  (mobile + desktop; 5a/5b/6a/6b were desktop-verified, mobile only
-  via CSS), the `v2.0.0` launch tag (distinct from the per-stage
-  `v2.0.0-stage*` tags), the GitHub release, Cloudflare Web
-  Analytics.
+- **Stages 1 through 6c are shipped.** Fork + rebrand (Stage 1)
+  through the ornate-template throws PR card (Stage 6c) are built,
+  reviewed, polished, and shipped, tagged `v2.0.0-rebrand` through
+  `v2.0.0-stage6c` on `origin/main` — twelve tagged stages total.
+  Stage 5 — the Progress page — landed in two halves: 5a (the
+  throws windowed vs-PR view, replacing "See the Gap") and 5b (the
+  S&C lifts view plus the Throws/Lifts toggle). Stage 6a
+  (2026-05-27) bundled the throws PR celebration card visual lift,
+  audio plumbing, and the brand rename to Stone & Standard. Stage
+  6b (2026-05-27) completed adaptive-pair coverage for hammer + sheaf
+  (ten silhouettes covering all five throws implements as adaptive
+  + able-bodied pairs). Stage 6c (2026-05-28) pivoted the throws
+  PR card from soft-grey simple to an ornate Highland Games-themed
+  template (PR shield + parchment medallion + stone plaque + brass
+  scroll + thistle-and-laurel framing + misty mountain backdrop)
+  with silhouette and dynamic text as positioned overlays. WCAG AA
+  contrast achieved with pale-warm-cream body text against the
+  dark template regions. The 6a scope-isolation rule extends: lift
+  PR, Goal, and Awesome Day cards stay on the simpler v2.0 paths;
+  ornate-template extension to those card types is v2.1 polish.
+- **The v2 feature + polish build is structurally complete.**
+  Remaining v2.0 work is the launch housekeeping cluster — Oak-
+  driven verification and packaging, no more feature commits:
+  cross-device smoke test (mobile + desktop, with cache-bust query
+  string per the working norm banked 2026-05-28), the `v2.0.0`
+  launch tag (distinct from the per-stage `v2.0.0-stage*` tags),
+  the GitHub release at that tag with release notes, and Cloudflare
+  Web Analytics on the deployed v2 build (free, no cookies, no
+  PII).
 - **Stones section moved to v2.1** (decided 2026-05-27, pending
   expert input). See the Stones section block below and the v2.x
   backlog list.
+- **v2.1 design language extension** queued — Goal cards, Awesome
+  Day capstones, and lift PR cards all keep their existing simpler
+  presentations through v2.0 and pick up the 6c ornate-template
+  design language in v2.1. Reference templates already staged in
+  `Images for Cards/` (awesome-day-template, s&c-pr-template,
+  s&c-goal-template, s&c-awesome-day-template, stone-pr-template);
+  the v2.1 design sessions will draw from these.
+- **v2.1 dashboard redesign** reference imagery staged 2026-05-28
+  (`s&s-mobile-layout.png` mobile portrait, `s&S-dashboard.png`
+  desktop widescreen — note the desktop variant still reads
+  "HIGHLAND GAMES TRACKER" pre-rename and will need refresh during
+  v2.1 design). Not in v2.0; queued for v2.1 design session.
 - **Higgins Method v0.6** landed 2026-05-27 — Reviewer callsign
   renamed from "gpt" to "codex" with explicit read-only guardrails;
   see `higgins-method.md`. Pre-v0.6 spec sketches keep the "gpt"

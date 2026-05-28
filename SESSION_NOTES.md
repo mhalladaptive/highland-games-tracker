@@ -6,6 +6,337 @@ of what got decided when.
 
 ---
 
+## 2026-05-28 — Stage 6c shipped; ornate template card; v2.0 feature+polish build complete
+
+*Written by cowork at the session wrap. Stage 6c shipped tonight in
+8 commits past v2.0.0-stage6b, with mid-stage interleaved v2.1 prep
+work also landing on main. v2.0.0-stage6c is tagged at `7f8b657`
+(the contrast fix). Verify against `git log` and the tag before
+trusting.*
+
+A long session that started as the natural continuation of 6b —
+Oak's iPhone smoke test surfaced two visual findings on the
+shipped throws PR card (silhouette too small with too much white
+space, Weight for Height weight not reading as above the bar) —
+and ended with the **entire throws PR card visual language pivoted
+to an ornate Highland Games-themed template**, plus the v2.0
+feature+polish build structurally complete. Twelve tagged stages
+on `origin/main` now span the fork from `comeback-tracker` v1.4
+through 6c.
+
+### The 6c design arc went through three distinct directions in one
+### evening
+
+The first 6c spec drafted around Oak's iPhone findings was a CSS
+tuning pass on the existing 6a soft-grey card: relax the silhouette
+size constraints (the 74%/68% caps left wide images like hammer
+producing vertical whitespace and tall images like sheaf/WOB
+producing thin-vertical-line renders), tighten the text grouping to
+eliminate the mid-card whitespace valley, and add a **Scottish
+Saltire flag background** at low opacity to fill the residual
+negative space. Cowork generated the Saltire programmatically via
+PIL polygon-fill from the public-domain flag spec — original code
+rather than stock imagery, dodging license risk on stylized Saltire
+renderings. Oak's call mid-session: have the flag wave for 5
+seconds then freeze, via CSS keyframes on the `::before`
+pseudo-element with a `prefers-reduced-motion: reduce` accessibility
+guard.
+
+That direction held for about two hours. The spec was rewritten
+cleanly, the Saltire asset landed, both WOB silhouettes were almost
+locked for refresh (then walked back to adaptive-only after
+side-by-side eyeball confirmed the shipped able-bodied composition
+was already correct — a cowork miss; the "weight close to bar"
+finding on able-bodied was a scale-compression artifact at small
+mobile-viewport size, not a defect in the source artwork).
+
+**Then Oak generated a fully different design via GPT image gen and
+loved the result**: an ornate Highland Games-themed celebration
+card with a PR shield badge at the top, an empty parchment medallion
+in the center (where the silhouette layers), a stone plaque below
+(for headline + event + mark + previous-mark text), a brass scroll
+banner at the bottom (for date / games title / location metadata),
+and the whole composition framed by thistles + laurel + a misty
+mountain backdrop. The cleaned template (silhouette and text
+removed) became the basis for 6c's third direction: **a fixed
+template image with the silhouette and all dynamic text layered as
+positioned HTML/CSS overlays.** The Saltire commit became orphaned
+v2.x backlog material (the template has its own background imagery,
+no flag needed); the wave animation, the reduced-motion guard, the
+text-cohesion CSS, all retired.
+
+The 6c spec was rewritten from scratch end-to-end for the template
+approach. Scope tightened explicitly to throws PR cards only —
+Goal cards, Awesome Day capstones, and lift PR cards all keep their
+existing simpler presentations through v2.0, with the design-language
+extension to those card types queued for v2.1 polish per the
+existing v2.1 backlog thread.
+
+### ccode shipped 6c in four atomic commits
+
+Stage 6c handoff to ccode after the spec rewrite landed:
+
+1. `8bc3b8b chore(assets): move PR card template to images/decorations/`
+2. `ec0567c chore(assets): refresh WOB adaptive silhouette with weight-above-bar art`
+3. `91d2c62 feat(card): rebuild throws PR card DOM around ornate template`
+4. `5f266b1 style(card): retire 6a soft-grey throws card; add ornate-template overlays`
+
+ccode's calibration notes were exemplary — the spec's starting CSS
+values for overlay positions were all educated guesses against the
+template's region proportions, and ccode nudged 8 of them against
+the template's actual brightness profile (silhouette `top` from 30%
+→ 40% because parchment brightness peak is at y=40%; plaque `top`
+from 64% → 71% centre-anchored to fit the inset parchment; scroll
+positioning re-anchored to land inside the brass body not below it;
+plaque font sizes shrunk to fit the 16%-tall parchment region;
+headline color flipped to brass because those two rows actually sit
+above the parchment on dark stone). Every nudge was documented with
+the reason. The commit message for each was thorough enough that
+cowork's verification didn't need to ask ccode anything.
+
+### One delivery defect on the WOB adaptive — caught by ccode's own
+### verification
+
+ccode's per-implement headless screenshots flagged that 9 of 10
+silhouette variants rendered cleanly but the WOB adaptive showed
+as a black figure on a solid white rectangle inside the parchment
+medallion — the silhouette had no alpha channel. Tracing back
+through the commit chain: Oak's original GPT-generated source
+(staged in `f1f5dda` earlier in the session) was already RGB
+no-alpha; ccode's move from `Images for Cards/` to
+`images/silhouettes/` just propagated the defect. **Not ccode's
+introduction; ccode's catch.**
+
+Cowork ran rembg locally — the sandbox could install rembg but the
+proxy blocked the model download from GitHub release assets. Pivoted
+to pure PIL with luminance-based alpha conversion (silhouette is
+high-contrast black-on-white, so per-pixel `alpha = 255 - luminance`
+gave a clean RGBA with antialiased edges preserved at the partial
+alpha values). 12.6% opaque silhouette, 85.4% transparent
+background, 2% partial-alpha edges — comparable to what rembg would
+have produced. The fix landed as `fc6a390 fix(assets): restore WOB-
+adaptive transparency` (5th commit in the chain). After the fix all
+10 variants rendered cleanly inside the medallion.
+
+### Codex review caught a Major — text contrast against the dark
+### template regions
+
+Codex's verdict: ship after fixes. One Major: the plaque + scroll
+body text at `#3a2a14` (engraved-warm-brown) measured 1.9:1 plaque
+and 3.35:1 scroll — below WCAG AA on both. Codex sampled the shipped
+template image directly.
+
+Cowork independently remeasured against the actual template and got
+even worse numbers — 1.58:1 plaque, 2.61:1 scroll — because the
+"parchment plaque" region in the template is much darker than the
+visual term suggested (avg RGB `(93, 71, 45)`, a saturated mid-brown,
+not the light cream the spec assumed). The key insight: **darkening
+the text wouldn't fix it.** Pure black against the plaque region
+hits only 2.40:1 — still failing large-text AA. The fix had to
+invert direction: go LIGHT, not darker.
+
+Cowork tested alternative text colors against the measured regions
+and recommended `#fff8d8` (pale warm cream), which gave 8.18:1
+plaque and 4.95:1 scroll — both passing AA normal text. Stayed in
+the warm gilded-tone aesthetic of the template so the text reads as
+"metallic gilded inlay" against the dark template regions, rather
+than dark engraving (which is what the spec had imagined).
+
+ccode patched with a clean fix in `7f8b657 fix(card): plaque +
+scroll text contrast — light cream for WCAG AA`. The cascade nuance
+ccode caught: the `.card-event`, `.card-mark`, `.card-prev` selectors
+each carried their own explicit color override under
+`.celebration-card--throw`, so changing only the parent
+`.card-plaque` declaration would leave the body text dark via the
+child overrides. Five color declarations flipped together. ccode
+also declined the optional drop-shadow for "metallic inlay depth"
+with sound reasoning: a single drop-shadow reads as text raised
+above the surface (shadow falls below), undermining the
+engraved-into aesthetic; a true engraved look needs a
+light-top/dark-bottom multi-shadow recipe and the 4.95:1 scroll
+contrast already passed AA without it.
+
+Cowork remeasured on the rendered card (not just the template) and
+got 9.75:1 plaque, 7.73:1 scroll, 6.61:1 stone-above — all passing
+AA normal text. Stronger than the static-template prediction because
+the rendered cards land text over the brightest sub-regions of each
+zone.
+
+### iOS Safari cache lesson — banked
+
+Oak's iPhone smoke test of the patched 6c initially showed the new
+template rendering ON TOP of the old soft-grey card. Source on disk
+was correct; headless Chromium rendered clean; iOS Safari was
+serving stale CSS or JS from cache. The desktop "Cmd+Shift+R hard-
+reload" workflow does not translate to mobile Safari. Banked in
+working-norms memory: load with a cache-bust query string
+(`?v=stageN` or `?v=YYYYMMDD-HHMM`) as the **first** mobile-page-
+load step in future smoke-test checklists, not buried as a fallback.
+
+After the cache-bust load, Oak confirmed: "Once I loaded up a clean
+HTML, it looks great." Tag landed.
+
+### v2.1 prep work that accumulated alongside
+
+Stage 6c shipping wasn't the only thing happening on main today.
+Oak's GPT collaboration also produced several v2.1 backlog assets,
+which committed as cowork-side working material in
+`Images for Cards/`:
+
+- Six **card template variants** (`awesome-day-template`,
+  `s&c-awesome-day-template`, `s&c-awesome-day-example`,
+  `s&c-goal-template`, `s&c-pr-template`, `stone-pr-template`) —
+  extending the v2.0 throws PR card design language to the other
+  card types (lift PR, Goal, Awesome Day, stones).
+- Five **stoneman lift-position imagery** files
+  (`stoneman-break-it-off-the-ground`, `stoneman-chest`,
+  `stoneman-lap`, `stoneman-overhead`, `stoneman-shoulder`) — the
+  canonical lift positions for named manhood stones in v2.1's
+  Stones section.
+- Two **v2.1 dashboard mockups**
+  (`s&s-mobile-layout.png` for mobile portrait,
+  `s&S-dashboard.png` for desktop widescreen) — comprehensive
+  dashboard redesign reference for the v2.1 design session.
+
+These sit in the timeline interleaved with the 6c commits but
+clearly identified by their commit messages as v2.1 prep. None of
+them ship in v2.0; they're reference material the v2.1 design
+sessions will draw from.
+
+### One side errand: six Highland Games crest icons background-
+### removed
+
+Mid-session, Codex (the same model now serving as the Higgins-
+Method Reviewer; codex was renamed from gpt in v0.6 yesterday) ran
+a side task to rembg-process six crest icons (caber, hammer, sheaf,
+stone, weight-for-distance, weight-over-bar) from solid backgrounds
+to clean transparent PNGs. Output in `Images for Cards/cutouts/`,
+processed via `process.py` + `contact_sheet.py` using the
+`isnet-general-use` model (u2net failed badly on weight-for-distance
+— deleted the entire weight body and kept only the chain + handle
+as a wisp). The cutouts and the reusable scripts committed at
+`56137f7` and `f1f5dda`. Banked in memory as the rembg-asset-
+cleanup reference.
+
+### What shipped in v2.0.0-stage6c
+
+The tag at `7f8b657` includes the contrast fix. The 6c stage proper
+spans 8 commits:
+
+```
+ad6232b docs: Stage 6c spec full rewrite — ornate template approach
+bfcbd2d chore(assets): stage Stage 6C ornate card template
+8bc3b8b chore(assets): move PR card template to images/decorations/
+ec0567c chore(assets): refresh WOB adaptive silhouette with weight-above-bar art
+91d2c62 feat(card): rebuild throws PR card DOM around ornate template
+5f266b1 style(card): retire 6a soft-grey throws card; add ornate-template overlays
+fc6a390 fix(assets): restore WOB-adaptive transparency
+7f8b657 fix(card): plaque + scroll text contrast — light cream for WCAG AA   ← v2.0.0-stage6c
+```
+
+Plus v2.1 prep commits that landed past or interleaved with the
+6c stage:
+
+```
+48c1b01 chore(assets): stage v2.1 Goal card preparatory mockup
+a673778 chore(assets): stage v2.1 card template variants
+af18018 chore(assets): stage stoneman lift-position imagery for v2.1 Stones section
+f5d248e chore(assets): stage v2.1 Stone and Standard dashboard mockups
+```
+
+371/371 tests still passing (no test changes in 6c — DOM
+restructure preserved dual-class names so the Stage 4b regex
+selectors still match). Lint clean. All 10 implement variants render
+correctly. WCAG AA on text. iOS Safari verified after cache-bust.
+
+### Lessons banked today
+
+- **Verify before asserting completion claims.** The "structurally
+  complete" framing in v2-plan after 6b shipped was based on
+  remembering features rather than grep'ing the canonical plan;
+  Oak caught the Stones section as still-pending in one read.
+  Walked back to "complete except for Stones" then walked back
+  again to "complete except for the 6c visual polish surfaced by
+  the iPhone smoke test." Lesson is for cowork: completion claims
+  need a grep-the-plan check, not a memory check.
+- **Design pivots are allowed mid-stage.** The soft-grey + Saltire
+  + wave-animation direction was a fully drafted spec with assets
+  generated and committed; Oak's discovery of a GPT-generated
+  ornate template pivoted the entire approach. Cowork rewrote the
+  spec from scratch; the prior direction stayed in git history and
+  the prior Saltire commit stayed as v2.x backlog material. No
+  shame in the pivot — the new direction is meaningfully better.
+- **iOS Safari cache evicts differently from desktop.** Cache-bust
+  query string is the right first move for any mobile smoke test,
+  not a fallback. Banked in working-norms.
+- **Darkening text doesn't always fix contrast.** When the
+  background is dark, inverting the text-color direction (going
+  light) is the cleanest fix. Cowork's recommendation to ccode
+  was data-grounded (measured the template regions, tested five
+  candidate colors against WCAG AA, picked the one passing both
+  regions); ccode delivered.
+- **Source-asset format defects propagate silently through ccode
+  moves.** Oak's WOB adaptive GPT source was RGB no-alpha; the
+  `chore: refresh` commit that moved it to `images/silhouettes/`
+  carried that defect forward. ccode's per-implement verification
+  caught it. Worth a one-line addition to future spec briefs:
+  "verify the source asset's mode/alpha state is correct for the
+  shipped path's expectations."
+- **Dual-class names on rewritten DOM elements preserve legacy
+  test selectors.** ccode's pattern of giving each rewritten text
+  element both the new class (`card-headline`) and the legacy
+  class (`celebration-card-headline`) let the Stage 4b regex tests
+  keep passing without test changes. Cowork should bake this
+  pattern into future card-redesign spec sketches so ccode doesn't
+  have to invent it each time.
+
+### Where it stands
+
+The v2.0 **feature plus polish build is structurally complete.**
+Twelve tagged stages from `v2.0.0-rebrand` (Stage 1) through
+`v2.0.0-stage6c` are built, reviewed, polished, and on
+`origin/main`. The current head is `f5d248e`, three v2.1 prep
+commits past the `v2.0.0-stage6c` tag.
+
+**Remaining v2.0 work is the four-action launch housekeeping
+cluster**, all Oak-driven verification and packaging — no more
+feature commits:
+
+1. **Cross-device smoke test** — full-app verification on mobile
+   plus desktop, not just 6c. The checklist at
+   `docs/v2.0-smoke-test-checklist.md` (or `outputs/` equivalent)
+   is the guide. With the cache-bust query string banked into the
+   norms, this should go faster than tonight's 6c eyeball did.
+2. **`v2.0.0` launch tag** — distinct from per-stage tags. Marks
+   the version-1-of-the-new-name release.
+3. **GitHub release** at the `v2.0.0` tag, with release notes
+   summarizing v2.0's arc (fork from comeback-tracker v1.4 → brand
+   rename to Stone & Standard → the celebration card visual
+   evolution → twelve tagged stages).
+4. **Cloudflare Web Analytics** on the deployed v2 build (free,
+   no cookies, no PII per the v2-plan backlog).
+
+L1 gate still paused for the rest of v2.0 per Oak's 2026-05-23
+decision; resumes after launch.
+
+### Housekeeping
+
+- This SESSION_NOTES entry, the v2-plan Status block walk-forward
+  to "feature+polish build complete," and the PICKUP refresh land
+  as one `docs:` commit — the post-build cowork follow-up shape we
+  established with 6a + 6b.
+- The `stage-6a-stone-and-standard` and `stage-6b-stone-and-standard`
+  branches are still preserved on origin from the prior stages;
+  safe to delete whenever cleanup gets prioritized, not blocking.
+- v2.1 design session opens once v2.0 ships. Queued: the Stones
+  section (with expert stone-lifter input pending), the share-story
+  trio (athlete photo overlay, save-image button, native share
+  sheet), Goal card / Awesome Day / lift PR card redesigns
+  extending the 6c template language, and the dashboard redesign
+  shown in the v2.1 mockups (mobile portrait + desktop widescreen).
+
+---
+
 ## 2026-05-27 evening — Stage 6b shipped; Higgins Method v0.6; Stones deferred to v2.1; v2 feature build complete
 
 *Written by cowork at the session wrap. ccode shipped 6b on a feature

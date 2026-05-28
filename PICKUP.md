@@ -11,103 +11,121 @@ the repo directory keeps its old name; the rename is at the brand
 layer, not the filesystem layer, until after v2.0 ships).
 
 YOUR ROLE — read this first. This is a Cowork session. Under the
-Higgins Method (v0.6, 2026-05-27), cowork is the PLANNER: cowork turns
-ideas into spec sketches and hands them to ccode (Claude Code), who
-builds; codex (ChatGPT Codex inside VS Code) reviews in review-only
-mode. Cowork does NOT write or edit the app's code.
+Higgins Method (v0.6, 2026-05-27), cowork is the PLANNER: cowork
+turns ideas into spec sketches and hands them to ccode (Claude Code),
+who builds; codex (ChatGPT Codex inside VS Code) reviews in review-
+only mode. Cowork does NOT write or edit the app's code.
 
 Context to load before we start:
 
 1. Read v2-plan.md root to bottom — the full v2 design from the
    2026-05-19 design session, mostly locked product decisions. Stages
-   1 through 6b are shipped; the remaining v2.0 work is the Stage 6
-   housekeeping cluster (cross-device smoke test, v2.0.0 launch tag,
-   GitHub release, Cloudflare Web Analytics). The Status block at the
-   top is current as of 2026-05-27 end-of-day.
+   1 through 6c are shipped (twelve tagged stages total). The v2
+   feature plus polish build is structurally complete. Remaining v2.0
+   work is the four-action launch housekeeping cluster: cross-device
+   smoke test, v2.0.0 launch tag, GitHub release, Cloudflare Web
+   Analytics. The Status block at the top is current as of 2026-05-28.
 
 2. Read SESSION_NOTES.md, newest entry first — the journal of how we
-   got here.
+   got here. The 2026-05-28 entry captures Stage 6c's three-direction
+   design pivot, the ccode build, the codex contrast Major and ccode
+   fix, the iOS Safari cache lesson, and the lessons banked.
 
 3. Skim docs/specs/ — the shipped spec sketches (v2-stage2-spec.md
-   through v2-stage6b-spec.md) sit there as models for the cowork
-   spec-sketch format. There's no active feature spec right now —
-   the v2.0 feature build is complete.
+   through v2-stage6c-spec.md) sit there as models for the cowork
+   spec-sketch format. No active feature spec right now — the v2.0
+   feature plus polish build is complete.
 
 4. Skim the Stone & Standard entries in the skills ledger:
    ~/Documents/Obsidian Vault/Reference/Higgins Method/skills-ledger.md
 
 5. Skim higgins-method.md — v0.6 (2026-05-27) renamed the Reviewer
    callsign from "gpt" to "codex" and added explicit read-only
-   guardrails. Pre-v0.6 spec sketches keep the "gpt" framing as
-   historical artifacts.
+   guardrails. Pre-v0.6 spec sketches (v2-stage6a-spec.md and earlier)
+   keep the "gpt" framing as historical artifacts.
 
-Current state (end of 2026-05-27):
+Current state (end of 2026-05-28):
 
-- The v2 feature build is COMPLETE through Stage 6b. Stages 1
-  through 6b are shipped and tagged — v2.0.0-rebrand, v2.0.0-stage2,
-  v2.0.0-stage3a/3b, v2.0.0-stage4a/4b/4c, v2.0.0-stage5a/5b,
-  v2.0.0-stage6a, and v2.0.0-stage6b on origin/main.
-- Stage 6a (2026-05-27) shipped the throws PR celebration card lift —
-  soft-grey card (#F4F4F4) with implement-specific athlete silhouette
-  hero, audio plumbing (sound toggle off by default, preference key
-  stone-and-standard-sound), and the brand rename from Highland Games
-  Tracker to Stone & Standard across surface, storage namespace
-  (stone-and-standard-v1, idempotent copy-only migration from the old
-  key), backup envelope (validateBackup accepts stone-and-standard,
-  highland-games-tracker, and comeback-tracker; exportData writes the
-  new one), package.json, and README. Bonus UX rename ccode added:
-  "Weight Over Bar" event display became "Weight for Height" (event
-  id stays stable at weight-over-bar).
-- Stage 6b (2026-05-27, same day) shipped the adaptive-pair
-  completion — hammer and sheaf joined the
-  SILHOUETTE_PAIRED_IMPLEMENTS set. All five throws implements now
-  have adaptive + able-bodied silhouette pairs; ten silhouettes live
-  at images/silhouettes/.
-- Cross-implement visual style remains mixed by accepted decision:
-  stone + weight-distance carry detailed silhouettes with white kilt
-  tartan accents; hammer + sheaf + WOB are pure black graphic
-  silhouettes. Each implement at its own authentic throw moment.
-- Higgins Method v0.6 landed 2026-05-27 — Reviewer callsign renamed
-  from "gpt" to "codex" to reflect the actual tool (ChatGPT Codex
-  inside VS Code, replacing manual file upload to ChatGPT chat).
-  Canonical review-prompt opener now enforces read-only mode
-  explicitly because Codex is agentic with filesystem access.
+- Stages 1 through 6c are shipped and tagged — v2.0.0-rebrand,
+  v2.0.0-stage2, v2.0.0-stage3a/3b, v2.0.0-stage4a/4b/4c,
+  v2.0.0-stage5a/5b, v2.0.0-stage6a, v2.0.0-stage6b, and
+  v2.0.0-stage6c on origin/main.
+- Stage 6a (2026-05-27) shipped the throws PR celebration card lift,
+  audio plumbing, and the brand rename to Stone & Standard.
+- Stage 6b (2026-05-27) completed adaptive-pair coverage for hammer
+  and sheaf. Ten silhouettes at images/silhouettes/.
+- Stage 6c (2026-05-28) pivoted the throws PR card to an ornate
+  Highland Games-themed template (PR shield + parchment medallion
+  + stone plaque + brass scroll banner + thistle-and-laurel framing
+  + misty mountain backdrop) with silhouette and dynamic text as
+  positioned overlays. The 6c design arc went through three
+  directions in one evening: first soft-grey+Saltire+wave-animation,
+  then a pivot to the ornate template after Oak generated it via
+  GPT image gen. Spec was rewritten end-to-end for the template
+  approach. The Saltire commit is orphaned v2.x backlog material.
+  WCAG AA contrast achieved with #fff8d8 pale-warm-cream body text
+  (codex flagged the original #3a2a14 as Major — 1.58:1 plaque,
+  2.61:1 scroll; ccode patched, cowork remeasured 9.75:1 plaque,
+  7.73:1 scroll, both passing AA normal text).
+- Higgins Method v0.6 (2026-05-27) renamed Reviewer callsign from
+  "gpt" to "codex" with read-only guardrails.
+- iOS Safari cache lesson banked 2026-05-28 — mobile smoke tests
+  need cache-bust query string as the first page-load step, not
+  desktop's Cmd+Shift+R.
 - Remaining v2.0 work — Stage 6 housekeeping, all Oak-driven
-  verification and packaging, no more feature commits:
-    (a) Cross-device smoke test — 5a/5b/6a/6b were desktop-verified;
-        mobile only via CSS. Drive the live app on phone + Mac, walk
-        each major flow, hard-reload (Cmd+Shift+R) to dodge stale
-        cache.
-    (b) v2.0.0 launch tag — distinct from the per-stage
-        v2.0.0-stage* tags.
-    (c) GitHub release at the v2.0.0 tag, with release notes.
-    (d) Cloudflare Web Analytics on the deployed v2 build (free, no
-        cookies, no PII).
-- Stones section moved to v2.1 (decided 2026-05-27, pending input
-  from Oak's stone-lifting-expert friend). v2.1 backlog now: Stones
-  section + athlete photo overlay on celebration card + Save-image
-  button (Canvas API → PNG download) + native share sheet
-  (navigator.share()) — coherent "share story + Stones" release.
-- Tooling: Biome lint in the loop — `npm run lint` is a verification
-  step. Test suite runs in-browser via tests.html (371 tests as of
-  Stage 6b ship; same count as 6a since 6b changes were
-  assertion-level only).
-- L1 gate: STILL PAUSED for the rest of the v2 build through launch,
-  per Oak's 2026-05-23 decision — resumes after v2.0 ships.
-- Repo state at 2026-05-27 end-of-day: on main at 5bf77b3 (the
-  Higgins Method v0.6 docs commit), one commit past v2.0.0-stage6b
-  at b5aa667. origin/main synced. The stage-6b-stone-and-standard
-  and stage-6a-stone-and-standard branches are preserved both
-  locally and on origin — safe to delete
-  (`git branch -d <branch> && git push origin --delete <branch>`)
-  but not blocking.
+  verification and packaging:
+    (a) Cross-device smoke test — full app, mobile + desktop, with
+        cache-bust query string baked in. Use
+        docs/v2.0-smoke-test-checklist.md as the guide (cowork
+        wrote it 2026-05-27; refresh for the new ornate card +
+        cache-bust before driving).
+    (b) v2.0.0 launch tag — distinct from the per-stage tags.
+    (c) GitHub release at the v2.0.0 tag with release notes
+        summarizing v2.0's arc.
+    (d) Cloudflare Web Analytics on the deployed v2 build.
+- Stones section is v2.1 (decided 2026-05-27, pending expert input
+  from Oak's stone-lifting-expert friend). Reference imagery for
+  named-manhood-stone lift positions staged 2026-05-28 in
+  Images for Cards/ (stoneman-break-it-off-the-ground, -chest, -lap,
+  -shoulder, -overhead).
+- v2.1 design-language extension — Goal cards, Awesome Day
+  capstones, and lift PR cards all keep their existing v2.0 simpler
+  presentations; they pick up the 6c ornate-template design language
+  in v2.1. Reference templates staged in Images for Cards/
+  (awesome-day-template, s&c-pr-template, s&c-goal-template,
+  s&c-awesome-day-template, stone-pr-template).
+- v2.1 dashboard redesign — reference mockups staged 2026-05-28
+  (s&s-mobile-layout.png mobile portrait, s&S-dashboard.png desktop
+  widescreen; the desktop variant still reads HIGHLAND GAMES TRACKER
+  pre-rename and will need refresh during v2.1 design).
+- v2.1 share-story trio — athlete photo overlay on celebration
+  cards, Save-image button (Canvas API → PNG), native share sheet
+  (navigator.share()).
+- Tooling: Biome lint in the loop — `npm run lint` is a
+  verification step. Test suite runs in-browser via tests.html
+  (371 tests as of 6c ship; same count as 6a/6b — 6c was DOM
+  restructure with dual-class names preserving Stage 4b regex
+  selectors).
+- L1 gate: STILL PAUSED for the rest of v2.0 launch, per Oak's
+  2026-05-23 decision — resumes after v2.0 ships.
+- Repo state at 2026-05-28 end-of-day: on main, head is the
+  v2.1 dashboard mockups chore commit (three commits past
+  v2.0.0-stage6c at 7f8b657). origin/main synced. Stage feature
+  branches preserved on origin and safe to delete whenever cleanup
+  gets prioritized (stage-6a-stone-and-standard,
+  stage-6b-stone-and-standard); not blocking.
 
 Where I want to start today: [STATE YOUR GOAL. The natural next
-moves, in rough order: (1) cross-device smoke test of the shipped
-app on mobile + desktop — this is the gating check before the launch
-tag; (2) v2.0.0 launch tag + GitHub release once smoke test clears;
-(3) Cloudflare Web Analytics setup; (4) v2.1 design session for
-Stones once you have expert input from your stone-lifting friend.
+moves, in rough order: (1) cross-device smoke test of the whole
+shipped app on mobile + desktop — this is the gating check before
+the v2.0.0 launch tag. With the ornate 6c PR card on the throws PR
+path and the cache-bust query string discipline, this should go
+faster than tonight's 6c eyeball did; (2) v2.0.0 launch tag once
+smoke test clears; (3) GitHub release at the tag with release notes;
+(4) Cloudflare Web Analytics setup; (5) v2.1 design session for
+Stones (once you have expert input from your stone-lifting friend)
+and for the design-language extension to Goal / Awesome Day / Lift
+PR cards using the reference templates staged in Images for Cards/.
 State what you want.]
 
 How I want to work:
@@ -123,9 +141,12 @@ How I want to work:
   commands.
 - Teach mode — I'm learning vibe-coding and appreciate teachable
   moments noted naturally as we go.
-- Smoke-test hygiene: when the app is served locally for a smoke
-  test, the browser can serve stale cached files — hard-reload
-  (Cmd+Shift+R) each page before testing it.
+- Smoke-test hygiene on desktop: hard-reload (Cmd+Shift+R) each
+  page before testing. Smoke-test hygiene on mobile (banked
+  2026-05-28): use a cache-bust query string like
+  http://<mac-ip>:8000?v=YYYYMMDD-HHMM as the first page-load step.
+  iOS Safari caches localhost resources aggressively and the
+  desktop hard-reload trick does not translate.
 - Paste blocks for terminal commands contain ONLY commands — no
   hash-prefixed comments or descriptive prose. Descriptions go
   between blocks, not inside them.
