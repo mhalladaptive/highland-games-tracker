@@ -183,9 +183,33 @@ function freshV2Shape() {
   };
 }
 
-test('loadData: empty storage => v2 fresh shape', () => {
+function clearAllStorageNamespaces() {
   localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(LEGACY_STORAGE_KEY);
+}
+
+test('loadData: empty storage => v2 fresh shape', () => {
+  clearAllStorageNamespaces();
   assertDeepEqual(loadData(), freshV2Shape());
+});
+
+test('cleanupLegacyStorageKeys: removes legacy key when current key is populated', () => {
+  clearAllStorageNamespaces();
+  const v2Shape = freshV2Shape();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(v2Shape));
+  localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify({
+    version: 2, baselines: { 'braemar-stone': 36 }
+  }));
+  loadData();
+  assertEqual(localStorage.getItem(LEGACY_STORAGE_KEY), null);
+  assertTrue(localStorage.getItem(STORAGE_KEY) !== null);
+});
+
+test('cleanupLegacyStorageKeys: idempotent when legacy key is already absent', () => {
+  clearAllStorageNamespaces();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(freshV2Shape()));
+  loadData();
+  assertEqual(localStorage.getItem(LEGACY_STORAGE_KEY), null);
 });
 
 test('loadData: corrupt JSON => v2 fresh shape', () => {
@@ -983,7 +1007,7 @@ test('defaultWeightScheduleForGender: male/female map to mens/womens; others emp
 });
 
 test('fresh install profile: empty object with no setupCompletedAt triggers first-launch', () => {
-  localStorage.removeItem(STORAGE_KEY);
+  clearAllStorageNamespaces();
   const data = loadData();
   assertDeepEqual(data.profile, {});
   assertTrue(!data.profile.setupCompletedAt, 'no setupCompletedAt on fresh install');

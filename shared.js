@@ -391,6 +391,29 @@ function migrateStorageNamespace() {
   }
 }
 
+// Stage 6a follow-up — retire the legacy highland-games-tracker-v1 key
+// once the current key holds verified v2 data. Splits the cleanup off
+// from migrateStorageNamespace() so the original copy step stays
+// untouched, and so this function can run as a separate idempotent
+// pass that retroactively cleans up users whose Stage 6a migration
+// already ran (the original migrateStorageNamespace short-circuits
+// when STORAGE_KEY is populated, so it never reaches a delete step
+// for them).
+//
+// Caller contract: only invoke AFTER loadData has successfully
+// parsed and validated parsed.prs as a v2-shape object. That's the
+// signal the current key is genuinely good and the legacy copy is
+// genuinely redundant.
+function cleanupLegacyStorageKeys() {
+  try {
+    if (localStorage.getItem(STORAGE_KEY) === null) return;
+    if (localStorage.getItem(LEGACY_STORAGE_KEY) === null) return;
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
+  } catch {
+    // storage disabled (private mode) — nothing to clean up
+  }
+}
+
 function loadData() {
   migrateStorageNamespace();
   const raw = localStorage.getItem(STORAGE_KEY);
@@ -412,6 +435,7 @@ function loadData() {
     if (!Array.isArray(parsed.sessions)) parsed.sessions = [];
     if (migrateLegacyGamesLocation(parsed)) mutated = true;
     if (mutated) saveData(parsed);
+    cleanupLegacyStorageKeys();
     return parsed;
   } catch {
     return freshData();
