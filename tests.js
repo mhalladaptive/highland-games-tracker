@@ -212,6 +212,39 @@ test('cleanupLegacyStorageKeys: idempotent when legacy key is already absent', (
   assertEqual(localStorage.getItem(LEGACY_STORAGE_KEY), null);
 });
 
+test('cleanupLegacyStorageKeys: does NOT delete when current key has v1 version (partial/corrupt state)', () => {
+  clearAllStorageNamespaces();
+  // Seed: current key has prs but version=1 (mixed/corrupt state).
+  // Legacy key holds real v2 data — must NOT be deleted by the
+  // cleanup's own guard logic. We test the guard in isolation by
+  // calling cleanupLegacyStorageKeys directly rather than going
+  // through loadData (which would run the schema-migration upgrade
+  // path first and then delete the legacy key from the success
+  // path — a different code path).
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    version: 1, prs: { 'open-stone': 100 }
+  }));
+  localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify({
+    version: 2, prs: { 'open-stone': 999 }, sessions: []
+  }));
+  cleanupLegacyStorageKeys();
+  assertTrue(localStorage.getItem(LEGACY_STORAGE_KEY) !== null,
+    'legacy key preserved when current key is not verified v2');
+});
+
+test('cleanupLegacyStorageKeys: does NOT delete when current key has corrupt prs', () => {
+  clearAllStorageNamespaces();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    version: 2, prs: 'not an object'
+  }));
+  localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify({
+    version: 2, prs: {}, sessions: []
+  }));
+  cleanupLegacyStorageKeys();
+  assertTrue(localStorage.getItem(LEGACY_STORAGE_KEY) !== null,
+    'legacy key preserved when current prs is corrupt');
+});
+
 test('loadData: corrupt JSON => v2 fresh shape', () => {
   localStorage.removeItem(STORAGE_KEY);
   localStorage.setItem(STORAGE_KEY, '{not valid json');
@@ -3787,7 +3820,7 @@ test('storage migration: copies the old key forward when the new key is empty', 
     const data = loadData();
     assertEqual(data.prs['open-stone'], 300, 'data resolved from the old key');
     assertTrue(localStorage.getItem(STORAGE_KEY) !== null, 'new key populated');
-    assertTrue(localStorage.getItem(LEGACY_STORAGE_KEY) !== null, 'old key is never deleted');
+    assertEqual(localStorage.getItem(LEGACY_STORAGE_KEY), null, 'old key is retired after successful v2 load (Stage 6a follow-up cleanup)');
   });
 });
 
@@ -3819,7 +3852,7 @@ test('storage migration: a copied v1 blob still runs the v1→v2 schema migratio
     const data = loadData();
     assertEqual(data.version, 2, 'schema migrated to v2');
     assertEqual(data.prs['open-stone'], 280, 'baselines → prs');
-    assertTrue(localStorage.getItem(LEGACY_STORAGE_KEY) !== null, 'old key still present');
+    assertEqual(localStorage.getItem(LEGACY_STORAGE_KEY), null, 'old key is retired after the schema migration writes verified v2 data');
   });
 });
 

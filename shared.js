@@ -406,8 +406,26 @@ function migrateStorageNamespace() {
 // genuinely redundant.
 function cleanupLegacyStorageKeys() {
   try {
-    if (localStorage.getItem(STORAGE_KEY) === null) return;
+    const currentRaw = localStorage.getItem(STORAGE_KEY);
+    if (currentRaw === null) return;
     if (localStorage.getItem(LEGACY_STORAGE_KEY) === null) return;
+    // Defense-in-depth: don't trust the caller's control flow alone.
+    // The loose isV2Shape gate inside loadData is fine for ENTERING
+    // the success path (it lets the v1→v2 schema migration run),
+    // but for an irreversible delete we want stricter verification
+    // of the persisted current key — version === SCHEMA_VERSION AND
+    // prs is a real object. Anything else (missing version, version
+    // still 1, prs corrupted, etc.) means the legacy key may still
+    // be the only intact data and must be preserved.
+    let parsed;
+    try {
+      parsed = JSON.parse(currentRaw);
+    } catch {
+      return;
+    }
+    if (!parsed || typeof parsed !== 'object') return;
+    if (parsed.version !== SCHEMA_VERSION) return;
+    if (!parsed.prs || typeof parsed.prs !== 'object' || Array.isArray(parsed.prs)) return;
     localStorage.removeItem(LEGACY_STORAGE_KEY);
   } catch {
     // storage disabled (private mode) — nothing to clean up
