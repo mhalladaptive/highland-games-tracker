@@ -1,6 +1,6 @@
-# The Higgins Method (v0.5)
-**Date:** May 18, 2026 · **v0.4 revision:** May 21, 2026 · **v0.5 revision:** May 22, 2026
-**Status:** Decided draft. v0.5 adds a per-response grading scale to the cold-read gates. v0.4 re-sizes the L1 gate into three interleaved ~1-hour sub-gates — the single whole-project gate proved too large (pending across three shipped stages of highland-games-tracker). v0.3 revised the skill ladder gates and added the explicit collaboration-not-replacement principle. Supersedes `witan-redesign.md`. Does NOT replace CLAUDE.md until you decide it should.
+# The Higgins Method (v0.6)
+**Date:** May 18, 2026 · **v0.4 revision:** May 21, 2026 · **v0.5 revision:** May 22, 2026 · **v0.6 revision:** May 27, 2026
+**Status:** Decided draft. v0.6 renames the Reviewer role's callsign from "gpt" to "codex" to reflect the actual tool in use (ChatGPT Codex inside VS Code, replacing ChatGPT chat), and adds an explicit read-only guardrail to the Reviewer's role description — necessary because Codex is an agent with filesystem access and could otherwise blur the Builder/Reviewer boundary by "helpfully" editing files. v0.5 adds a per-response grading scale to the cold-read gates. v0.4 re-sizes the L1 gate into three interleaved ~1-hour sub-gates — the single whole-project gate proved too large (pending across three shipped stages of highland-games-tracker). v0.3 revised the skill ladder gates and added the explicit collaboration-not-replacement principle. Supersedes `witan-redesign.md`. Does NOT replace CLAUDE.md until you decide it should.
 
 ## Why this exists
 
@@ -31,20 +31,26 @@ This is the lens the ladder, the loop, and the ledger all operate through.
 | **You** | The builder-in-training | Role grows every project. The point of the system. |
 | **cowork** | Claude in Cowork | **Planner.** Turns an idea into a spec sketch. Early: does it with you. Later: you draft, it critiques. |
 | **ccode** | Claude Code | **Builder.** Builds the spec. |
-| **gpt** | ChatGPT | **Reviewer.** Reviews the build — a separate model from the builder, so the cross-check is real from project one. Also runs the optional spec stress-test when invoked. |
+| **codex** | ChatGPT Codex (in VS Code) | **Reviewer.** Reviews the build — a separate model from the builder, so the cross-check is real from project one. **Operates in review-only mode:** produces findings only; does not edit files, run write commands, or commit changes. (Codex is an agent with filesystem access, so the read-only constraint must be stated explicitly in every review prompt — see *Review-prompt opener* below.) Also runs the optional spec stress-test when invoked. |
 
 Separate-model review is the **one redundancy kept on purpose** — one model reviewing another's work is the highest-value cross-check. Confirmed in use from Level 1, to get the motions down from the start.
 
-**Reviewer model — LOCKED: gpt (ChatGPT).** Validated by current (May 2026) practice — using GPT as a "tougher reviewer to catch edge cases" is a documented, common workflow. Gemini is **out of the lineup.** Gemini's one real advantage (much larger context window) only matters for reviewing large codebases in a single pass — irrelevant at current project size. **Revisit later:** reconsider Gemini as reviewer only if/when a project grows large enough that gpt struggles to see all of it at once (likely a Level 3 / ambitious-project concern, not before).
+**Reviewer model — LOCKED: Codex (ChatGPT Codex inside VS Code, since v0.6 / 2026-05-27).** Previously named "gpt" in the Method (v0.5 and earlier) and run as ChatGPT chat with manual file upload. The v0.6 rename reflects the actual tool in use rather than the company that makes it. Validated by current (May 2026) practice — using ChatGPT-derived models as a "tougher reviewer to catch edge cases" is a documented, common workflow; Codex extends that with direct repo file access (it cites absolute paths it discovered itself, not paths from an upload). Gemini is **out of the lineup.** Gemini's one real advantage (much larger context window) only matters for reviewing large codebases in a single pass — irrelevant at current project size. **Revisit later:** reconsider Gemini as reviewer only if/when a project grows large enough that Codex struggles to see all of it at once (likely a Level 3 / ambitious-project concern, not before).
 
-**Dropped:** the standing required spec stress-test. Now **optional** — you invoke gpt for it only when a spec genuinely feels risky.
+**Review-prompt opener (canonical, v0.6).** Because Codex is agentic, the read-only guardrail must be stated explicitly in every spec sketch's review prompt. Open the prompt with:
+
+> *You are codex — the Reviewer in the Higgins Method. You are operating in **review-only mode** for this pass. Read the listed files. Produce findings classified by severity (Critical / Major / Minor / Nit). Do NOT edit files, run write commands, commit changes, or otherwise modify the repo. Your output is the review report only.*
+
+Historical spec sketches (pre-v0.6, e.g. `docs/specs/v2-stage6a-spec.md` and `v2-stage6b-spec.md`) open their review prompts with "you are gpt — the Reviewer" and assume read-only behaviour implicitly because the prior reviewer (ChatGPT chat) had no filesystem access. Those are historical artifacts; leave them as-is. v0.6-onward sketches use the codex framing.
+
+**Dropped:** the standing required spec stress-test. Now **optional** — you invoke codex for it only when a spec genuinely feels risky.
 
 ## The skill ladder (centerpiece)
 
 Three levels. The progression measures **collaboration competence**, not coding independence.
 
 ### Level 1 — Supported
-- ccode builds; gpt reviews. You read what was built.
+- ccode builds; codex reviews. You read what was built.
 - Your job: follow what ccode is doing well enough to describe the project's *structure* — which files exist, what each is for, what data flows where.
 - **Gate to advance — three sub-gates: L1.1, L1.2, L1.3.** Each is a single ~1-hour cowork session: cold-read one file you have not pre-studied and give a *functional* walkthrough — what the file is for, its main parts, how data moves through it. The three ramp in difficulty (a light file → a page file → the hardest file) and **interleave with the loop** — each cold-read sits at the start of a build, on a file that build will touch, so the gate adds no separate-track time. L1 clears when all three sub-gates are in.
   - **Functional depth, not mastery.** Enough to brief and sanity-check ccode on a change to that file — not enough to have written it yourself. The mastery bar is *learning from AI how to code*; this gate is *learning to direct it*. Cleared with only light prompting from cowork.
@@ -54,12 +60,12 @@ Three levels. The progression measures **collaboration competence**, not coding 
 - *Transferable principle: a gate certifies a floor you can stand on, not a ceiling you've mastered. A gate you cannot clear in about two hours is mis-sized.*
 
 ### Level 2 — Spot & Direct
-- ccode builds; gpt reviews; **you also review.**
+- ccode builds; codex reviews; **you also review.**
 - Your job: look at what ccode produces and catch when it doesn't match what you wanted. Articulate the issue clearly enough that ccode can fix it.
-- **Gate to advance:** your spot-checks find real issues that gpt's review also flags. Track this — three projects' worth of signal, not a one-off.
+- **Gate to advance:** your spot-checks find real issues that codex's review also flags. Track this — three projects' worth of signal, not a one-off.
 
 ### Level 3 — Lead
-- You set the spec; ccode implements; gpt second-passes risky areas.
+- You set the spec; ccode implements; codex second-passes risky areas.
 - Your job: decide tradeoffs, choose where rigor is needed, direct the architecture. Implementation is still ccode.
 - Optional spec stress-test available if you want it.
 - **Gate to advance:** open — calibrate from real practice.
@@ -91,7 +97,7 @@ No phase numbering. No approval-gate vocabulary. Just the loop.
 
 - **Normal** — most projects. Run the loop at your current skill level.
 - **Elevated** — project touches auth, real user data, money, or other people's information. Rigor bumps **back up** regardless of skill level:
-  - gpt review always on.
+  - codex review always on.
   - Spec stress-test on.
   - You do not skip the review step even at Level 3.
 
@@ -139,7 +145,7 @@ Baseline = "today, total beginner." Progress = gates cleared + the redundancy yo
 
 ## Settled vs. still open
 
-**Settled:** name (Higgins Method) · callsigns (cowork / ccode / gpt) · separate-model reviewer from Level 1 · reviewer model = gpt, Gemini out of the lineup (revisit only at large project size) · v0.4 ladder gates (L1 = three sub-gates L1.1–L1.3, functional cold-reads → spot-check signal across 3 projects → open).
+**Settled:** name (Higgins Method) · callsigns (cowork / ccode / codex; renamed from gpt in v0.6 to match the actual tool — ChatGPT Codex inside VS Code) · separate-model reviewer from Level 1 · Reviewer operates in review-only mode (v0.6 explicit guardrail) · reviewer model = codex, Gemini out of the lineup (revisit only at large project size) · v0.4 ladder gates (L1 = three sub-gates L1.1–L1.3, functional cold-reads → spot-check signal across 3 projects → open).
 
 **Still open:**
 - v1 time bound — deliberately deferred until the Comeback Tracker calibration run produces a real number.
