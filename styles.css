@@ -1232,59 +1232,183 @@ body.kind-training .comp-only {
   border-top: 1px solid var(--border);
 }
 
-/* Stage 6a — throws PR card: a soft-grey card (#F4F4F4, distinct from the page
-   background) carrying an implement-specific athlete silhouette as its hero. The
-   silhouette is anchored bottom-right and sits behind the content; the text is
-   left-aligned so it reads in the upper-left negative space the figure leaves. */
+/* Stage 6c — throws PR card: an ornate Highland Games-themed template image
+   (PR shield + parchment medallion + stone plaque + brass scroll + thistle-
+   and-laurel framing + misty mountain backdrop) carrying the silhouette and
+   all dynamic text as positioned overlays. Card aspect is locked to the
+   template's natural 1023:1537 (~2:3) so object-fit: cover renders the art
+   without clipping the PR shield at the top or the scroll banner at the
+   bottom. Layering: template (z 0) → silhouette (z 1) → plaque + scroll +
+   wordmark text (z 2). */
 .celebration-card--throw {
-  background: #f4f4f4;
-  text-align: left;
-}
-
-/* Keep every text element above the silhouette layer. */
-.celebration-card--throw > :not(.throw-silhouette) {
   position: relative;
-  z-index: 1;
+  background: none;
+  padding: 0;
+  overflow: hidden;
+  aspect-ratio: 1023 / 1537;
 }
 
-.throw-silhouette {
+.celebration-card--throw .card-template {
   position: absolute;
-  right: 0;
-  bottom: 0;
-  height: 74%;
-  width: auto;
-  max-width: 68%;
-  object-fit: contain;
-  object-position: bottom right;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   z-index: 0;
   pointer-events: none;
 }
 
-/* Louder than the plain PR card, but tuned for the soft-grey backdrop: a dark
-   bold event name and the mark as a big hero number, the mark pinned to the
-   top-left so it never collides with the bottom-right figure. */
-.celebration-card--throw .celebration-card-event {
-  font-size: 1.15rem;
-  font-weight: 800;
-  color: var(--text);
+/* Silhouette is centred inside the medallion's inner parchment circle. width
+   and max-height are tuned so every implement (square stone/WFD, wide hammer,
+   tall sheaf, near-square WOB) fits cleanly without bumping the thistle /
+   laurel frame; object-fit: contain preserves each silhouette's aspect. The
+   shipped silhouettes were composed for 6a's bottom-right anchoring, so most
+   have transparent padding on the top-left of the canvas — generous bounds
+   keep the visible figure at a sensible scale inside the medallion. */
+.celebration-card--throw .throw-silhouette {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  transform: translate(-50%, -50%);
+  width: 52%;
+  height: auto;
+  max-height: 38%;
+  object-fit: contain;
+  z-index: 1;
+  pointer-events: none;
 }
 
-.celebration-card--throw .celebration-card-mark {
-  font-size: 3.2rem;
+/* Stone plaque region (inset parchment plaque on the stone slab, visual
+   centre ~y=67%). Anchoring by centre — not by top — so a longer event name
+   pushes the block evenly inside the plaque rather than overflowing down
+   into the scroll banner. Engraved-on-stone dark warm brown reads as carved
+   text against the parchment. All rules are scoped under .celebration-card--
+   throw so they win the cascade over the legacy .celebration-card-headline /
+   -event / -mark / -prev / -wordmark rules above (which still apply on the
+   lift PR + Goal + Awesome Day cards, unchanged). */
+.celebration-card--throw .card-plaque {
+  position: absolute;
+  left: 50%;
+  top: 71%;
+  transform: translate(-50%, -50%);
+  width: 76%;
+  z-index: 2;
+  text-align: center;
+  color: #3a2a14;
+  pointer-events: none;
+}
+
+.celebration-card--throw .card-headline {
+  /* Headline + subhead sit in the dark stone above the inset parchment.
+     Brass colour (matching the wordmark and the template's scroll-banner
+     fittings) reads as decorative label text against the dark stone,
+     while the larger event/mark/prev below sit on the bright parchment
+     in engraved dark brown. */
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #d4b876;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.celebration-card--throw .card-subhead {
+  font-size: 0.58rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #d4b876;
+  line-height: 1;
+  margin: 0.05rem 0 0.2rem;
+  opacity: 0.9;
+}
+
+.celebration-card--throw .card-event {
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #3a2a14;
+  margin: 0;
+}
+
+.celebration-card--throw .card-mark {
+  display: block;
+  font-size: 1.85rem;
   font-weight: 900;
   letter-spacing: -0.01em;
-  justify-content: flex-start;
-  align-items: flex-start;
+  color: #3a2a14;
+  line-height: 1;
+  margin: 0.05rem 0 0;
+  /* Reset the inherited 6a flex-fill so the mark sits inside the plaque
+     block instead of taking flex: 1 and centering against the card. */
+  flex: none;
+  align-items: initial;
+  justify-content: initial;
 }
 
-/* Weight for Height (and any other event without a silhouette yet) renders a
-   clean grey card; with no figure to read around, the text re-centres. */
-.celebration-card--throw.celebration-card--no-silhouette {
+.celebration-card--throw .card-prev {
+  font-size: 0.7rem;
+  line-height: 1.2;
+  color: #3a2a14;
+  opacity: 0.75;
+  margin: 0.05rem 0 0;
+}
+
+/* Brass scroll banner (visual body ~y=83–91%). Anchored from the bottom so
+   short / long metadata stacks consistently inside the scroll. */
+.celebration-card--throw .card-scroll {
+  position: absolute;
+  left: 50%;
+  top: 90%;
+  transform: translate(-50%, -50%);
+  width: 76%;
+  z-index: 2;
   text-align: center;
+  color: #3a2a14;
+  font-size: 0.66rem;
+  line-height: 1.15;
+  display: flex;
+  flex-direction: column;
+  gap: 0.02rem;
+  pointer-events: none;
 }
 
-.celebration-card--throw.celebration-card--no-silhouette .celebration-card-mark {
-  justify-content: center;
+.celebration-card--throw .card-meta-line {
+  display: block;
+}
+
+/* Lower-left wordmark in the dark mountain shadow below the scroll. Warm
+   brass to echo the scroll banner. Reset the legacy wordmark's border-top
+   + top padding — those decorate the 6a in-flow wordmark, but here it's a
+   positioned overlay. Reserves space for a future Stone & Standard icon
+   (v2.x) — icon slots in next to or replaces this text. */
+.celebration-card--throw .card-wordmark {
+  position: absolute;
+  left: 4%;
+  bottom: 3%;
+  z-index: 2;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #c5a76b;
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+  pointer-events: none;
+}
+
+/* Defensive fallbacks. --no-template: the template image failed to load;
+   render a flat parchment-toned card so the plaque text and silhouette
+   still read. --no-silhouette: no silhouette img to show; the slot stays
+   empty (the medallion region of the template carries the visual on its
+   own). */
+.celebration-card--throw.celebration-card--no-template {
+  background: #e8dcc4;
+  aspect-ratio: 4 / 5;
+}
+
+.celebration-card--throw.celebration-card--no-silhouette .throw-silhouette {
+  display: none;
 }
 
 .celebration-card--awesomeDay .celebration-card-mark {
