@@ -14,29 +14,35 @@ stages.
 
 ## Status
 
-- **Stages 1 through 6a are shipped.** Fork + rebrand (Stage 1)
-  through the celebration card lift + brand rename (Stage 6a) are
-  built, reviewed, and shipped, tagged `v2.0.0-rebrand` and
-  `v2.0.0-stage2` … `v2.0.0-stage6a` on `origin/main`. Stage 5 — the
-  Progress page — landed in two halves: 5a (the throws windowed
-  vs-PR view, replacing "See the Gap") and 5b (the S&C lifts view
-  plus the Throws/Lifts toggle). Stage 6a shipped 2026-05-27 in 9
-  atomic commits on a feature branch plus 3 follow-up commits
-  (docs reconciliation, README softening, 1-line chore cleanup).
-- **Stage 6b (post-6a adaptive-pair completion):** spec'd 2026-05-26,
-  rewritten 2026-05-27 early, polished 2026-05-27 in a pre-handoff
-  walk-through; handoff-ready. Small low-risk presentation-only
-  stage that adds hammer + sheaf to `SILHOUETTE_PAIRED_IMPLEMENTS`,
-  renames the existing single-variant files to `-able-bodied`, adds
-  the new adaptive variants (already staged in `Images for Cards/`),
-  updates tests + cowork mockup. The post-6b `v2-plan.md` / `PICKUP.md`
-  refresh and the cowork-side asset mirror cleanup are a separate
-  post-build cowork `docs:` follow-up (not part of the ccode build).
-  See `docs/specs/v2-stage6b-spec.md`.
-- **Stage 6 housekeeping (after 6b):** the cross-device smoke test
-  (mobile + desktop), the `v2.0.0` release tag, the GitHub release,
-  Cloudflare Web Analytics.
-- **v2.0 launch:** targeted after Stage 6 housekeeping.
+- **Stages 1 through 6b are shipped.** Fork + rebrand (Stage 1)
+  through the hammer + sheaf adaptive-pair completion (Stage 6b)
+  are built, reviewed, and shipped, tagged `v2.0.0-rebrand` through
+  `v2.0.0-stage6b` on `origin/main`. Stage 5 — the Progress page —
+  landed in two halves: 5a (the throws windowed vs-PR view,
+  replacing "See the Gap") and 5b (the S&C lifts view plus the
+  Throws/Lifts toggle). Stage 6a (2026-05-27) bundled the throws
+  PR celebration card visual lift (soft-grey card `#F4F4F4`,
+  implement-specific athlete silhouette as hero), audio plumbing
+  (sound toggle off by default), and the brand rename to Stone &
+  Standard across surface, storage namespace, backup envelope,
+  `package.json`, and README. Stage 6b (2026-05-27, same day)
+  completed the adaptive-pair coverage — hammer + sheaf joined the
+  `SILHOUETTE_PAIRED_IMPLEMENTS` set; ten silhouettes now cover
+  all five throws implements as adaptive + able-bodied pairs.
+- **The v2 feature build is structurally complete.** Remaining v2.0
+  work is the Stage 6 housekeeping cluster — Oak-driven verification
+  and packaging, no more feature commits: cross-device smoke test
+  (mobile + desktop; 5a/5b/6a/6b were desktop-verified, mobile only
+  via CSS), the `v2.0.0` launch tag (distinct from the per-stage
+  `v2.0.0-stage*` tags), the GitHub release, Cloudflare Web
+  Analytics.
+- **Stones section moved to v2.1** (decided 2026-05-27, pending
+  expert input). See the Stones section block below and the v2.x
+  backlog list.
+- **Higgins Method v0.6** landed 2026-05-27 — Reviewer callsign
+  renamed from "gpt" to "codex" with explicit read-only guardrails;
+  see `higgins-method.md`. Pre-v0.6 spec sketches keep the "gpt"
+  framing as historical artifacts.
 
 ## Audience and intent
 
@@ -487,42 +493,50 @@ imported v1 backups in addition to the schema migration. Order:
 schema migration first (renames `baselines` → `prs`, etc.), then
 games-in-location migration (operates on sessions).
 
-## Stones section — pending design
+## Stones section — deferred to v2.1 (expert design input pending)
 
-Identified 2026-05-24, mid Stage 6, as a feature missing from this plan.
-Detailed design is deferred until the Stage 6 card polish is finished —
-this note holds the feature so it is not lost, and flags that the plan
-above will need to absorb it.
+Identified 2026-05-24, mid Stage 6, as a feature missing from this
+plan. Originally scoped for v2.0 ("Placement (v2.0): the Stones
+section sits between Throws and S&C Milestones"). On 2026-05-27,
+after Stage 6b shipped, the decision was made to **defer Stones to
+v2.1** so the design can absorb input from Oak's stone-lifting
+expert friend; the open items below (data model, measurement model,
+celebration-system integration) benefit far more from domain
+expertise than from another internal planning pass. v2.0 launches
+without Stones; v2.1 becomes the "share story + Stones" release.
 
 A new section for **named manhood stones** — the historic Scottish
-lifting/throwing stones that carry their own names and lore: the Dinnie
-Stones, the Ardblair Stone, the Inver Stone, and others. *(Spellings to
-confirm — captured here as the canonical names; "Denny / Ard Blair /
-Inverse" in conversation read as Dinnie / Ardblair / Inver.)* This is
-its own category — distinct from the fixed Throws list and from
-user-defined Strength & Conditioning Milestones.
+lifting/throwing stones that carry their own names and lore: the
+Dinnie Stones, the Ardblair Stone, the Inver Stone, and others.
+*(Spellings to confirm with the expert — captured here as the
+canonical names; "Denny / Ard Blair / Inverse" in conversation read
+as Dinnie / Ardblair / Inver.)* This is its own category —
+distinct from the fixed Throws list and from user-defined Strength
+and Conditioning Milestones.
 
 Known so far:
 
-- **Placement (v2.0).** The Stones section sits between Throws and
-  Strength & Conditioning Milestones on the pages that carry those
-  sections.
-- **v2.1.** The Throws / Stones / S&C sections split into their own
-  pages then, for more per-section customization.
-- **Default-section setting.** An option — profile or settings — for
-  which section the app opens to: Throws, Stones, or S&C Milestones.
+- **Placement (v2.1).** The Stones section sits between Throws and
+  Strength and Conditioning Milestones on the pages that carry
+  those sections.
+- **v2.2 or later.** The Throws / Stones / S&C sections split into
+  their own pages then, for more per-section customization.
+- **Default-section setting (v2.1, with Stones).** An option —
+  profile or settings — for which section the app opens to:
+  Throws, Stones, or S&C Milestones.
 
-Open, for the post-cards planning session:
+Open, for the v2.1 design session once expert input lands:
 
-- The data model for named stones — a fixed canonical list, athlete-
-  added stones, or both (a famous stone like the Dinnie vs. a local
-  stone an athlete wants to log).
-- How a stone is measured — lifted, carried for distance, to a height?
-  Named-stone feats differ; the section may need its own measurement
-  model rather than reusing the Throws or S&C shapes.
-- How the section threads the Set PRs & Goals page, Log Session, and
-  the Progress page.
-- Whether the celebration system fires for stones (a stone PR card).
+- The data model for named stones — a fixed canonical list,
+  athlete-added stones, or both (a famous stone like the Dinnie
+  vs. a local stone an athlete wants to log).
+- How a stone is measured — lifted, carried for distance, to a
+  height? Named-stone feats differ; the section may need its own
+  measurement model rather than reusing the Throws or S&C shapes.
+- How the section threads the Set PRs & Goals page, Log Session,
+  and the Progress page.
+- Whether the celebration system fires for stones (a stone PR
+  card).
 - Where and how the default-section setting is stored.
 
 ## Open items
@@ -551,6 +565,14 @@ Open, for the post-cards planning session:
   button and native share sheet items below — together they make v2.1
   a coherent "share story" release. Decision made 2026-05-26 to defer
   from 6a/6b to v2.1.
+- **Stones section — v2.1.** The named-manhood-stones section
+  (Dinnie / Ardblair / Inver and others) deferred from v2.0 to v2.1
+  on 2026-05-27 pending expert design input from Oak's stone-lifting
+  expert friend. See the Stones section block above for the open
+  design questions the expert input is meant to close. With Stones
+  joining v2.1 alongside the photo-overlay / Save-image / native
+  share trio, v2.1 becomes a coherent "share story + Stones"
+  release.
 - **Save-image button on celebration cards — v2.1.** Canvas API →
   PNG download for sharing. Pairs with the athlete photo overlay.
 - **Native share sheet — v2.x.** `navigator.share()` integration.
