@@ -442,6 +442,9 @@ function loadData() {
     const isV2Shape = parsed.prs && typeof parsed.prs === 'object' && !Array.isArray(parsed.prs);
     const isV1Shape = parsed.baselines && typeof parsed.baselines === 'object' && !Array.isArray(parsed.baselines);
     if (!isV2Shape && !isV1Shape) return freshData();
+    const originalWasVerifiedV2 = parsed.version === SCHEMA_VERSION && isV2Shape;
+    const originalWasVerifiedV1 = parsed.version === 1 && isV1Shape;
+    const originalWasVerified = originalWasVerifiedV2 || originalWasVerifiedV1;
     let mutated = false;
     if (migrateSchemaV1toV2(parsed)) mutated = true;
     if (!parsed.prMeta || typeof parsed.prMeta !== 'object') parsed.prMeta = {};
@@ -453,7 +456,7 @@ function loadData() {
     if (!Array.isArray(parsed.sessions)) parsed.sessions = [];
     if (migrateLegacyGamesLocation(parsed)) mutated = true;
     if (mutated) saveData(parsed);
-    cleanupLegacyStorageKeys();
+    if (originalWasVerified) cleanupLegacyStorageKeys();
     return parsed;
   } catch {
     return freshData();

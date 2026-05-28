@@ -245,6 +245,19 @@ test('cleanupLegacyStorageKeys: does NOT delete when current key has corrupt prs
     'legacy key preserved when current prs is corrupt');
 });
 
+test('loadData: mixed v1-version/v2-prs input does NOT delete legacy key', () => {
+  clearAllStorageNamespaces();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    version: 1, prs: { 'open-stone': 100 }
+  }));
+  localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify({
+    version: 2, prs: { 'open-stone': 999 }, sessions: []
+  }));
+  loadData();
+  assertTrue(localStorage.getItem(LEGACY_STORAGE_KEY) !== null,
+    'legacy key preserved when current key starts in mixed/corrupt state through loadData');
+});
+
 test('loadData: corrupt JSON => v2 fresh shape', () => {
   localStorage.removeItem(STORAGE_KEY);
   localStorage.setItem(STORAGE_KEY, '{not valid json');
