@@ -927,20 +927,45 @@ function playCelebrationSound(src) {
   }
 }
 
-// Stage 6a — the throws PR card: a soft-grey card carrying an implement-specific
-// athlete silhouette as its hero, anchored bottom-right so the text reads in the
-// upper-left negative space. selectThrowSilhouette (shared.js, pure) picks the
-// asset; this is the rendering layer. All eight throws events have a silhouette;
-// if one is ever missing (no src, or the image fails to load) the card falls
-// back to the un-skinned layout — the .celebration-card--no-silhouette modifier
-// re-centres the text for that case.
+// Stage 6c — the throws PR card: an ornate Highland Games-themed template
+// image (PR shield + parchment medallion + stone plaque + brass scroll +
+// thistle-and-laurel framing) with the implement-specific athlete silhouette
+// dropped inside the medallion and all dynamic text positioned over the
+// plaque + scroll regions. The 6a soft-grey card is fully retired.
 //
-// A celebration sound fires when the card renders (a no-op while sound is off,
-// which is the default). Playback is gesture-initiated — the card fires from
-// Save Session or a View Celebrations click — so it stays within autoplay policy.
+// Layering (bottom-to-top): template (z 0) → silhouette (z 1) → plaque text
+// + scroll text + lower-left wordmark (z 2). selectThrowSilhouette (shared.js,
+// pure) picks the silhouette asset; this is the rendering layer.
+//
+// Defensive fallbacks: a missing or undecodable template adds .celebration-
+// card--no-template (CSS gives that a flat warm background so the overlays
+// still read); a missing or undecodable silhouette adds .celebration-card--
+// no-silhouette (CSS hides the medallion-centred image slot for that case).
+//
+// Dual-class names on the text elements (e.g. `card-headline celebration-
+// card-headline`) keep the Stage 4b test selectors working — the new spec
+// classes carry the CSS, the legacy classes carry the tests.
+//
+// A celebration sound fires when the card renders (a no-op while sound is
+// off, which is the default). Playback is gesture-initiated — the card
+// fires from Save Session or a View Celebrations click — so it stays within
+// autoplay policy.
 function buildThrowsPrCard(milestone, session, data, sil) {
   const card = document.createElement('div');
   card.className = 'celebration-card celebration-card--pr celebration-card--throw';
+
+  // Template image is the visual container for everything that follows.
+  // A failed load is rare but recoverable: fall back to a flat warm card.
+  const template = document.createElement('img');
+  template.className = 'card-template';
+  template.src = 'images/decorations/pr-card-template.png';
+  template.alt = '';
+  template.setAttribute('aria-hidden', 'true');
+  template.addEventListener('error', () => {
+    template.remove();
+    card.classList.add('celebration-card--no-template');
+  });
+  card.appendChild(template);
 
   if (sil && sil.src) {
     const img = document.createElement('img');
@@ -948,8 +973,8 @@ function buildThrowsPrCard(milestone, session, data, sil) {
     img.src = sil.src;
     img.alt = '';
     img.setAttribute('aria-hidden', 'true');
-    // A missing or undecodable asset must never break the card: drop the image
-    // and fall back to the un-skinned layout.
+    // A missing or undecodable silhouette must never break the card: drop
+    // the image and fall back to the no-silhouette modifier.
     img.addEventListener('error', () => {
       img.remove();
       card.classList.add('celebration-card--no-silhouette');
@@ -959,30 +984,69 @@ function buildThrowsPrCard(milestone, session, data, sil) {
     card.classList.add('celebration-card--no-silhouette');
   }
 
+  // Stone plaque region — headline, subhead, event, mark, previous-mark.
+  // textContent stays mixed-case "Personal Record" so the Stage 4b regex
+  // tests still match; CSS text-transform: uppercase carries the visual.
+  const plaque = document.createElement('div');
+  plaque.className = 'card-plaque';
+
   const headline = document.createElement('p');
-  headline.className = 'celebration-card-headline';
-  headline.textContent = 'New Personal Record';
-  card.appendChild(headline);
+  headline.className = 'card-headline celebration-card-headline';
+  headline.textContent = 'Personal Record';
+  plaque.appendChild(headline);
+
+  const subhead = document.createElement('p');
+  subhead.className = 'card-subhead';
+  subhead.textContent = 'New PR Achieved';
+  plaque.appendChild(subhead);
 
   const eventName = document.createElement('p');
-  eventName.className = 'celebration-card-event';
+  eventName.className = 'card-event celebration-card-event';
   eventName.textContent = eventDisplayName(milestone.event, data) || milestone.event;
-  card.appendChild(eventName);
+  plaque.appendChild(eventName);
 
   const mark = document.createElement('p');
-  mark.className = 'celebration-card-mark';
+  mark.className = 'card-mark celebration-card-mark';
   mark.textContent = formatEventValue(milestone.event, milestone.value, data);
-  card.appendChild(mark);
+  plaque.appendChild(mark);
 
   if (Number.isFinite(milestone.previousValue)) {
     const prev = document.createElement('p');
-    prev.className = 'celebration-card-prev';
+    prev.className = 'card-prev celebration-card-prev';
     prev.textContent = `was ${formatEventValue(milestone.event, milestone.previousValue, data)}`;
-    card.appendChild(prev);
+    plaque.appendChild(prev);
   }
 
-  card.appendChild(buildCelebrationMeta(session));
-  card.appendChild(buildCelebrationWordmark());
+  card.appendChild(plaque);
+
+  // Brass scroll banner — date, games title (only when set), location.
+  // One per line; the scroll is wide enough for short location strings.
+  const scroll = document.createElement('div');
+  scroll.className = 'card-scroll';
+  const dateLine = document.createElement('span');
+  dateLine.className = 'card-meta-line';
+  dateLine.textContent = formatSessionDate(session.date);
+  scroll.appendChild(dateLine);
+  if (session.games) {
+    const games = document.createElement('span');
+    games.className = 'card-meta-line';
+    games.textContent = session.games;
+    scroll.appendChild(games);
+  }
+  if (session.location) {
+    const loc = document.createElement('span');
+    loc.className = 'card-meta-line';
+    loc.textContent = session.location;
+    scroll.appendChild(loc);
+  }
+  card.appendChild(scroll);
+
+  // Lower-left wordmark — text-only for now; a future Stone & Standard icon
+  // (v2.x) sits next to or replaces this same slot.
+  const wm = document.createElement('div');
+  wm.className = 'card-wordmark celebration-card-wordmark';
+  wm.textContent = 'Stone & Standard';
+  card.appendChild(wm);
 
   playCelebrationSound(CELEBRATION_AUDIO.shout);
   return card;
