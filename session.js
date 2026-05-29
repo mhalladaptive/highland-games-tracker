@@ -888,14 +888,18 @@ function buildAwesomeDayCard(session, milestones, data) {
 
 // Stage 6a — celebration sound. The preference is a standalone localStorage
 // flag (not part of the v2 data blob or profile, so no schema change): absent
-// or anything other than 'on' means off, which is the default. The clips are
-// placeholders at fixed paths today; the real "Big throw!" shout and weight-
-// clang drop in at the same paths once recorded.
+// or anything other than 'on' means off, which is the default.
 const SOUND_PREF_KEY = 'stone-and-standard-sound';
-const CELEBRATION_AUDIO = {
-  shout: 'audio/big-throw.wav',
-  land: 'audio/weight-clang.wav',
-};
+
+// Voice clip wiring. The throws PR slot rotates between two clips
+// for variety; the other three slots are single-clip today. The
+// shape is intentionally minimal — no generalized array-per-slot
+// scaffolding. If a future slot grows to multiple clips, promote
+// it to an array at that point.
+const THROWS_PR_VOICES = ['audio/big-throw.wav', 'audio/see-it-send-it.wav'];
+const THROWS_GOAL_VOICE = 'audio/practicing.wav';
+const HEIGHT_EVENT_VOICE = 'audio/up-and-over.wav';
+const AWESOME_DAY_VOICE = 'audio/plan-comes-together.wav';
 
 // Per-card-render counter so each throws PR card's date-curve path gets
 // a unique id. Replay queues cards one at a time so collision is unlikely
@@ -903,6 +907,28 @@ const CELEBRATION_AUDIO = {
 // path that might mount two at once. Increment, then use.
 let cardDatePathCounter = 0;
 const SVG_NS = 'http://www.w3.org/2000/svg';
+
+// Resolve a milestone to its voice clip src per the v2.0.2 mapping.
+// Returns null when no voice should play (lifts get no voice; an
+// unknown event id is treated as no-voice for safety).
+//
+// Height-event override: any celebration on a height-measurement
+// event (Sheaf Toss, Weight for Height) plays the height voice
+// regardless of whether it's a PR or Goal milestone — the event
+// type is the loudest signal.
+function pickCelebrationVoice(milestone) {
+  if (!milestone) return null;
+  if (milestone.type === 'awesomeDay') return AWESOME_DAY_VOICE;
+  const event = ITEMS.find((i) => i.id === milestone.event);
+  if (!event) return null;
+  if (event.category !== 'throw') return null;
+  if (event.measurementType === 'height') return HEIGHT_EVENT_VOICE;
+  if (milestone.type === 'pr') {
+    return THROWS_PR_VOICES[Math.floor(Math.random() * THROWS_PR_VOICES.length)];
+  }
+  if (milestone.type === 'goal') return THROWS_GOAL_VOICE;
+  return null;
+}
 
 function isSoundOn() {
   try {
@@ -952,11 +978,6 @@ function playCelebrationSound(src) {
 // Dual-class names on the text elements (e.g. `card-headline celebration-
 // card-headline`) keep the Stage 4b test selectors working — the new spec
 // classes carry the CSS, the legacy classes carry the tests.
-//
-// A celebration sound fires when the card renders (a no-op while sound is
-// off, which is the default). Playback is gesture-initiated — the card
-// fires from Save Session or a View Celebrations click — so it stays within
-// autoplay policy.
 function buildThrowsPrCard(milestone, session, data, sil) {
   const card = document.createElement('div');
   card.className = 'celebration-card celebration-card--pr celebration-card--throw';
@@ -1073,7 +1094,6 @@ function buildThrowsPrCard(milestone, session, data, sil) {
   wm.textContent = 'Stone & Standard';
   card.appendChild(wm);
 
-  playCelebrationSound(CELEBRATION_AUDIO.shout);
   return card;
 }
 
@@ -1247,6 +1267,7 @@ function showCelebrationQueue(session, data, options) {
   const fullList = Array.isArray(session && session.milestones) ? session.milestones : [];
   const queue = Array.isArray(opts.subset) ? opts.subset : fullList;
   if (queue.length === 0) return;
+  const fireSounds = !!opts.fireSounds;
 
   const overlay = document.createElement('div');
   overlay.className = 'celebration-overlay';
@@ -1293,6 +1314,18 @@ function showCelebrationQueue(session, data, options) {
     slot.innerHTML = '';
     const card = buildCelebrationCard(queue[index], session, data, fullList);
     if (card) slot.appendChild(card);
+    // Voice policy: first card fires; middle cards silent; the
+    // Awesome Day capstone always fires when reached. Replay
+    // (fireSounds false) stays silent throughout.
+    if (fireSounds) {
+      const milestone = queue[index];
+      const isFirst = index === 0;
+      const isAwesomeDay = milestone && milestone.type === 'awesomeDay';
+      if (isFirst || isAwesomeDay) {
+        const src = pickCelebrationVoice(milestone);
+        if (src) playCelebrationSound(src);
+      }
+    }
   }
   function renderChainPromptFor(milestone) {
     slot.innerHTML = '';
@@ -1448,7 +1481,7 @@ function handleSubmit(event) {
     resetForm();
     showStatus('Session updated.');
     if (updatedSession && created.length > 0) {
-      showCelebrationQueue(updatedSession, data, { subset: created, chainPrompts: true });
+      showCelebrationQueue(updatedSession, data, { subset: created, chainPrompts: true, fireSounds: true });
     }
   } else {
     const newSession = {
@@ -1468,7 +1501,7 @@ function handleSubmit(event) {
     renderSessionsList(data.sessions, data.userLifts);
     resetForm();
     showStatus(`Session logged for ${formatSessionDate(formData.date)}.`);
-    showCelebrationQueue(newSession, data, { chainPrompts: true });
+    showCelebrationQueue(newSession, data, { chainPrompts: true, fireSounds: true });
   }
 }
 

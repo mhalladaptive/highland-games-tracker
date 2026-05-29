@@ -3830,6 +3830,44 @@ test('sound preference: uses a key separate from the v2 data blob (no schema cha
   assertTrue(SOUND_PREF_KEY !== STORAGE_KEY, 'sound flag is not the data key');
 });
 
+// --- v2.0.2: celebration voice picker mapping ---
+
+test('pickCelebrationVoice: throws PR returns one of the two throws PR voices', () => {
+  for (let i = 0; i < 20; i++) {
+    const src = pickCelebrationVoice({ type: 'pr', event: 'open-stone' });
+    assertTrue(src === 'audio/big-throw.wav' || src === 'audio/see-it-send-it.wav');
+  }
+});
+
+test('pickCelebrationVoice: throws Goal returns practicing.wav', () => {
+  assertEqual(pickCelebrationVoice({ type: 'goal', event: 'open-stone' }), 'audio/practicing.wav');
+});
+
+test('pickCelebrationVoice: height-event PR returns up-and-over.wav (overrides throws PR mapping)', () => {
+  assertEqual(pickCelebrationVoice({ type: 'pr', event: 'sheaf-toss' }), 'audio/up-and-over.wav');
+  assertEqual(pickCelebrationVoice({ type: 'pr', event: 'weight-over-bar' }), 'audio/up-and-over.wav');
+});
+
+test('pickCelebrationVoice: height-event Goal returns up-and-over.wav (overrides throws Goal mapping)', () => {
+  assertEqual(pickCelebrationVoice({ type: 'goal', event: 'sheaf-toss' }), 'audio/up-and-over.wav');
+});
+
+test('pickCelebrationVoice: lift PR returns null (lifts have no voice)', () => {
+  assertEqual(pickCelebrationVoice({ type: 'pr', event: 'deadlift' }), null);
+});
+
+test('pickCelebrationVoice: lift Goal returns null', () => {
+  assertEqual(pickCelebrationVoice({ type: 'goal', event: 'deadlift' }), null);
+});
+
+test('pickCelebrationVoice: awesomeDay returns plan-comes-together.wav', () => {
+  assertEqual(pickCelebrationVoice({ type: 'awesomeDay' }), 'audio/plan-comes-together.wav');
+});
+
+test('pickCelebrationVoice: unknown event id returns null safely', () => {
+  assertEqual(pickCelebrationVoice({ type: 'pr', event: 'not-a-real-event' }), null);
+});
+
 // --- Stage 6a: storage namespace migration (Stone & Standard rename) ---
 //
 // Each test backs up and restores BOTH keys so the suite (which only snapshots
