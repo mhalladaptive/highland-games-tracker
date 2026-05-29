@@ -1324,10 +1324,11 @@ function showCelebrationQueue(session, data, options) {
   closeBtn.textContent = '×';
   overlay.appendChild(closeBtn);
 
-  // Sound on/off toggle. Sound is off by default; the preference persists in a
-  // standalone localStorage flag (see isSoundOn / setSoundOn). The toggle is a
-  // user gesture, so turning sound on keeps later playback within autoplay
-  // policy.
+  // Sound on/off toggle. Sound is on by default; users can opt out via this
+  // celebration overlay toggle or the profile modal preference. The preference
+  // persists in a standalone localStorage flag (see isSoundOn / setSoundOn).
+  // The toggle is a user gesture, so turning sound on keeps later playback
+  // within autoplay policy.
   const soundBtn = document.createElement('button');
   soundBtn.type = 'button';
   soundBtn.className = 'celebration-sound';
