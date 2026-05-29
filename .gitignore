@@ -11,3 +11,7 @@
 
 # Node (in case it shows up later)
 node_modules/
+
+# Saved-page captures (Chrome 'Save Page As → Complete') — bloat with stale copies
+Images for Cards/*_files/
+Images for Cards/*.html
