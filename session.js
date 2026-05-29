@@ -906,7 +906,7 @@ const AWESOME_DAY_VOICE = 'audio/plan-comes-together.wav';
 // drop. The 1.9s gap captures the lifter's settle-before-lift; the
 // final drop captures completion. Total sequence ~8.7s.
 const LIFT_LOADING_VOICE = 'audio/loading-the-bar.wav';
-const LIFT_DROP_VOICE = 'audio/barbell-drop.wav';
+const LIFT_DROP_VOICE = 'audio/heavy-barbell-drop.wav';
 const LIFT_CELEBRATION_SEQUENCE = [
   { src: LIFT_LOADING_VOICE, gapMsAfter: 1000 },
   { src: LIFT_LOADING_VOICE, gapMsAfter: 1000 },

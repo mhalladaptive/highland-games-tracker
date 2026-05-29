@@ -3859,7 +3859,7 @@ test('pickCelebrationVoice: lift PR returns the LIFT_CELEBRATION_SEQUENCE', () =
   assertEqual(result[0].src, 'audio/loading-the-bar.wav');
   assertEqual(result[1].src, 'audio/loading-the-bar.wav');
   assertEqual(result[2].src, 'audio/loading-the-bar.wav');
-  assertEqual(result[3].src, 'audio/barbell-drop.wav');
+  assertEqual(result[3].src, 'audio/heavy-barbell-drop.wav');
   assertEqual(result[0].gapMsAfter, 1000);
   assertEqual(result[1].gapMsAfter, 1000);
   assertEqual(result[2].gapMsAfter, 1900);
