@@ -3852,12 +3852,24 @@ test('pickCelebrationVoice: height-event Goal returns up-and-over.wav (overrides
   assertEqual(pickCelebrationVoice({ type: 'goal', event: 'sheaf-toss' }), 'audio/up-and-over.wav');
 });
 
-test('pickCelebrationVoice: lift PR returns null (lifts have no voice)', () => {
-  assertEqual(pickCelebrationVoice({ type: 'pr', event: 'deadlift' }), null);
+test('pickCelebrationVoice: lift PR returns the LIFT_CELEBRATION_SEQUENCE', () => {
+  const result = pickCelebrationVoice({ type: 'pr', event: 'deadlift' });
+  assertTrue(Array.isArray(result), 'lift PR returns an array sequence');
+  assertEqual(result.length, 4, 'four entries: 3 loadings + 1 drop');
+  assertEqual(result[0].src, 'audio/loading-the-bar.wav');
+  assertEqual(result[1].src, 'audio/loading-the-bar.wav');
+  assertEqual(result[2].src, 'audio/loading-the-bar.wav');
+  assertEqual(result[3].src, 'audio/barbell-drop.wav');
+  assertEqual(result[0].gapMsAfter, 1000);
+  assertEqual(result[1].gapMsAfter, 1000);
+  assertEqual(result[2].gapMsAfter, 1900);
+  assertEqual(result[3].gapMsAfter, 0);
 });
 
-test('pickCelebrationVoice: lift Goal returns null', () => {
-  assertEqual(pickCelebrationVoice({ type: 'goal', event: 'deadlift' }), null);
+test('pickCelebrationVoice: lift Goal returns the same LIFT_CELEBRATION_SEQUENCE as lift PR', () => {
+  const prResult = pickCelebrationVoice({ type: 'pr', event: 'deadlift' });
+  const goalResult = pickCelebrationVoice({ type: 'goal', event: 'deadlift' });
+  assertDeepEqual(prResult, goalResult);
 });
 
 test('pickCelebrationVoice: awesomeDay returns plan-comes-together.wav', () => {

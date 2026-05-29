@@ -901,6 +901,19 @@ const THROWS_GOAL_VOICE = 'audio/practicing.wav';
 const HEIGHT_EVENT_VOICE = 'audio/up-and-over.wav';
 const AWESOME_DAY_VOICE = 'audio/plan-comes-together.wav';
 
+// Lift celebration sequence — fires on Lift PR and Lift Goal cards.
+// Five timing units: load → 1s gap → load → 1s gap → load → 1.9s gap →
+// drop. The 1.9s gap captures the lifter's settle-before-lift; the
+// final drop captures completion. Total sequence ~8.7s.
+const LIFT_LOADING_VOICE = 'audio/loading-the-bar.wav';
+const LIFT_DROP_VOICE = 'audio/barbell-drop.wav';
+const LIFT_CELEBRATION_SEQUENCE = [
+  { src: LIFT_LOADING_VOICE, gapMsAfter: 1000 },
+  { src: LIFT_LOADING_VOICE, gapMsAfter: 1000 },
+  { src: LIFT_LOADING_VOICE, gapMsAfter: 1900 },
+  { src: LIFT_DROP_VOICE,    gapMsAfter: 0    },
+];
+
 // Per-card-render counter so each throws PR card's date-curve path gets
 // a unique id. Replay queues cards one at a time so collision is unlikely
 // in practice, but a counter is cheaper than reasoning about every code
@@ -908,9 +921,10 @@ const AWESOME_DAY_VOICE = 'audio/plan-comes-together.wav';
 let cardDatePathCounter = 0;
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
-// Resolve a milestone to its voice clip src per the v2.0.2 mapping.
-// Returns null when no voice should play (lifts get no voice; an
-// unknown event id is treated as no-voice for safety).
+// Resolve a milestone to its celebration audio per the v2.0.3 mapping.
+// Return shape is string | Array | null: a single clip src for throws
+// and Awesome Day, a {src, gapMsAfter}[] sequence for lifts, null when
+// no audio should play (unknown event id treated as no-audio for safety).
 //
 // Height-event override: any celebration on a height-measurement
 // event (Sheaf Toss, Weight for Height) plays the height voice
@@ -921,6 +935,7 @@ function pickCelebrationVoice(milestone) {
   if (milestone.type === 'awesomeDay') return AWESOME_DAY_VOICE;
   const event = ITEMS.find((i) => i.id === milestone.event);
   if (!event) return null;
+  if (event.category === 'lift') return LIFT_CELEBRATION_SEQUENCE;
   if (event.category !== 'throw') return null;
   if (event.measurementType === 'height') return HEIGHT_EVENT_VOICE;
   if (milestone.type === 'pr') {
@@ -953,6 +968,29 @@ function playCelebrationSound(src) {
   if (!isSoundOn()) return;
   try {
     const audio = new Audio(src);
+    const p = audio.play();
+    if (p && typeof p.catch === 'function') p.catch(() => {});
+  } catch {
+    // never let audio throw into the celebration
+  }
+}
+
+// Play a sequence of clips with per-clip post-gaps. Each entry is
+// {src, gapMsAfter}; gapMsAfter is the delay (ms) between this
+// clip's end and the next clip's start. Same defensive try/catch
+// + .catch(() => {}) pattern as playCelebrationSound — a missing
+// file, undecodable clip, or blocked autoplay aborts the sequence
+// silently without throwing.
+function playClipSequence(sequence, index) {
+  if (!Array.isArray(sequence) || index >= sequence.length) return;
+  const { src, gapMsAfter } = sequence[index];
+  try {
+    const audio = new Audio(src);
+    audio.addEventListener('ended', () => {
+      const nextIndex = index + 1;
+      if (nextIndex >= sequence.length) return;
+      setTimeout(() => playClipSequence(sequence, nextIndex), gapMsAfter || 0);
+    });
     const p = audio.play();
     if (p && typeof p.catch === 'function') p.catch(() => {});
   } catch {
@@ -1322,8 +1360,12 @@ function showCelebrationQueue(session, data, options) {
       const isFirst = index === 0;
       const isAwesomeDay = milestone && milestone.type === 'awesomeDay';
       if (isFirst || isAwesomeDay) {
-        const src = pickCelebrationVoice(milestone);
-        if (src) playCelebrationSound(src);
+        const voice = pickCelebrationVoice(milestone);
+        if (typeof voice === 'string') {
+          playCelebrationSound(voice);
+        } else if (Array.isArray(voice)) {
+          if (isSoundOn()) playClipSequence(voice, 0);
+        }
       }
     }
   }
