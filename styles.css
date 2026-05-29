@@ -1441,7 +1441,7 @@ body.kind-training .comp-only {
    A future Stone & Standard icon (v2.x) sits in or near the same slot. */
 .celebration-card--throw .card-wordmark {
   position: absolute;
-  left: 4%;
+  left: calc(4% + 1.4em);
   bottom: 4%;
   z-index: 2;
   font-size: 0.7875rem;
