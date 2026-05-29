@@ -110,6 +110,21 @@
         <select id="profile-tier" class="field"></select>
       </label>
 
+      <div class="profile-sound-row">
+        <label class="profile-sound-label">
+          <input
+            type="checkbox"
+            id="profile-sound-toggle"
+            aria-describedby="profile-sound-help"
+          />
+          <span>Play celebration sounds</span>
+        </label>
+        <p id="profile-sound-help" class="profile-sound-help">
+          Sound stays off if you turn it off here. The overlay on a
+          celebration card has the same toggle.
+        </p>
+      </div>
+
       <div class="profile-actions">
         <button type="submit" id="profile-submit" class="save-btn">Continue</button>
       </div>
@@ -117,6 +132,7 @@
   </dialog>
 
   <script src="shared.js"></script>
+  <script src="session.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

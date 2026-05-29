@@ -3807,12 +3807,9 @@ test('selectThrowSilhouette: an unknown event → null', () => {
 
 // --- Stage 6a: sound preference ---
 
-test('sound preference: off by default, toggles, and persists to its own flag', () => {
+test('sound preference: toggles and persists to its own flag', () => {
   const prev = localStorage.getItem(SOUND_PREF_KEY);
   try {
-    localStorage.removeItem(SOUND_PREF_KEY);
-    assertEqual(isSoundOn(), false, 'absent flag reads as off');
-
     setSoundOn(true);
     assertEqual(isSoundOn(), true, 'turned on');
     assertEqual(localStorage.getItem(SOUND_PREF_KEY), 'on', 'persisted to standalone flag');
@@ -3820,6 +3817,39 @@ test('sound preference: off by default, toggles, and persists to its own flag', 
     setSoundOn(false);
     assertEqual(isSoundOn(), false, 'turned back off');
     assertEqual(localStorage.getItem(SOUND_PREF_KEY), 'off', 'off persisted');
+  } finally {
+    if (prev === null) localStorage.removeItem(SOUND_PREF_KEY);
+    else localStorage.setItem(SOUND_PREF_KEY, prev);
+  }
+});
+
+test('isSoundOn: returns true when key is absent (v2.0.4 default-ON)', () => {
+  const prev = localStorage.getItem(SOUND_PREF_KEY);
+  try {
+    localStorage.removeItem(SOUND_PREF_KEY);
+    assertTrue(isSoundOn());
+  } finally {
+    if (prev === null) localStorage.removeItem(SOUND_PREF_KEY);
+    else localStorage.setItem(SOUND_PREF_KEY, prev);
+  }
+});
+
+test('isSoundOn: returns true when key is "on"', () => {
+  const prev = localStorage.getItem(SOUND_PREF_KEY);
+  try {
+    localStorage.setItem(SOUND_PREF_KEY, 'on');
+    assertTrue(isSoundOn());
+  } finally {
+    if (prev === null) localStorage.removeItem(SOUND_PREF_KEY);
+    else localStorage.setItem(SOUND_PREF_KEY, prev);
+  }
+});
+
+test('isSoundOn: returns false when key is explicitly "off"', () => {
+  const prev = localStorage.getItem(SOUND_PREF_KEY);
+  try {
+    localStorage.setItem(SOUND_PREF_KEY, 'off');
+    assertEqual(isSoundOn(), false);
   } finally {
     if (prev === null) localStorage.removeItem(SOUND_PREF_KEY);
     else localStorage.setItem(SOUND_PREF_KEY, prev);

@@ -589,6 +589,12 @@ function setupProfileModal() {
   if (classSelect) classSelect.addEventListener('change', syncProfileTierField);
   const genderSelect = document.getElementById('profile-gender');
   if (genderSelect) genderSelect.addEventListener('change', syncProfileWeightScheduleField);
+  const soundCheckbox = document.getElementById('profile-sound-toggle');
+  if (soundCheckbox) {
+    soundCheckbox.addEventListener('change', () => {
+      setSoundOn(soundCheckbox.checked);
+    });
+  }
   form.addEventListener('submit', () => {
     // Read current first so we can pass the existing setupCompletedAt
     // through to the builder — it preserves an incoming timestamp and
@@ -623,6 +629,10 @@ function openProfileModal() {
   syncProfileTierField();
   document.getElementById('profile-tier').value = profile.tier || '';
   syncProfileWeightScheduleField();
+  const soundCheckbox = document.getElementById('profile-sound-toggle');
+  if (soundCheckbox) {
+    soundCheckbox.checked = isSoundOn();
+  }
   if (typeof modal.showModal === 'function') {
     modal.showModal();
   } else {

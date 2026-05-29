@@ -947,7 +947,7 @@ function pickCelebrationVoice(milestone) {
 
 function isSoundOn() {
   try {
-    return localStorage.getItem(SOUND_PREF_KEY) === 'on';
+    return localStorage.getItem(SOUND_PREF_KEY) !== 'off';
   } catch {
     return false;
   }
